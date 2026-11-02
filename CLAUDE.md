@@ -88,7 +88,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `--cell` is the box color token; `--cell-size` is the box size set by `sizeBoard`.
 - `packs.toml`: the word packs, in display order. Each `[[pack]]` has `id` (saved progress
   is keyed by it; don't rename), `name`, `note` (shown under the chips), and `words`;
-  `[custom] words` is the starter "My words" list. **Word list format** (packs and the custom list share it): one entry per
+  `[custom] words` is the starter "Custom" list. **Word list format** (packs and the custom list share it): one entry per
   line, `syl-la-bles emoji`, e.g. `but-ter-fly 🦋`. Dashes mark syllables and drive the
   coloring and *Clap it*. Letters (plus apostrophes, e.g. `don't`; the
   apostrophe box is pre-filled), 2–12 characters. `(how-it-sounds)` at the end, one part

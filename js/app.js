@@ -66,7 +66,7 @@ function sizeBoard() {
 }
 function renderEmpty() {
   board.style.gridTemplateColumns = "";
-  board.innerHTML = '<p class="empty-msg">This pack needs at least 3 words. Open <b>Grown-ups</b> and add words under “My words”.</p>';
+  board.innerHTML = '<p class="empty-msg">This pack needs at least 3 words. Open <b>Grown-ups</b> and add words under “Custom words”.</p>';
   $("#clueList").innerHTML = "";
   $("#pic").textContent = "✏️"; $("#clueLabel").textContent = "No puzzle yet"; $("#clueSub").textContent = "";
 }
