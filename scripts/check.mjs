@@ -62,10 +62,13 @@ if (!starter) errors.push(`packs.toml: missing [custom] words = """..."""`);
 const lists = Object.entries(packs).map(([id, p]) => ({ id, text: p.list }));
 lists.push({ id: "custom", text: starter });
 
-// Short hint parts that speech engines read as words, not letters.
-const SAFE_SHORT = new Set(["uh", "oh", "go", "no", "so", "ex", "um", "in", "up", "it", "at", "on", "us"]);
-// Common abbreviations that speech engines expand or spell out.
-const ABBREV = new Set(["vol", "tel", "min", "max", "ap", "co", "fla", "mon", "tue", "thu", "fri",
+// Short hint parts that speech engines read as words, not letters. "un" and "ub" were
+// timed against Google US English and read normally.
+const SAFE_SHORT = new Set(["uh", "oh", "go", "no", "so", "ex", "um", "in", "up", "it", "at", "on", "us", "un", "ub"]);
+// Common abbreviations that speech engines expand or spell out, plus syllables timed as
+// misread by Google US English (spelled out, or expanded like "fla" → "Florida").
+const ABBREV = new Set(["mit", "bih", "uhn", "uhb", "ca", "tle", "ril", "ple", "cil", "dle", "dile", "oc",
+  "vol", "tel", "min", "max", "ap", "co", "fla", "mon", "tue", "thu", "fri",
   "jan", "feb", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec", "st", "dr", "mr", "mrs", "ms",
   "ft", "pt", "gal", "oz", "lb", "km", "cm", "mm", "sec", "hr", "est", "etc", "vs", "inc", "ltd", "corp", "dept", "ave",
   "blvd", "rd", "ref", "pg", "pp", "ch", "fig", "govt", "approx", "misc", "gen", "lt", "sgt", "capt", "col", "jr", "sr"]);
