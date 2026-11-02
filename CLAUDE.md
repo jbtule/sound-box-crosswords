@@ -39,7 +39,7 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
 7. **A grown-up can tune it** without code, in Settings: syllable colors on/off, auto-speak,
-   voice, A–Z vs QWERTY pad, custom word list. Nothing in Settings makes the game easier,
+   voice, QWERTY (default) vs A–Z pad, custom word list. Nothing in Settings makes the game easier,
    so it needs no lock. Keep it that way: don't add settings that weaken recall.
 
 When a request is ambiguous, prefer the option that better serves goals 1–4.

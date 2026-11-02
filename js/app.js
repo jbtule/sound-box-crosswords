@@ -21,7 +21,7 @@ try {
   throw e;
 }
 
-var settings = Object.assign({ syl: true, kb: "abc", speakSel: true, voice: "" }, store.get("settings", {}));
+var settings = Object.assign({ syl: true, kb: "qwerty", speakSel: true, voice: "" }, store.get("settings", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
 var packId = store.get("pack", "");
