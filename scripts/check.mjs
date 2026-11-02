@@ -41,7 +41,7 @@ if (!cdn || cdn[1] !== pkg) errors.push(`index.html import map uses smol-toml ${
 
 const { parse } = await import("smol-toml");
 const { readPacks } = await import("../js/words.js");
-const { parseList, makePuzzle, MAX_COLS, MAX_ROWS } = await import("../js/crossword.js");
+const { parseList, makePuzzle, blankSentence, MAX_COLS, MAX_ROWS } = await import("../js/crossword.js");
 
 const tomlText = readFileSync(join(root, "packs.toml"), "utf8");
 let raw = { pack: [] }, packs = {}, starter = "";
@@ -115,6 +115,17 @@ for (const { id, text } of lists) {
       }
     }
     seen.add(w);
+  }
+  // Sentences are shown with the word blanked out, so one that uses another word from the
+  // same list would spell it on screen when both are in a puzzle.
+  if (id !== "custom") {
+    const all = parseList(text).map((e) => e.w);
+    for (const e of parseList(text)) {
+      if (!e.sentence) continue;
+      for (const o of all) {
+        if (o !== e.w && blankSentence(e.sentence, [o]) !== e.sentence) errors.push(`${id}: "${e.w}" sentence gives away "${o}": "${e.sentence}"`);
+      }
+    }
   }
   if (parseList(text).length !== seen.size) errors.push(`${id}: parseList disagrees with the line count`);
   if (id !== "custom" && lines.length < 10) errors.push(`${id}: only ${lines.length} words; packs need variety to build puzzles`);
