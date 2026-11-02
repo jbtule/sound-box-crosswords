@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Sound Box Crosswords</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lexend:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one tall column — packs, the grid card, the current picture clue, a big letter pad, then all the clues. Graph-paper ground. */
+:root {
+  --bg: #e9f0f7;
+  --grid-line: rgba(70, 110, 160, 0.09);
+  --ink: #1b2a41;
+  --muted: #586982;
+  --card: #ffffff;
+  --cell: #ffffff;
+  --cell-edge: #b4c4d7;
+  --accent: #ef7d22;
+  --accent-soft: #fde6d2;
+  --sylA: #d6f1e3;
+  --sylA-edge: #2f9a6c;
+  --sylB: #e6dcfb;
+  --sylB-edge: #7d5fd0;
+  --ok: #24895c;
+  --bad: #d23f58;
+  --key: #f4f8fc;
+  --key-edge: #c9d6e5;
+  --scrim: rgba(16, 25, 42, 0.45);
+  --shadow: 0 1px 2px rgba(27, 42, 65, 0.08), 0 6px 18px rgba(27, 42, 65, 0.07);
+  --display: "Fredoka", "Lexend", system-ui, sans-serif;
+  --body: "Lexend", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1828; --grid-line: rgba(140, 170, 220, 0.06); --ink: #e7eef8; --muted: #97a7bf;
+    --card: #17223a; --cell: #1f2c47; --cell-edge: #3a4d6f; --accent: #ff9a47; --accent-soft: #4a3220;
+    --sylA: #1c4a3a; --sylA-edge: #4fcf97; --sylB: #3a2f60; --sylB-edge: #a98cf2;
+    --ok: #4fcf97; --bad: #ff6f86; --key: #22314f; --key-edge: #364a6f; --scrim: rgba(0, 0, 0, 0.6);
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 18px rgba(0,0,0,0.25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1828; --grid-line: rgba(140, 170, 220, 0.06); --ink: #e7eef8; --muted: #97a7bf;
+  --card: #17223a; --cell: #1f2c47; --cell-edge: #3a4d6f; --accent: #ff9a47; --accent-soft: #4a3220;
+  --sylA: #1c4a3a; --sylA-edge: #4fcf97; --sylB: #3a2f60; --sylB-edge: #a98cf2;
+  --ok: #4fcf97; --bad: #ff6f86; --key: #22314f; --key-edge: #364a6f; --scrim: rgba(0, 0, 0, 0.6);
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 18px rgba(0,0,0,0.25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 32px;
+  -webkit-tap-highlight-color: transparent;
+}
+.wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; line-height: 1.1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 span { color: var(--accent); }
+.ghost { background: var(--card); border: 1.5px solid var(--key-edge); border-radius: 999px; padding: 7px 14px; font-size: 0.85rem; font-weight: 600; }
+
+.packs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.packs::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1.5px solid var(--key-edge); background: var(--card); border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 0.92rem; display: flex; gap: 6px; align-items: center; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--card); border-color: var(--ink); }
+.chip .n { font-size: 0.78rem; opacity: 0.8; font-variant-numeric: tabular-nums; }
+.note { margin: -4px 0 0; color: var(--muted); font-size: 0.9rem; }
+
+.board-card { position: relative; background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 16px 12px; min-height: 160px; display: flex; justify-content: center; }
+.board { display: grid; gap: 4px; --cell: 40px; }
+.cell { width: var(--cell); height: var(--cell); background: var(--cell); border: 2px solid var(--cell-edge); border-radius: 7px; position: relative; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: calc(var(--cell) * 0.56); text-transform: lowercase; user-select: none; transition: background 0.15s, border-color 0.15s; }
+.void { width: var(--cell); height: var(--cell); }
+.cell .num { position: absolute; top: 1px; left: 3px; font-family: var(--body); font-size: max(9px, calc(var(--cell) * 0.24)); font-weight: 600; color: var(--muted); line-height: 1; }
+.cell.sel { background: var(--accent-soft); border-color: var(--accent); }
+.cell.sel.syl-a { background: var(--sylA); border-color: var(--sylA-edge); }
+.cell.sel.syl-b { background: var(--sylB); border-color: var(--sylB-edge); }
+.cell.cursor { box-shadow: 0 0 0 3px var(--accent); z-index: 1; }
+.cell.locked { color: var(--ok); }
+.cell.beat { transform: scale(1.12); box-shadow: 0 0 0 3px var(--ink); z-index: 2; }
+.cell.wiggle { animation: wiggle 0.4s; border-color: var(--bad); }
+.cell.wrong { background: color-mix(in srgb, var(--bad) 22%, var(--cell)); border-color: var(--bad); }
+.cell.pop { animation: pop 0.45s; }
+@keyframes wiggle { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(3px)} }
+@keyframes pop { 0%{transform:scale(1)} 45%{transform:scale(1.18)} 100%{transform:scale(1)} }
+.empty-msg { color: var(--muted); text-align: center; max-width: 34ch; align-self: center; }
+
+.done { position: absolute; inset: 0; border-radius: 18px; background: color-mix(in srgb, var(--card) 92%, transparent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 16px; }
+.done .big { font-size: 3rem; line-height: 1; }
+.done h2 { font-family: var(--display); font-size: 1.7rem; margin: 0; }
+.done p { margin: 0; color: var(--muted); }
+
+.cluebar { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 12px; }
+.pic { width: 76px; height: 76px; border-radius: 16px; border: 2px solid var(--key-edge); background: var(--key); font-size: 2.6rem; line-height: 1; display: grid; place-items: center; position: relative; }
+.pic::after { content: "🔊"; position: absolute; right: -6px; bottom: -6px; font-size: 0.95rem; background: var(--card); border-radius: 999px; padding: 3px; box-shadow: var(--shadow); }
+.clueinfo { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.cluehead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+#clueLabel { font-family: var(--display); font-weight: 600; font-size: 1.15rem; }
+#clueSub { color: var(--muted); font-size: 0.85rem; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.tool { border: 1.5px solid var(--key-edge); background: var(--key); border-radius: 12px; padding: 7px 12px; font-weight: 600; font-size: 0.9rem; }
+.tool:active { transform: translateY(1px); }
+
+.keyboard { display: flex; flex-direction: column; gap: 6px; user-select: none; }
+.krow { display: flex; gap: 6px; justify-content: center; }
+.key { flex: 1 1 0; max-width: 54px; min-width: 0; height: 50px; border: 1.5px solid var(--key-edge); border-bottom-width: 3px; background: var(--card); border-radius: 10px; font-family: var(--display); font-weight: 600; font-size: 1.35rem; text-transform: lowercase; padding: 0; }
+.key:active { transform: translateY(2px); border-bottom-width: 1.5px; }
+.key.wide { max-width: 84px; flex-grow: 1.6; font-size: 1.1rem; }
+
+.clues h2 { font-family: var(--display); font-size: 1.1rem; margin: 4px 0 8px; }
+.clue-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.ctile { background: var(--card); border: 2px solid transparent; border-radius: 14px; box-shadow: var(--shadow); padding: 8px 6px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.ctile .e { font-size: 2rem; line-height: 1.1; }
+.ctile .l { font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+.ctile.cur { border-color: var(--accent); }
+.ctile.fin { opacity: 0.55; }
+.ctile.fin .l::after { content: " ✓"; color: var(--ok); }
+
+.actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.primary { background: var(--ink); color: var(--card); border: none; border-radius: 999px; padding: 11px 22px; font-weight: 600; font-family: var(--display); font-size: 1.05rem; }
+.foot { color: var(--muted); font-size: 0.8rem; text-align: center; margin: 0; }
+
+.sheet { position: fixed; inset: 0; background: var(--scrim); z-index: 20; display: flex; align-items: flex-end; justify-content: center; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); }
+.panel { background: var(--card); width: 100%; max-width: 560px; max-height: 92%; overflow-y: auto; border-radius: 20px 20px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 16px; }
+.panel h2 { font-family: var(--display); margin: 0; font-size: 1.35rem; }
+.panel h3 { margin: 0 0 6px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.opt { display: flex; gap: 8px; flex-wrap: wrap; }
+.opt label { display: flex; align-items: center; gap: 6px; border: 1.5px solid var(--key-edge); border-radius: 12px; padding: 8px 12px; font-size: 0.92rem; }
+.opt small { color: var(--muted); }
+textarea { width: 100%; min-height: 170px; border: 1.5px solid var(--key-edge); border-radius: 12px; background: var(--key); color: var(--ink); font: 1rem/1.5 var(--body); padding: 10px 12px; resize: vertical; }
+.help { font-size: 0.85rem; color: var(--muted); margin: 6px 0 0; max-width: 60ch; }
+.help code { background: var(--key); padding: 1px 5px; border-radius: 5px; }
+.panel .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+#saveMsg { font-size: 0.88rem; color: var(--ok); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cell.wiggle, .cell.pop { animation: none; }
+  .cell.beat { transform: none; }
+  .cell, .key { transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>Sound Box <span>Crosswords</span></h1>
+    <button class="ghost" id="settingsBtn" type="button">Grown-ups</button>
+  </div>
+  <div class="packs" id="packs" role="group" aria-label="Word packs"></div>
+  <p class="note" id="packNote"></p>
+
+  <section class="board-card" aria-label="Crossword">
+    <div class="board" id="board"></div>
+    <div class="done" id="done" hidden>
+      <div class="big">⭐</div>
+      <h2>Solved it!</h2>
+      <p id="doneStats"></p>
+      <button class="primary" id="nextBtn" type="button">Next puzzle</button>
+    </div>
+  </section>
+
+  <section class="cluebar" id="cluebar">
+    <button class="pic" id="pic" type="button" aria-label="Hear the word">🐸</button>
+    <div class="clueinfo">
+      <div class="cluehead"><span id="clueLabel">1 Across</span><span id="clueSub"></span></div>
+      <div class="tools">
+        <button class="tool" id="hearBtn" type="button">Hear it</button>
+        <button class="tool" id="clapBtn" type="button">Clap it</button>
+        <button class="tool" id="hintBtn" type="button">Show a letter</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="keyboard" id="keyboard" aria-label="Letters"></section>
+
+  <section class="clues">
+    <h2>Pictures in this puzzle</h2>
+    <div class="clue-list" id="clueList"></div>
+  </section>
+
+  <div class="actions"><button class="primary" id="newBtn" type="button">New puzzle</button></div>
+  <p class="foot">Tap a picture to hear the word. Colors in the boxes show each syllable.</p>
+</div>
+
+<section class="sheet" id="sheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="row" style="justify-content:space-between"><h2 id="sheetTitle">Grown-up settings</h2><button class="ghost" id="closeBtn" type="button">Done</button></div>
+    <div>
+      <h3>Checking</h3>
+      <div class="opt">
+        <label><input type="radio" name="check" id="chkLetter" value="letter"> Each letter <small>wrong letters wiggle off</small></label>
+        <label><input type="radio" name="check" id="chkWord" value="word"> Whole word <small>checks when all boxes are full</small></label>
+      </div>
+    </div>
+    <div>
+      <h3>Helpers</h3>
+      <div class="opt">
+        <label><input type="checkbox" id="optSyl"> Color each syllable</label>
+        <label><input type="checkbox" id="optSpeakSel"> Say the word when a picture is chosen</label>
+      </div>
+    </div>
+    <div>
+      <h3>Letter pad</h3>
+      <div class="opt">
+        <label><input type="radio" name="kb" id="kbAbc" value="abc"> A to Z</label>
+        <label><input type="radio" name="kb" id="kbQwerty" value="qwerty"> Keyboard order</label>
+      </div>
+    </div>
+    <div>
+      <h3>My words</h3>
+      <textarea id="customText" aria-label="Your word list" spellcheck="false"></textarea>
+      <p class="help">One word per line. Add dashes between syllables (<code>ex-plore</code>) so the colors and “Clap it” work. An emoji after the word becomes the picture; without one, the clue is “listen” only. The starter list is an example — swap in this week’s school words.</p>
+      <div class="row" style="margin-top:10px"><button class="primary" id="saveBtn" type="button">Save and play my words</button><span id="saveMsg" role="status"></span></div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (s) { return document.querySelector(s); };
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem("sbx:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem("sbx:" + k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  var PACKS = {
+    blends: { name: "Blends", note: "Two consonants side by side. Say both sounds: fr-og, ne-st.", list:
+      "frog 🐸\nflag 🚩\ndrum 🥁\ncrab 🦀\nsled 🛷\nclock 🕰️\nswan 🦢\nskunk 🦨\nplant 🪴\ntruck 🚚\nnest 🪺\ntent ⛺\nhand ✋\ngift 🎁\nmilk 🥛\ndrop 💧\nstop 🛑\nplug 🔌\nbrick 🧱\nant 🐜\nspoon 🥄\ntree 🌳\nsmile 😃" },
+    bossy: { name: "Bossy R", note: "The R changes the vowel: ar, or, er, ir, ur.", list:
+      "car 🚗\nstar ⭐\nhorn 📯\ncorn 🌽\nfork 🍴\nshark 🦈\nscarf 🧣\nshirt 👕\nbird 🐦\ngirl 👧\npurse 👛\nstorm ⛈️\nhorse 🐴\ndart 🎯\ncart 🛒\nworm 🪱\narm 💪\njar 🫙\ntur-tle 🐢\nbur-ger 🍔" },
+    two: { name: "2 beats", note: "Clap the two beats, then spell one beat at a time.", list:
+      "rab-bit 🐇\npump-kin 🎃\nbas-ket 🧺\nsun-set 🌅\nro-bot 🤖\nlem-on 🍋\nti-ger 🐅\nmag-net 🧲\ncar-rot 🥕\nkit-ten 🐈\npop-corn 🍿\npen-cil ✏️\nrock-et 🚀\ncac-tus 🌵\ncan-dle 🕯️\nwin-dow 🪟\nsand-wich 🥪\ndrag-on 🐉\nhel-met ⛑️\nbut-ton 🔘\npan-da 🐼\nze-bra 🦓\nliz-ard 🦎\nspi-der 🕷️\nmon-key 🐒\nchick-en 🐔\ncup-cake 🧁\nsnow-man ⛄" },
+    three: { name: "3 beats", note: "Three beats. Keep the last one from getting lost.", list:
+      "oc-to-pus 🐙\nba-nan-a 🍌\nbut-ter-fly 🦋\ndi-no-saur 🦕\nkan-ga-roo 🦘\nel-e-phant 🐘\nto-ma-to 🍅\ncom-put-er 💻\num-brel-la ☂️\nham-bur-ger 🍔\nbroc-co-li 🥦\nvol-ca-no 🌋\ntel-e-scope 🔭\nla-dy-bug 🐞\ngo-ril-la 🦍\npine-ap-ple 🍍\nstraw-ber-ry 🍓\ncroc-o-dile 🐊\nfla-min-go 🦩\npi-an-o 🎹" },
+    mine: { name: "My words", note: "Your own list. Change it under Grown-ups.", list: "" }
+  };
+  var DEFAULT_CUSTOM = "ex-plore 🧭\nstore 🏪\nmore ➕\nsnore 😴\nbe-fore ⏮️\nshore 🏖️\nchore 🧹\nscore 🏆";
+
+  var settings = Object.assign({ check: "letter", syl: true, kb: "abc", speakSel: true }, store.get("settings", {}));
+  var customText = store.get("custom", DEFAULT_CUSTOM);
+  var stars = store.get("stars", {});
+  var packId = store.get("pack", "blends");
+  if (!PACKS[packId]) packId = "blends";
+  var recent = [];
+
+  function parseList(text) {
+    var out = [], seen = {};
+    String(text || "").split(/\r?\n/).forEach(function (line) {
+      var m = line.trim().match(/^([A-Za-z][A-Za-z\-]*[A-Za-z])\s*(.*)$/);
+      if (!m) return;
+      var syll = m[1].toLowerCase().replace(/-+/g, "-");
+      var w = syll.replace(/-/g, "");
+      if (w.length < 2 || w.length > 12 || seen[w]) return;
+      seen[w] = 1;
+      out.push({ syll: syll, w: w, pic: m[2].trim().split(/\s+/)[0] || "" });
+    });
+    return out;
+  }
+  function entries(id) { return parseList(id === "mine" ? customText : PACKS[id].list); }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  /* ---------- crossword builder ---------- */
+  var MAXC = 11, MAXR = 12;
+  function tryBuild(cands, target) {
+    var grid = {}, dirUse = {}, placed = [];
+    var key = function (r, c) { return r + "," + c; };
+    function canPlace(w, r, c, dir, first) {
+      var dr = dir === "D" ? 1 : 0, dc = dir === "A" ? 1 : 0, inter = 0;
+      if (grid[key(r - dr, c - dc)] || grid[key(r + dr * w.length, c + dc * w.length)]) return -1;
+      for (var k = 0; k < w.length; k++) {
+        var rr = r + dr * k, cc = c + dc * k, kk = key(rr, cc), ch = grid[kk];
+        if (ch) {
+          if (ch !== w[k] || (dirUse[kk] && dirUse[kk][dir])) return -1;
+          inter++;
+        } else if (dir === "A") {
+          if (grid[key(rr - 1, cc)] || grid[key(rr + 1, cc)]) return -1;
+        } else if (grid[key(rr, cc - 1)] || grid[key(rr, cc + 1)]) return -1;
+      }
+      if (!first && inter === 0) return -1;
+      return inter;
+    }
+    function bboxOk(w, r, c, dir) {
+      var rs = [r, r + (dir === "D" ? w.length - 1 : 0)], cs = [c, c + (dir === "A" ? w.length - 1 : 0)];
+      placed.forEach(function (p) { rs.push(p.r, p.r + (p.dir === "D" ? p.w.length - 1 : 0)); cs.push(p.c, p.c + (p.dir === "A" ? p.w.length - 1 : 0)); });
+      return Math.max.apply(null, cs) - Math.min.apply(null, cs) + 1 <= MAXC && Math.max.apply(null, rs) - Math.min.apply(null, rs) + 1 <= MAXR;
+    }
+    function put(e, r, c, dir) {
+      var dr = dir === "D" ? 1 : 0, dc = dir === "A" ? 1 : 0;
+      for (var k = 0; k < e.w.length; k++) {
+        var kk = key(r + dr * k, c + dc * k);
+        grid[kk] = e.w[k];
+        dirUse[kk] = dirUse[kk] || {}; dirUse[kk][dir] = 1;
+      }
+      placed.push({ w: e.w, syll: e.syll, pic: e.pic, r: r, c: c, dir: dir });
+    }
+    var order = shuffle(cands.slice());
+    put(order[0], 0, 0, Math.random() < 0.5 ? "A" : "D");
+    for (var i = 1; i < order.length && placed.length < target; i++) {
+      var e = order[i], opts = [], best = 0;
+      placed.forEach(function (p) {
+        for (var a = 0; a < p.w.length; a++) for (var b = 0; b < e.w.length; b++) {
+          if (p.w[a] !== e.w[b]) continue;
+          var dir = p.dir === "A" ? "D" : "A";
+          var r = p.dir === "A" ? p.r - b : p.r + a;
+          var c = p.dir === "A" ? p.c + a : p.c - b;
+          var s = canPlace(e.w, r, c, dir, false);
+          if (s > 0 && bboxOk(e.w, r, c, dir)) { opts.push({ r: r, c: c, dir: dir, s: s }); if (s > best) best = s; }
+        }
+      });
+      if (opts.length) {
+        var top = opts.filter(function (o) { return o.s === best; });
+        var o = top[Math.floor(Math.random() * top.length)];
+        put(e, o.r, o.c, o.dir);
+      }
+    }
+    return placed;
+  }
+  function build(pool) {
+    var fresh = pool.filter(function (e) { return recent.indexOf(e.w) < 0; });
+    var base = shuffle(fresh.length >= 6 ? fresh : pool.slice()).slice(0, 10);
+    var avg = base.reduce(function (s, e) { return s + e.w.length; }, 0) / base.length;
+    var target = Math.min(base.length, avg > 7 ? 5 : 6);
+    var bestSet = null, bestScore = -1;
+    for (var t = 0; t < 60; t++) {
+      var p = tryBuild(base, target);
+      var rs = [], cs = [];
+      p.forEach(function (q) { rs.push(q.r, q.r + (q.dir === "D" ? q.w.length - 1 : 0)); cs.push(q.c, q.c + (q.dir === "A" ? q.w.length - 1 : 0)); });
+      var area = (Math.max.apply(null, rs) - Math.min.apply(null, rs) + 1) * (Math.max.apply(null, cs) - Math.min.apply(null, cs) + 1);
+      var score = p.length * 1000 - area;
+      if (score > bestScore) { bestScore = score; bestSet = p; }
+      if (p.length >= target && t > 20) break;
+    }
+    return bestSet;
+  }
+
+  /* ---------- state ---------- */
+  var P = null; // {words, rows, cols, cells}
+  var fill = {}, locked = {}, doneW = {}, cur = 0, pos = 0, misses = 0, hints = 0, finished = false;
+
+  function newPuzzle() {
+    $("#done").hidden = true;
+    finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; hints = 0;
+    var pool = entries(packId);
+    if (pool.length < 3) { P = null; renderEmpty(); return; }
+    var placed = build(pool);
+    recent = placed.map(function (p) { return p.w; }).concat(recent).slice(0, 8);
+    var minR = Infinity, minC = Infinity, maxR = -Infinity, maxC = -Infinity;
+    placed.forEach(function (p) {
+      minR = Math.min(minR, p.r); minC = Math.min(minC, p.c);
+      maxR = Math.max(maxR, p.r + (p.dir === "D" ? p.w.length - 1 : 0));
+      maxC = Math.max(maxC, p.c + (p.dir === "A" ? p.w.length - 1 : 0));
+    });
+    var cells = {};
+    placed.forEach(function (p, i) {
+      p.r -= minR; p.c -= minC; p.cells = [];
+      p.chunks = p.syll.split("-");
+      p.sylOf = [];
+      p.chunks.forEach(function (ch, ci) { for (var x = 0; x < ch.length; x++) p.sylOf.push(ci); });
+      for (var k = 0; k < p.w.length; k++) {
+        var r = p.r + (p.dir === "D" ? k : 0), c = p.c + (p.dir === "A" ? k : 0), kk = r + "," + c;
+        cells[kk] = cells[kk] || { letter: p.w[k], words: [] };
+        cells[kk].words.push(i);
+        p.cells.push(kk);
+      }
+    });
+    var starts = placed.map(function (p, i) { return { i: i, r: p.r, c: p.c }; })
+      .sort(function (a, b) { return a.r - b.r || a.c - b.c; });
+    var n = 0, numAt = {};
+    starts.forEach(function (s) { var kk = s.r + "," + s.c; if (!numAt[kk]) numAt[kk] = ++n; placed[s.i].num = numAt[kk]; });
+    Object.keys(numAt).forEach(function (kk) { cells[kk].num = numAt[kk]; });
+    P = { words: placed, rows: maxR - minR + 1, cols: maxC - minC + 1, cells: cells };
+    renderBoard();
+    renderClues();
+    select(order()[0], null, false);
+  }
+  function order() {
+    return P.words.map(function (_, i) { return i; }).sort(function (a, b) {
+      return P.words[a].num - P.words[b].num || (P.words[a].dir === "A" ? -1 : 1);
+    });
+  }
+
+  /* ---------- speech ---------- */
+  var synth = window.speechSynthesis, voice = null;
+  function pickVoice() {
+    try {
+      var vs = synth.getVoices();
+      voice = vs.find(function (v) { return /^en-US/i.test(v.lang) && /Samantha|Google US|Aria|Jenny/i.test(v.name); }) ||
+              vs.find(function (v) { return /^en-US/i.test(v.lang); }) || vs.find(function (v) { return /^en/i.test(v.lang); }) || null;
+    } catch (e) {}
+  }
+  if (synth) { pickVoice(); try { synth.onvoiceschanged = pickVoice; } catch (e) {} }
+  function speak(text, rate, cancel) {
+    return new Promise(function (resolve) {
+      if (!synth) { setTimeout(resolve, 500); return; }
+      try {
+        if (cancel) synth.cancel();
+        var u = new SpeechSynthesisUtterance(text);
+        if (voice) u.voice = voice;
+        u.lang = "en-US"; u.rate = rate || 0.85;
+        var t = setTimeout(resolve, 2200);
+        u.onend = function () { clearTimeout(t); resolve(); };
+        u.onerror = function () { clearTimeout(t); resolve(); };
+        synth.speak(u);
+      } catch (e) { resolve(); }
+    });
+  }
+
+  /* ---------- rendering ---------- */
+  var board = $("#board");
+  function sizeBoard() {
+    if (!P) return;
+    var avail = board.parentElement.clientWidth - 24;
+    var cell = Math.floor((avail - (P.cols - 1) * 4) / P.cols);
+    cell = Math.max(24, Math.min(50, cell));
+    board.style.setProperty("--cell", cell + "px");
+  }
+  function renderEmpty() {
+    board.style.gridTemplateColumns = "";
+    board.innerHTML = '<p class="empty-msg">This pack needs at least 3 words. Open <b>Grown-ups</b> and add words under “My words”.</p>';
+    $("#clueList").innerHTML = "";
+    $("#pic").textContent = "✏️"; $("#clueLabel").textContent = "No puzzle yet"; $("#clueSub").textContent = "";
+  }
+  function renderBoard() {
+    board.innerHTML = "";
+    board.style.gridTemplateColumns = "repeat(" + P.cols + ", var(--cell))";
+    for (var r = 0; r < P.rows; r++) for (var c = 0; c < P.cols; c++) {
+      var kk = r + "," + c, cell = P.cells[kk], d = document.createElement("div");
+      if (!cell) { d.className = "void"; board.appendChild(d); continue; }
+      d.className = "cell"; d.dataset.k = kk;
+      d.setAttribute("role", "button"); d.setAttribute("aria-label", "box");
+      d.innerHTML = (cell.num ? '<span class="num">' + cell.num + "</span>" : "") + '<span class="ch"></span>';
+      board.appendChild(d);
+    }
+    sizeBoard();
+  }
+  function cellEl(kk) { return board.querySelector('[data-k="' + kk + '"]'); }
+  function update() {
+    if (!P) return;
+    var W = P.words[cur];
+    board.querySelectorAll(".cell").forEach(function (el) {
+      var kk = el.dataset.k, idx = W.cells.indexOf(kk);
+      el.querySelector(".ch").textContent = fill[kk] || "";
+      el.classList.toggle("locked", !!locked[kk]);
+      el.classList.toggle("sel", idx >= 0 && !finished);
+      el.classList.toggle("syl-a", idx >= 0 && settings.syl && W.sylOf[idx] % 2 === 0);
+      el.classList.toggle("syl-b", idx >= 0 && settings.syl && W.sylOf[idx] % 2 === 1);
+      el.classList.toggle("cursor", idx === pos && !finished);
+    });
+    $("#pic").textContent = W.pic || "👂";
+    $("#clueLabel").textContent = W.num + (W.dir === "A" ? " Across" : " Down");
+    var n = W.chunks.length;
+    $("#clueSub").textContent = W.w.length + " boxes · " + n + (n === 1 ? " beat" : " beats");
+    document.querySelectorAll(".ctile").forEach(function (t) {
+      var i = +t.dataset.i;
+      t.classList.toggle("cur", i === cur && !finished);
+      t.classList.toggle("fin", !!doneW[i]);
+    });
+  }
+  function renderClues() {
+    var list = $("#clueList"); list.innerHTML = "";
+    order().forEach(function (i) {
+      var W = P.words[i], b = document.createElement("button");
+      b.type = "button"; b.className = "ctile"; b.dataset.i = i;
+      b.innerHTML = '<span class="e">' + (W.pic || "👂") + '</span><span class="l">' + W.num + (W.dir === "A" ? " across" : " down") + "</span>";
+      b.setAttribute("aria-label", W.num + (W.dir === "A" ? " across" : " down") + ", hear the word");
+      b.addEventListener("click", function () { select(i, null, true, true); });
+      list.appendChild(b);
+    });
+  }
+
+  /* ---------- play ---------- */
+  function firstEmpty(i, from) {
+    var W = P.words[i], n = W.cells.length;
+    from = from || 0;
+    for (var s = 0; s < n; s++) { var j = (from + s) % n; if (!fill[W.cells[j]]) return j; }
+    return -1;
+  }
+  function select(i, p, say, force) {
+    if (!P || finished) return;
+    var changed = i !== cur;
+    cur = i;
+    var fe = firstEmpty(i);
+    pos = p != null ? p : (fe < 0 ? 0 : fe);
+    update();
+    if (say && (force || (changed && settings.speakSel))) speak(P.words[i].w, 0.85, true);
+  }
+  function settleCrossings(kk) {
+    var newly = [];
+    P.cells[kk].words.forEach(function (i) {
+      if (doneW[i]) return;
+      var W = P.words[i];
+      if (W.cells.every(function (c, j) { return fill[c] === W.w[j]; })) newly.push(i);
+    });
+    newly.forEach(complete);
+    return newly.length > 0;
+  }
+  function flash(kk, cls, ms) {
+    var el = cellEl(kk); if (!el) return;
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    setTimeout(function () { el.classList.remove(cls); }, ms || 450);
+  }
+  function input(ch) {
+    if (!P || finished) return;
+    var W = P.words[cur];
+    if (doneW[cur]) { var nx = nextUnfinished(); if (nx < 0) return; select(nx, null, true); W = P.words[cur]; }
+    if (locked[W.cells[pos]]) { var fe = firstEmpty(cur, pos); if (fe < 0) return; pos = fe; }
+    var kk = W.cells[pos], right = W.w[pos];
+    if (settings.check === "letter") {
+      if (ch !== right) { misses++; flash(kk, "wiggle"); return; }
+      fill[kk] = ch; locked[kk] = true;
+      if (settleCrossings(kk)) { update(); return; }
+    } else {
+      fill[kk] = ch;
+      if (W.cells.every(function (c) { return fill[c]; })) { checkWord(cur); return; }
+    }
+    var nxt = firstEmpty(cur, pos + 1);
+    if (nxt >= 0) pos = nxt;
+    update();
+  }
+  function checkWord(i) {
+    var W = P.words[i];
+    if (W.cells.every(function (c, j) { return fill[c] === W.w[j]; })) { complete(i); update(); return; }
+    misses++;
+    var firstWrong = -1;
+    W.cells.forEach(function (c, j) {
+      if (fill[c] !== W.w[j]) {
+        if (firstWrong < 0) firstWrong = j;
+        flash(c, "wrong", 700); flash(c, "wiggle");
+      }
+    });
+    update();
+    setTimeout(function () {
+      W.cells.forEach(function (c, j) { if (fill[c] !== W.w[j] && !locked[c]) delete fill[c]; });
+      pos = firstWrong < 0 ? 0 : firstWrong;
+      update();
+    }, 700);
+  }
+  function nextUnfinished() {
+    var o = order(), k = o.indexOf(cur);
+    for (var s = 1; s <= o.length; s++) { var i = o[(k + s) % o.length]; if (!doneW[i]) return i; }
+    return -1;
+  }
+  function complete(i) {
+    if (doneW[i]) return;
+    doneW[i] = true;
+    var W = P.words[i];
+    W.cells.forEach(function (c, j) { fill[c] = W.w[j]; locked[c] = true; setTimeout(function () { flash(c, "pop"); }, j * 60); });
+    speak(W.w, 0.9, false);
+    if (Object.keys(doneW).length === P.words.length) { setTimeout(finish, 700); return; }
+    if (i === cur) {
+      var nx = nextUnfinished();
+      setTimeout(function () { if (!finished && doneW[cur]) select(nx, null, true); }, 900);
+    }
+  }
+  function finish() {
+    finished = true;
+    stars[packId] = (stars[packId] || 0) + 1;
+    store.set("stars", stars);
+    renderPacks();
+    update();
+    var parts = [P.words.length + " words"];
+    parts.push(hints === 1 ? "1 letter shown" : hints + " letters shown");
+    parts.push(misses === 0 ? "no slips" : misses === 1 ? "1 try again" : misses + " try-agains");
+    $("#doneStats").textContent = parts.join(" · ");
+    $("#done").hidden = false;
+    speak("You solved it!", 0.95, false);
+    $("#nextBtn").focus();
+  }
+  function back() {
+    if (!P || finished) return;
+    var W = P.words[cur], kk = W.cells[pos];
+    if (fill[kk] && !locked[kk]) { delete fill[kk]; update(); return; }
+    for (var j = pos - 1; j >= 0; j--) {
+      if (!locked[W.cells[j]]) { pos = j; delete fill[W.cells[j]]; break; }
+    }
+    update();
+  }
+  function hint() {
+    if (!P || finished) return;
+    var W = P.words[cur];
+    if (doneW[cur]) return;
+    var j = locked[W.cells[pos]] || fill[W.cells[pos]] === W.w[pos] ? firstEmpty(cur, pos) : pos;
+    if (j < 0) { j = W.cells.findIndex(function (c, x) { return fill[c] !== W.w[x]; }); if (j < 0) return; }
+    var kk = W.cells[j];
+    fill[kk] = W.w[j]; locked[kk] = true; hints++;
+    flash(kk, "pop");
+    if (!settleCrossings(kk)) { var nxt = firstEmpty(cur, j + 1); pos = nxt >= 0 ? nxt : j; }
+    update();
+  }
+  var clapping = false;
+  async function clap() {
+    if (!P || clapping) return;
+    clapping = true;
+    var W = P.words[cur], idx = 0;
+    try { if (synth) synth.cancel(); } catch (e) {}
+    if (W.chunks.length === 1) {
+      W.cells.forEach(function (c) { var el = cellEl(c); el && el.classList.add("beat"); });
+      await speak(W.w, 0.6, false);
+      W.cells.forEach(function (c) { var el = cellEl(c); el && el.classList.remove("beat"); });
+    } else {
+      for (var ci = 0; ci < W.chunks.length; ci++) {
+        var ks = W.cells.slice(idx, idx + W.chunks[ci].length);
+        idx += W.chunks[ci].length;
+        ks.forEach(function (c) { var el = cellEl(c); el && el.classList.add("beat"); });
+        await speak(W.chunks[ci], 0.7, false);
+        await new Promise(function (r) { setTimeout(r, 250); });
+        ks.forEach(function (c) { var el = cellEl(c); el && el.classList.remove("beat"); });
+      }
+      await speak(W.w, 0.8, false);
+    }
+    clapping = false;
+  }
+
+  /* ---------- keyboard ---------- */
+  function renderKeyboard() {
+    var rows = settings.kb === "qwerty" ? ["qwertyuiop", "asdfghjkl", "zxcvbnm⌫"] : ["abcdefg", "hijklmn", "opqrstu", "vwxyz⌫"];
+    var kb = $("#keyboard"); kb.innerHTML = "";
+    rows.forEach(function (row) {
+      var r = document.createElement("div"); r.className = "krow";
+      Array.from(row).forEach(function (k) {
+        var b = document.createElement("button"); b.type = "button"; b.className = "key";
+        if (k === "⌫") { b.classList.add("wide"); b.textContent = "⌫"; b.setAttribute("aria-label", "Erase"); b.addEventListener("click", back); }
+        else { b.textContent = k; b.addEventListener("click", function () { input(k); }); }
+        r.appendChild(b);
+      });
+      kb.appendChild(r);
+    });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (!$("#sheet").hidden) { if (e.key === "Escape") closeSheet(); return; }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (/^[a-z]$/i.test(e.key)) { input(e.key.toLowerCase()); e.preventDefault(); }
+    else if (e.key === "Backspace") { back(); e.preventDefault(); }
+  });
+
+  board.addEventListener("click", function (e) {
+    var el = e.target.closest(".cell"); if (!el || !P || finished) return;
+    var kk = el.dataset.k, ws = P.cells[kk].words, W = P.words[cur];
+    var inCur = W.cells.indexOf(kk);
+    if (inCur >= 0 && inCur === pos && ws.length > 1) {
+      var other = ws.find(function (i) { return i !== cur; });
+      select(other, P.words[other].cells.indexOf(kk), true);
+    } else if (inCur >= 0) { pos = inCur; update(); }
+    else {
+      var pick = ws.find(function (i) { return !doneW[i]; });
+      if (pick == null) pick = ws[0];
+      select(pick, P.words[pick].cells.indexOf(kk), true);
+    }
+  });
+
+  /* ---------- packs + settings ---------- */
+  function renderPacks() {
+    var wrap = $("#packs"); wrap.innerHTML = "";
+    Object.keys(PACKS).forEach(function (id) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip";
+      b.setAttribute("aria-pressed", id === packId ? "true" : "false");
+      b.innerHTML = PACKS[id].name + (stars[id] ? ' <span class="n">⭐' + stars[id] + "</span>" : "");
+      b.addEventListener("click", function () {
+        if (packId === id) return;
+        packId = id; store.set("pack", id); recent = [];
+        renderPacks(); newPuzzle();
+      });
+      wrap.appendChild(b);
+    });
+    $("#packNote").textContent = PACKS[packId].note;
+  }
+  function openSheet() {
+    $("#chkLetter").checked = settings.check === "letter";
+    $("#chkWord").checked = settings.check === "word";
+    $("#optSyl").checked = settings.syl;
+    $("#optSpeakSel").checked = settings.speakSel;
+    $("#kbAbc").checked = settings.kb === "abc";
+    $("#kbQwerty").checked = settings.kb === "qwerty";
+    $("#customText").value = customText;
+    $("#saveMsg").textContent = "";
+    $("#sheet").hidden = false;
+    $("#closeBtn").focus();
+  }
+  function closeSheet() { $("#sheet").hidden = true; $("#settingsBtn").focus(); }
+  function saveSettings() { store.set("settings", settings); }
+  $("#settingsBtn").addEventListener("click", openSheet);
+  $("#closeBtn").addEventListener("click", closeSheet);
+  $("#sheet").addEventListener("click", function (e) { if (e.target === $("#sheet")) closeSheet(); });
+  ["chkLetter", "chkWord"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.check = e.target.value; saveSettings(); }); });
+  $("#optSyl").addEventListener("change", function (e) { settings.syl = e.target.checked; saveSettings(); update(); });
+  $("#optSpeakSel").addEventListener("change", function (e) { settings.speakSel = e.target.checked; saveSettings(); });
+  ["kbAbc", "kbQwerty"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.kb = e.target.value; saveSettings(); renderKeyboard(); }); });
+  $("#saveBtn").addEventListener("click", function () {
+    var txt = $("#customText").value, n = parseList(txt).length;
+    if (n < 3) { $("#saveMsg").style.color = "var(--bad)"; $("#saveMsg").textContent = "Add at least 3 words (letters only, one per line)."; return; }
+    customText = txt; store.set("custom", txt);
+    $("#saveMsg").style.color = ""; $("#saveMsg").textContent = "Saved " + n + " words.";
+    packId = "mine"; store.set("pack", "mine"); recent = [];
+    renderPacks(); newPuzzle();
+    setTimeout(closeSheet, 600);
+  });
+
+  $("#pic").addEventListener("click", function () { if (P) speak(P.words[cur].w, 0.85, true); });
+  $("#hearBtn").addEventListener("click", function () { if (P) speak(P.words[cur].w, 0.75, true); });
+  $("#clapBtn").addEventListener("click", clap);
+  $("#hintBtn").addEventListener("click", hint);
+  $("#newBtn").addEventListener("click", newPuzzle);
+  $("#nextBtn").addEventListener("click", newPuzzle);
+  window.addEventListener("resize", sizeBoard);
+  if (!synth) { ["hearBtn", "clapBtn"].forEach(function (id) { $("#" + id).title = "Sound isn't available in this browser"; }); }
+
+  renderPacks();
+  renderKeyboard();
+  newPuzzle();
+})();
+</script>
+</body>
+</html>
