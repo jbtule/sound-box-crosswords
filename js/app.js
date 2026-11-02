@@ -83,6 +83,9 @@ function renderBoard() {
   }
   sizeBoard();
 }
+// Words with no emoji get a drawn sound-wave icon: listen, then spell.
+var WAVE = '<svg class="wave" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4M7 6.5v11M11 3v18M15 7.5v9M19 10v4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
+function setPic(el, pic) { if (pic) el.textContent = pic; else el.innerHTML = WAVE; }
 function cellEl(kk) { return board.querySelector('[data-k="' + kk + '"]'); }
 // Syncs the board, clue bar, and clue tiles with the play state.
 function update() {
@@ -97,7 +100,7 @@ function update() {
     el.classList.toggle("syl-b", idx >= 0 && settings.syl && W.sylOf[idx] % 2 === 1);
     el.classList.toggle("cursor", idx === pos && !finished);
   });
-  $("#pic").textContent = W.pic || "👂";
+  setPic($("#pic"), W.pic);
   $("#clueLabel").textContent = W.num + (W.dir === "A" ? " Across" : " Down");
   var n = W.chunks.length;
   $("#clueSub").textContent = W.w.length + " boxes · " + n + (n === 1 ? " beat" : " beats");
@@ -114,7 +117,7 @@ function renderClues() {
     var W = P.words[i], b = document.createElement("button");
     b.type = "button"; b.className = "ctile"; b.dataset.i = i;
     var e = document.createElement("span"), l = document.createElement("span");
-    e.className = "e"; e.textContent = W.pic || "👂";
+    e.className = "e"; setPic(e, W.pic);
     l.className = "l"; l.textContent = W.num + (W.dir === "A" ? " across" : " down");
     b.append(e, l);
     b.setAttribute("aria-label", W.num + (W.dir === "A" ? " across" : " down") + ", hear the word");

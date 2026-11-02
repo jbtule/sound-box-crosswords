@@ -74,7 +74,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   uses it with no setting change. Voices are identified by `voiceURI`, not name (iOS names
   basic and Enhanced voices the same).
 - **Pictures are emoji**, which keeps it offline-friendly and license-free. Don't add
-  copyrighted characters or images.
+  copyrighted characters or images. A word with no emoji is listen-only: the app draws a
+  sound-wave icon (`WAVE` / `setPic` in `app.js`).
 - **State** (settings, custom list, stars, selected pack) lives in `localStorage` under the
   `sbx:` prefix, always wrapped in try/catch. It's per device; no accounts or server.
 - Light and dark themes via CSS custom properties on `:root`, with
@@ -129,7 +130,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - Test in a narrow viewport (~380px) and in dark mode. Make sure long words (9+ letters)
   still fit and the letter pad stays tappable (keys ≥ 44px tall).
 - When adding words, check that the emoji clearly shows that word, and that the spelling
-  fits the pack's pattern.
+  fits the pack's pattern. If no emoji shows it without misleading (their, would, done),
+  leave the emoji off rather than picking a loose match.
 - Keep the copy short and plain; players are young and some text is read by a grown-up.
 - This repo is public. Keep it about the general learner profile; don't add personal details
   about any specific child (name, school, diagnoses).

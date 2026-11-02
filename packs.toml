@@ -5,7 +5,8 @@
 #   name   label on the pack button
 #   note   one short line shown under the buttons
 #   words  one word per line: the word with dashes between syllables, a space, then an
-#          emoji for the picture. Dashes drive the syllable colors and "Clap it", so split
+#          emoji for the picture. Leave the emoji off for words a picture can't show
+#          without misleading (their, would); the app shows a sound-wave "listen" icon. Dashes drive the syllable colors and "Clap it", so split
 #          words the way a teacher would clap them. Letters only (apostrophes OK: don't), 2–12 letters.
 #          Words with 2+ syllables also need (how-it-sounds) at the end, one part per
 #          syllable: ba-nan-a 🍌 (buh-nan-uh). "Clap it" says these, because a syllable
@@ -137,55 +138,55 @@ pi-an-o 🎹 (pea-ann-oh)
 [[pack]]
 id = "g3-2026-unit2"
 name = "Unit 2"
-note = "3rd grade 2026 school words. 👂 means listen, then spell."
+note = "3rd grade 2026 school words. A sound wave means listen, then spell."
 words = """
 wheel 🛞
 beach 🏖️
 sweep 🧹
-mis-read 👂 (miss-reed)
-com-pete 👂 (kum-peet)
+mis-read (miss-reed)
+com-pete (kum-peet)
 light 💡
 pies 🥧
 shy 🫣
 ex-cit-ed 🤩 (ex-site-ted)
 sun-shine ☀️ (sun-shine)
 cow-boy 🤠 (cow-boy)
-in-side 👂 (in-side)
+in-side (in-side)
 sea-food 🦐 (sea-food)
 su-per-mar-ket 🛒 (soo-purr-mahr-kit)
-some-bod-y 👂 (sum-bah-dee)
-their 👂
-a-round 👂 (uh-round)
-they 👂
-would 👂
-al-ways 👂 (all-ways)
+some-bod-y (sum-bah-dee)
+their
+a-round (uh-round)
+they
+would
+al-ways (all-ways)
 """
 
 [[pack]]
 id = "g3-2026-unit3"
 name = "Unit 3"
-note = "3rd grade 2026 school words. 👂 means listen, then spell."
+note = "3rd grade 2026 school words. A sound wave means listen, then spell."
 words = """
 yard 🏡
 storm ⛈️
 more ➕
 ex-plore 🧭 (ex-plore)
-u-ni-form 👂 (you-nuh-form)
+u-ni-form (you-nuh-form)
 third 🥉
 germs 🦠
 burn-ing 🔥 (burn-ing)
-un-hurt 👂 (uhn-hurt)
-ob-serve 👂 (uhb-zurv)
-ex-it 👂 (eggs-it)
-stomp 👂
+un-hurt (uhn-hurt)
+ob-serve (uhb-zurv)
+ex-it (eggs-it)
+stomp
 chick-en 🐔 (chick-in)
-pub-lish 👂 (pub-lish)
+pub-lish (pub-lish)
 pan-ic 😱 (pan-ick)
-these 👂
-don't 👂
-on-ly 👂 (own-lee)
-those 👂
-done 👂
+these
+don't
+on-ly (own-lee)
+those
+done
 """
 
 # Starter list for the "Custom" pack (the grown-up's own list) until they save their own.

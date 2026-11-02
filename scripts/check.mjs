@@ -61,7 +61,8 @@ const ABBREV = new Set(["vol", "tel", "min", "max", "ap", "co", "fla", "mon", "t
   "jan", "feb", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec", "st", "dr", "mr", "mrs", "ms",
   "ft", "pt", "gal", "oz", "lb", "km", "cm", "mm", "sec", "hr", "est", "etc", "vs", "inc", "ltd", "corp", "dept", "ave",
   "blvd", "rd", "ref", "pg", "pp", "ch", "fig", "govt", "approx", "misc", "gen", "lt", "sgt", "capt", "col", "jr", "sr"]);
-const LINE = /^([a-z][a-z']*(?:-[a-z']+)*) (\S+)(?: \(([^)]*)\))?$/;
+// word, then an optional emoji (none = listen-only), then an optional (sounds) hint.
+const LINE = /^([a-z][a-z']*(?:-[a-z']+)*)(?: ([^\s(]\S*))?(?: \(([^)]*)\))?$/;
 for (const { id, text } of lists) {
   if (!text) continue; // "mine" is filled in by the user
   const seen = new Set();
@@ -72,7 +73,7 @@ for (const { id, text } of lists) {
     const w = m[1].replace(/-/g, "");
     if (w.length < 2 || w.length > 12) errors.push(`${id}: "${w}" must be 2–12 letters`);
     if (seen.has(w)) errors.push(`${id}: "${w}" is listed twice`);
-    if (!/\p{Extended_Pictographic}/u.test(m[2])) errors.push(`${id}: "${w}" has no emoji picture`);
+    if (m[2] != null && !/\p{Extended_Pictographic}/u.test(m[2])) errors.push(`${id}: "${w}" picture "${m[2]}" isn't an emoji`);
     const beats = m[1].split("-").length;
     // Spoken alone, syllables get misread as abbreviations ("vol" → "volume", "ap" → "A P"),
     // so every multi-syllable word spells out how each syllable sounds.
