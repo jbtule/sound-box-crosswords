@@ -56,14 +56,16 @@ Why, and what fixed it:
      exactly on it turned pub into "hub" (e2m:fin).
    - Ending the cut later (`~120`) changes nothing; the phrase ends in silence.
 
+## Listening check
+
+27 clips compared by ear, today's vs new (the fixed ones above, plus every clip the
+recognizer scored worse): **26 better, 1 worse (shore)**. That includes more, store,
+score, chore, dinosaur, shy and hel, which the recognizer flagged. It's strict about the
+"or" vowel and hears a phrase-final r as missing, so treat its -ore scores as pessimistic.
+
 ## Known gaps
 
-- **Final -ore** is still unreliable, as it was before: more, store, sore, score and
-  dinosaur often lose the final r (before, fore, fork, corn, form and storm are now right).
-  Kokoro seems to soften a phrase-final r. A pause after the target (mid) fixes some
-  but adds a trailing vowel to most other clips.
-- A few onsets pick up the "t" of "next": hel → "thel", tuh, shy, chore. Rare.
-- Not checked by ear yet. Listen to a sample before merging.
+- **shore** sounds worse than before. Other -ore words were fine by ear.
 - Custom words still use the device voice; this only affects the pre-generated clips.
 
 ## Running it
