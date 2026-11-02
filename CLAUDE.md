@@ -214,6 +214,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `persist-credentials: false`.
 - Test in a narrow viewport (~380px) and in dark mode. Make sure long words (9+ letters)
   still fit and the letter pad stays tappable (keys ≥ 44px tall).
+- To add a school unit's spelling list as a pack, use the `add-unit-pack` skill
+  (`.claude/skills/add-unit-pack/SKILL.md`): the steps, the word rules, and a PR review table.
 - When adding words, check that the emoji clearly shows that word, and that the spelling
   fits the pack's pattern. If no emoji shows it without misleading (their, would, done),
   leave the emoji off rather than picking a loose match.
