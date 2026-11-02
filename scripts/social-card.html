@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- The link-preview image (social-card.png, 1200×630). `npm run card` renders this page with
      the app's own stylesheet, so the boxes and colors match. The words here (sound, box,
-     dolphin, lion, and the sentence) aren't pack words: the card must never spell an answer. -->
+     dolphin, fish, and the sentence) aren't pack words: the card must never spell an answer. -->
 <html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
@@ -40,7 +40,7 @@
     </div>
   </div>
   <div class="grid-card">
-    <!-- box down, sound across, dolphin down (current word, one box empty), lion across -->
+    <!-- box down, sound across, dolphin down (current word, one box empty), fish across (sharing the empty box) -->
     <div class="board" id="board"></div>
   </div>
 </div>
@@ -53,7 +53,7 @@
     [0, 1, "b", ""], [2, 1, "x", ""],
     [1, 0, "s", ""], [1, 1, "o", ""], [1, 2, "u", ""], [1, 3, "n", ""], [1, 4, "d", A],
     [2, 4, "o", A], [3, 4, "l", A], [4, 4, "p", B], [5, 4, "", B + " cursor"], [6, 4, "i", B], [7, 4, "n", B],
-    [7, 1, "l", ""], [7, 2, "i", ""], [7, 3, "o", ""],
+    [5, 1, "f", ""], [5, 2, "i", ""], [5, 3, "s", ""],
   ];
   const board = document.getElementById("board");
   board.style.gridTemplateRows = "repeat(8, var(--cell-size))";
