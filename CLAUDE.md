@@ -1,6 +1,6 @@
 # Sound Box Crosswords
 
-Picture crosswords for targeted spelling practice. Live at
+Sound crosswords for targeted spelling practice (clues are spoken, with a picture, a sentence, or both). Live at
 https://tools.tuley.name/sound-box-crosswords/ (GitHub Pages, deployed by
 `.github/workflows/ci.yml`). Pushing to `main` redeploys once the check passes.
 

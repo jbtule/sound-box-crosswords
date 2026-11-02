@@ -2,7 +2,7 @@
   "name": "Sound Box Crosswords",
   "short_name": "Sound Box",
   "id": "/sound-box-crosswords/",
-  "description": "Picture crosswords for spelling practice, one box per letter.",
+  "description": "Sound crosswords for spelling practice.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

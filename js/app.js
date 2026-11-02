@@ -785,7 +785,7 @@ renderInstall();
 // A quiet footer link for handing the app to another family: a QR code to scan in person,
 // the device's share sheet where there is one, and Copy link. The fixed address, not
 // location.href, so it matches qr.svg.
-var SHARE = { title: "Sound Box Crosswords", text: "Picture crosswords for spelling practice.", url: "https://tools.tuley.name/sound-box-crosswords/" };
+var SHARE = { title: "Sound Box Crosswords", text: "Sound crosswords for spelling practice.", url: "https://tools.tuley.name/sound-box-crosswords/" };
 var canShare = typeof navigator.share === "function" && (typeof navigator.canShare !== "function" || navigator.canShare(SHARE));
 $("#shareGo").hidden = !canShare;
 function openShare() {
