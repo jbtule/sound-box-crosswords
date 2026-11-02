@@ -74,6 +74,22 @@
   </div>
 </div>
 
+<section class="award" id="award" hidden>
+  <div class="award-card" role="dialog" aria-modal="true" aria-labelledby="awardTitle" aria-describedby="awardDetail">
+    <p class="kicker">New achievement!</p>
+    <div class="award-icon" id="awardIcon" aria-hidden="true"></div>
+    <h2 id="awardTitle"></h2>
+    <p id="awardDetail"></p>
+    <div class="award-dots" id="awardDots" aria-hidden="true"></div>
+    <p class="award-count" id="awardCount"></p>
+    <div class="award-nav">
+      <button class="ghost" id="awardPrev" type="button" aria-label="Previous achievement">‹</button>
+      <button class="primary" id="awardNext" type="button">Nice!</button>
+    </div>
+    <button class="award-close" id="awardClose" type="button" aria-label="Close">✕</button>
+  </div>
+</section>
+
 <section class="sheet" id="achSheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="achTitle">
     <div class="row" style="justify-content:space-between"><h2 id="achTitle">Achievements</h2><button class="ghost" id="achClose" type="button">Done</button></div>

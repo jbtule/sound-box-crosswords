@@ -327,6 +327,7 @@ function finish() {
   if (settings.chime) chime();
   say("p", "You solved it!", 0.95);
   $("#nextBtn").focus();
+  if (fresh.length) setTimeout(function () { showAwards(fresh); }, 1100); // after the solve celebration
 }
 function back() {
   if (!P || finished) return;
@@ -385,6 +386,13 @@ function renderKeyboard() {
 document.addEventListener("keydown", function (e) {
   if (!$("#sheet").hidden) { if (e.key === "Escape") closeSheet(); return; }
   if (!$("#achSheet").hidden) { if (e.key === "Escape") closeAchievements(); return; }
+  if (!$("#award").hidden) {
+    if (e.key === "Escape") closeAwards();
+    else if (e.key === "Enter" || e.key === "ArrowRight") nextAward();
+    else if (e.key === "ArrowLeft") prevAward();
+    e.preventDefault();
+    return;
+  }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (/^[a-z]$/i.test(e.key)) { input(e.key.toLowerCase()); e.preventDefault(); }
   else if (e.key === "'" || e.key === "\u2019") { input("'"); e.preventDefault(); } // iPad keyboards type ’
@@ -513,6 +521,43 @@ function toast(text) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function () { el.hidden = true; }, 1800);
 }
+// One card that cycles through the newly earned achievements: dots, back/next (buttons,
+// swipe, arrow keys), "Nice!" on the last, and ✕ to close any time.
+var awardQueue = [], awardIndex = 0, awardSeen = 0;
+function showAwards(list) {
+  awardQueue = list; awardIndex = 0; awardSeen = -1;
+  $("#award").hidden = false;
+  showAward();
+}
+function showAward() {
+  var a = awardQueue[awardIndex], n = awardQueue.length, last = awardIndex === n - 1;
+  $("#awardIcon").textContent = a.icon;
+  $("#awardTitle").textContent = a.title;
+  $("#awardDetail").textContent = a.detail;
+  $("#awardCount").textContent = n > 1 ? (awardIndex + 1) + " of " + n : "";
+  var dots = $("#awardDots"); dots.innerHTML = "";
+  if (n > 1) awardQueue.forEach(function (_, i) { var d = document.createElement("span"); if (i === awardIndex) d.className = "on"; dots.appendChild(d); });
+  $("#awardPrev").hidden = awardIndex === 0;
+  $("#awardNext").textContent = last ? "Nice!" : "Next";
+  var card = $("#award .award-card");
+  card.classList.remove("pop"); void card.offsetWidth; card.classList.add("pop");
+  if (awardIndex > awardSeen) { // celebrate each one the first time it's shown
+    awardSeen = awardIndex;
+    confetti(card);
+    if (settings.chime) chime();
+  }
+  $("#awardNext").focus();
+}
+function nextAward() {
+  if (awardIndex < awardQueue.length - 1) { awardIndex++; showAward(); } else closeAwards();
+}
+function prevAward() {
+  if (awardIndex > 0) { awardIndex--; showAward(); }
+}
+function closeAwards() {
+  $("#award").hidden = true;
+  $("#nextBtn").focus();
+}
 function openAchievements() {
   var now = Date.now(), all = catalog(achState());
   $("#achDays").textContent = "Practiced " + daysThisWeek(days, now) + " of the last 7 days · " +
@@ -542,6 +587,18 @@ function closeSheet() { $("#sheet").hidden = true; $("#settingsBtn").focus(); }
 function saveSettings() { store.set("settings", settings); }
 $("#settingsBtn").addEventListener("click", openSheet);
 $("#trophyBtn").addEventListener("click", openAchievements);
+$("#awardNext").addEventListener("click", nextAward);
+$("#awardPrev").addEventListener("click", prevAward);
+$("#awardClose").addEventListener("click", closeAwards);
+$("#award").addEventListener("click", function (e) { if (e.target === $("#award")) closeAwards(); });
+// Swipe left/right on the card to cycle.
+var swipeX = null;
+$("#award").addEventListener("pointerdown", function (e) { swipeX = e.clientX; });
+$("#award").addEventListener("pointerup", function (e) {
+  if (swipeX === null) return;
+  var dx = e.clientX - swipeX; swipeX = null;
+  if (dx < -40) nextAward(); else if (dx > 40) prevAward();
+});
 $("#achClose").addEventListener("click", closeAchievements);
 $("#achSheet").addEventListener("click", function (e) { if (e.target === $("#achSheet")) closeAchievements(); });
 $("#closeBtn").addEventListener("click", closeSheet);
