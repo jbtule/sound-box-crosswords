@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- The link-preview image (social-card.png, 1200×630). `npm run card` renders this page with
      the app's own stylesheet, so the boxes and colors match. The words here (sound, box,
-     dolphin, fish, and the sentence) aren't pack words: the card must never spell an answer. -->
+     dolphin, lion, and the sentence) aren't pack words: the card must never spell an answer. -->
 <html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
@@ -23,7 +23,7 @@
   .grid-card { background: var(--card); border-radius: 28px; box-shadow: var(--shadow); padding: 28px; }
   .board { --cell-size: 58px; gap: 6px; grid-template-columns: repeat(5, var(--cell-size)); }
   .cell { font-size: 2rem; }
-  .cell.empty { background: var(--accent-soft); border-color: var(--accent); }
+  .cell.cursor { box-shadow: 0 0 0 4px var(--accent); }
 </style>
 </head>
 <body>
@@ -40,19 +40,20 @@
     </div>
   </div>
   <div class="grid-card">
-    <!-- box down, sound across (one box left empty), dolphin down, fish across -->
+    <!-- box down, sound across, dolphin down (current word, one box empty), lion across -->
     <div class="board" id="board"></div>
   </div>
 </div>
 <script>
-  // [row, col, letter, classes]; an empty letter is the box still to fill. "dolphin" shows
-  // its two syllables (dol | phin) in the app's two bands.
+  // [row, col, letter, classes]; an empty letter is the box still to fill. "dolphin" is the
+  // current word (the clue's sentence is its), in the app's two syllable bands (dol | phin),
+  // with the cursor on the box a speller often drops: dolp_in.
   const A = "sel syl-a", B = "sel syl-b";
   const cells = [
     [0, 1, "b", ""], [2, 1, "x", ""],
-    [1, 0, "s", A], [1, 1, "o", A], [1, 2, "", "empty cursor"], [1, 3, "n", A], [1, 4, "d", A],
-    [2, 4, "o", A], [3, 4, "l", A], [4, 4, "p", B], [5, 4, "h", B], [6, 4, "i", B], [7, 4, "n", B],
-    [5, 1, "f", ""], [5, 2, "i", ""], [5, 3, "s", ""],
+    [1, 0, "s", ""], [1, 1, "o", ""], [1, 2, "u", ""], [1, 3, "n", ""], [1, 4, "d", A],
+    [2, 4, "o", A], [3, 4, "l", A], [4, 4, "p", B], [5, 4, "", B + " cursor"], [6, 4, "i", B], [7, 4, "n", B],
+    [7, 1, "l", ""], [7, 2, "i", ""], [7, 3, "o", ""],
   ];
   const board = document.getElementById("board");
   board.style.gridTemplateRows = "repeat(8, var(--cell-size))";
