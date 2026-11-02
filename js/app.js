@@ -150,8 +150,8 @@ function update() {
   $("#clueLabel").textContent = W.num + (W.dir === "A" ? " Across" : " Down");
   var n = W.chunks.length;
   $("#clueSub").textContent = W.w.length + " boxes · " + n + (n === 1 ? " beat" : " beats");
-  // Every puzzle word is blanked, so the sentence can't spell this word or a crossing one.
-  $("#clueSent").textContent = W.sentence ? blankSentence(W.sentence, P.words.map(function (x) { return x.w; })) : "";
+  // Only this word is blanked; pack sentences avoid the pack's other words (the check enforces it).
+  $("#clueSent").textContent = W.sentence ? blankSentence(W.sentence, [W.w]) : "";
   $("#clapBtn").hidden = n < 2; // nothing to clap in a one-beat word
   document.querySelectorAll(".ctile").forEach(function (t) {
     var i = +t.dataset.i;
