@@ -122,8 +122,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `npm run card` (`scripts/card.mjs` screenshots `scripts/social-card.html`, which borrows
   `styles.css`); rerun after changing either. Its words must not be pack words.
 - `listen/`: the **listen check**, a grown-up tool for hearing every recorded clip and
-  marking it ✓ or ✗. `/listen/` lists every edition's packs, `/listen/?edition=<id>&pack=<id>`
-  is one pack's page (no `edition` means `packs.toml`'s).
+  marking it ✓ or ✗. Nested: `/listen/` lists the grades (editions), `?edition=<id>` that
+  grade's packs (each opens to its words, which jump to their cards), and
+  `?edition=<id>&pack=<id>` one pack's page (no `edition` means `packs.toml`'s).
   It reads `packs.toml` and `audio.json` like the app (locally it falls back to the live
   `audio.json`), and `clipsFor` in `crossword.js` decides each word's clips for both it and
   the audio build. Marks are per device (`sbx:listen`), keyed by clip, so a changed hint

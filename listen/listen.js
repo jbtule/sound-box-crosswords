@@ -39,26 +39,38 @@ function pages(ed, multi, data, audio, withPhrases) {
   }
   function fromList(id, name, list) {
     out.push({ id: id, edition: ed, short: name, name: (multi ? ed.name + " · " : "") + name,
-      words: parseList(list).map(function (e) { return { syll: e.syll, pic: e.pic, clips: withKeys(clipsFor(e)) }; }) });
+      words: parseList(list).map(function (e) { return { w: e.w, syll: e.syll, pic: e.pic, clips: withKeys(clipsFor(e)) }; }) });
   }
   Object.keys(data.packs).forEach(function (id) { if (id !== "mine") fromList(id, data.packs[id].name, data.packs[id].list); });
   if (data.starter) fromList("custom", "Custom starter", data.starter);
   var phrases = Object.keys(audio.clips).filter(function (k) { return k.startsWith("p:"); }).map(function (k) { return k.slice(2); });
   if (phrases.length && withPhrases) {
-    out.push({ id: "phrases", edition: ed, short: "Phrases", name: (multi ? ed.name + " · " : "") + "Phrases", words: phrases.map(function (p) { return { syll: p, pic: "", clips: withKeys([{ kind: "p", text: p }]) }; }) });
+    out.push({ id: "phrases", edition: ed, short: "Phrases", name: (multi ? ed.name + " · " : "") + "Phrases", words: phrases.map(function (p, i) { return { w: "phrase" + i, syll: p, pic: "", clips: withKeys([{ kind: "p", text: p }]) }; }) });
   }
   return out;
 }
 
-function counts(page) {
-  var c = { total: 0, new: 0, ok: 0, bad: 0 }, seen = {};
-  page.words.forEach(function (w) {
+// Clip counts for one page or several (a grade); a clip shared by two words counts once.
+function counts(pagesToCount) {
+  var c = { total: 0, new: 0, ok: 0, bad: 0, missing: 0 }, seen = {};
+  [].concat(pagesToCount).forEach(function (page) { page.words.forEach(function (w) {
     w.clips.forEach(function (clip) {
-      if (!clip.key || seen[clip.key]) return; // a syllable shared by two words counts once
+      if (!clip.key) { if (!seen[clip.kind + ":" + clip.text]) c.missing++; seen[clip.kind + ":" + clip.text] = 1; return; }
+      if (seen[clip.key]) return; // a syllable shared by two words counts once
       seen[clip.key] = 1; c.total++; c[state(clip.key)]++;
     });
-  });
+  }); });
   return c;
+}
+function pills(c) {
+  var box = el("span", "counts");
+  if (c.new) box.appendChild(el("span", "pill new", c.new + " not heard"));
+  if (c.bad) box.appendChild(el("span", "pill bad", c.bad + " ✗"));
+  if (c.total && !c.new && !c.bad) box.appendChild(el("span", "pill ok", "all ✓"));
+  box.appendChild(el("span", "pill", c.total + (c.total === 1 ? " clip" : " clips")));
+  // New words are recorded at the next deploy; until then (and locally) they have no clip.
+  if (c.missing) box.appendChild(el("span", "pill", c.missing + " not recorded yet"));
+  return box;
 }
 
 function el(tag, cls, text) {
@@ -86,28 +98,69 @@ function play(items) { player.pause(); queue = items.slice(); next(); }
 
 /* ---------- index ---------- */
 function href(page) { return "?edition=" + encodeURIComponent(page.edition.id) + "&pack=" + encodeURIComponent(page.id); }
+// /listen/: one card per grade (edition) with its counts; with a single edition, its packs.
 function renderIndex(all, eds) {
+  if (eds.length === 1) { renderEdition(all, eds[0], false); return; }
   var list = $("#list"); list.innerHTML = "";
+  var ul = el("ul", "packs");
   eds.forEach(function (ed) {
     var mine = all.filter(function (p) { return p.edition === ed; });
-    if (eds.length > 1) list.appendChild(el("h2", "grade", ed.name));
-    list.appendChild(indexList(mine));
+    var li = el("li", "card"), a = el("a");
+    a.href = "?edition=" + encodeURIComponent(ed.id);
+    a.appendChild(el("span", "name", ed.name));
+    a.appendChild(pills(counts(mine)));
+    var sub = el("p", "sub", mine.map(function (p) { return p.short; }).join(" · "));
+    li.append(a, sub);
+    ul.appendChild(li);
   });
-  setupReport(all, "all packs");
+  list.appendChild(ul);
+  setupReport(all, "all grades");
 }
+// /listen/?edition=<id>: that grade's packs, each with its words underneath.
+function renderEdition(all, ed, multi) {
+  var mine = all.filter(function (p) { return p.edition === ed; });
+  if (multi) {
+    document.title = ed.name + " · Listen check";
+    $("#title").textContent = ed.name;
+    $("#crumb").textContent = "‹ All grades"; $("#crumb").href = "./"; $("#crumb").hidden = false;
+  }
+  var list = $("#list"); list.innerHTML = "";
+  list.appendChild(indexList(mine));
+  setupReport(mine, multi ? ed.name : "all packs");
+}
+// A word's status for the nested index: ✗ if any clip is marked wrong, then not heard,
+// then ✓ when every clip is. "none" when it has no recordings in this deploy yet.
+function wordState(w) {
+  var keyed = w.clips.filter(function (c) { return c.key; });
+  if (!keyed.length) return "none";
+  var st = keyed.map(function (c) { return state(c.key); });
+  return st.indexOf("bad") >= 0 ? "bad" : st.indexOf("new") >= 0 ? "new" : "ok";
+}
+var MARK = { bad: "✗", new: "•", ok: "✓", none: "–" };
+var MARK_LABEL = { bad: "marked wrong", new: "not heard", ok: "all right", none: "no recording yet" };
+function wordAnchor(w) { return "w-" + w.w; }
 function indexList(all) {
   var ul = el("ul", "packs");
   all.forEach(function (page) {
-    var c = counts(page), li = el("li", "card"), a = el("a");
+    var li = el("li", "card"), a = el("a");
     a.href = href(page);
     a.appendChild(el("span", "name", page.short));
-    var pills = el("span", "counts");
-    if (c.new) pills.appendChild(el("span", "pill new", c.new + " not heard"));
-    if (c.bad) pills.appendChild(el("span", "pill bad", c.bad + " ✗"));
-    if (!c.new && !c.bad) pills.appendChild(el("span", "pill ok", "all ✓"));
-    pills.appendChild(el("span", "pill", c.total + (c.total === 1 ? " clip" : " clips")));
-    a.appendChild(pills);
-    li.appendChild(a); ul.appendChild(li);
+    a.appendChild(pills(counts(page)));
+    li.appendChild(a);
+    // Nested index: every word in the pack with its status, each jumping to its card.
+    var more = el("details", "words-index"), sum = el("summary", null, page.words.length + (page.words.length === 1 ? " word" : " words"));
+    var wl = el("ul", "word-list");
+    page.words.forEach(function (w) {
+      var s = wordState(w), item = el("li"), link = el("a", "word-link is-" + s);
+      link.href = href(page) + "#" + wordAnchor(w);
+      var mark = el("span", "mark", MARK[s]);
+      mark.setAttribute("aria-label", MARK_LABEL[s]); mark.setAttribute("role", "img");
+      link.append(mark, el("span", null, (w.pic ? w.pic + " " : "") + w.syll));
+      item.appendChild(link); wl.appendChild(item);
+    });
+    more.append(sum, wl);
+    li.appendChild(more);
+    ul.appendChild(li);
   });
   return ul;
 }
@@ -122,6 +175,7 @@ function renderPack(page, base) {
     if (!clips.length) return;
     shown++;
     var card = el("section", "card word"), h = el("h2");
+    card.id = wordAnchor(w);
     if (w.pic) h.appendChild(el("span", "emoji", w.pic));
     h.appendChild(el("span", null, w.syll));
     var all = el("button", "tool", "▶ All");
@@ -226,13 +280,17 @@ async function start() {
     $("#list").appendChild(el("p", "empty", "No recordings in this deploy (the app is using the device voice)."));
     return;
   }
-  if (!id) { renderIndex(all, eds); return; }
+  var multi = eds.length > 1, edParam = params.get("edition");
+  if (!id && !edParam) { renderIndex(all, eds); return; }
   // No ?edition= means the original one (packs.toml), so older links still work.
-  var edId = params.get("edition") || (eds.find(function (e) { return e.file === "packs.toml"; }) || eds[0]).id;
-  var page = all.find(function (p) { return p.id === id && p.edition.id === edId; });
-  if (!page) { location.replace("./"); return; }
+  var ed = eds.find(function (e) { return e.id === edParam; }) || (!edParam && (eds.find(function (e) { return e.file === "packs.toml"; }) || eds[0]));
+  if (!ed) { location.replace("./"); return; }
+  if (!id) { renderEdition(all, ed, multi); return; }
+  var page = all.find(function (p) { return p.id === id && p.edition === ed; });
+  if (!page) { location.replace(multi ? "?edition=" + encodeURIComponent(ed.id) : "./"); return; }
   document.title = page.name + " · Listen check";
-  $("#title").textContent = page.name;
+  $("#title").textContent = page.short;
+  if (multi) { $("#crumb").textContent = "‹ " + ed.name; $("#crumb").href = "?edition=" + encodeURIComponent(ed.id); }
   $("#crumb").hidden = false;
   $("#bar").hidden = false;
   document.querySelectorAll("[data-filter]").forEach(function (b) {
@@ -242,6 +300,19 @@ async function start() {
       renderPack(page, audio.base);
     });
   });
+  // From the nested index (#w-<word>): show every clip so that word is on the page, then
+  // bring it into view and flash it.
+  var jump = location.hash.slice(1);
+  if (jump) {
+    filter = "all";
+    document.querySelectorAll("[data-filter]").forEach(function (o) { o.setAttribute("aria-pressed", String(o.dataset.filter === "all")); });
+  }
   renderPack(page, audio.base);
+  var target = jump && document.getElementById(jump);
+  if (target) {
+    target.scrollIntoView({ block: "start" });
+    target.classList.add("jumped");
+    setTimeout(function () { target.classList.remove("jumped"); }, 1600);
+  }
 }
 start();
