@@ -1,7 +1,7 @@
 # Word-list editions, one per grade. The app asks which one on the first visit, and
-# Settings → Grade switches. Each edition has its own packs file (same format as
-# packs.toml) and keeps its own saved progress, stars, achievements, collection, colors,
-# Custom list and settings on the device.
+# Settings → Edition (a dropdown) switches. Each edition has its own packs file (same format
+# as packs.toml) and keeps its own saved progress, stars, achievements, collection, colors,
+# Custom list and settings on the device; the voice and chime are shared by all.
 #
 #   id        short name; saved data is kept under "sbx:<id>:" (packs.toml's edition uses
 #             plain "sbx:", from before editions). Never change it once in use.

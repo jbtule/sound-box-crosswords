@@ -88,7 +88,14 @@ try {
   throw e;
 }
 
-var settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true, voice: "" }, store.get("settings", {}));
+// Settings: the letter pad, syllable colors and auto-speak are the edition's own (each child's);
+// the voice and chime belong to the device, shared by every edition ("shared"). Until that's
+// first saved they come from the settings saved before editions (plain "sbx:settings").
+var SHARED = ["voice", "chime"];
+var sharedBefore = {}, oldSettings = device.get("settings", {});
+SHARED.forEach(function (k) { if (oldSettings && k in oldSettings) sharedBefore[k] = oldSettings[k]; });
+var settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true, voice: "" },
+  store.get("settings", {}), sharedBefore, device.get("shared", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
 var packId = store.get("pack", "");
@@ -571,22 +578,23 @@ function renderProgressSheet() {
   });
   $("#progressEmpty").hidden = log.length > 0;
 }
-// Settings → Grade: one radio per edition; switching reloads into that grade's own lists,
-// progress and settings. Hidden when there's only one.
+// Settings → Edition: a dropdown of editions; switching reloads into that edition's own
+// lists, progress and settings. Hidden when there's only one.
 function renderGrades() {
-  var box = $("#gradeList"); box.innerHTML = "";
+  var sel = $("#editionSel"); sel.innerHTML = "";
   $("#gradeSec").hidden = EDITIONS.length < 2;
   EDITIONS.forEach(function (e) {
-    var label = document.createElement("label"), input = document.createElement("input");
-    input.type = "radio"; input.name = "grade"; input.value = e.id; input.checked = e.id === EDITION.id;
-    input.addEventListener("change", function () {
-      device.set("edition", e.id);
-      location.replace(location.pathname);
-    });
-    label.append(input, " " + e.name);
-    box.appendChild(label);
+    var o = document.createElement("option");
+    o.value = e.id; o.textContent = e.name;
+    sel.appendChild(o);
   });
+  sel.value = EDITION.id;
 }
+$("#editionSel").addEventListener("change", function (e) {
+  if (e.target.value === EDITION.id) return;
+  device.set("edition", e.target.value);
+  location.replace(location.pathname);
+});
 function openSheet() {
   renderGrades();
   $("#optSyl").checked = settings.syl;
@@ -802,7 +810,12 @@ function openAchievements() {
 }
 function closeAchievements() { $("#achSheet").hidden = true; $("#trophyBtn").focus(); }
 function closeSheet() { $("#sheet").hidden = true; $("#settingsBtn").focus(); }
-function saveSettings() { store.set("settings", settings); }
+function saveSettings() {
+  var own = {}, shared = {};
+  Object.keys(settings).forEach(function (k) { (SHARED.indexOf(k) >= 0 ? shared : own)[k] = settings[k]; });
+  store.set("settings", own);
+  device.set("shared", shared);
+}
 $("#settingsBtn").addEventListener("click", openSheet);
 $("#trophyBtn").addEventListener("click", openAchievements);
 $("#awardNext").addEventListener("click", nextAward);
