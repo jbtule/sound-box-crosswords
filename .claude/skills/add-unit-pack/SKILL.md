@@ -121,7 +121,18 @@ Leave merging to Jay.
 
 ## 7. After it deploys
 
-The deploy records every new word, syllable and sentence. Remind Jay to play the new pack
-once on the iPad and listen to **Break it down** on the multi-syllable words. If a part
-sounds wrong, change that word's `( )` hint to a clearer spelling in a follow-up PR; the
-new hint gets a new recording.
+The deploy records every new word, syllable and sentence. In the PR, and when telling Jay
+it's ready, give the listen check link for the new pack:
+`https://tools.tuley.name/sound-box-crosswords/listen/?pack=<id>`. Its "Not heard" view
+shows just the new recordings to play and mark ✓ or ✗.
+
+A ✗ comes back as pasted text or a GitHub issue ("Recordings to fix: …"), one line per
+clip with the pack, word, part, note and clip id. Fix each in a follow-up PR:
+
+- A syllable: change that word's `( )` hint to a clearer spelling (same rules as step 4).
+- A whole word: try a hint-free fix first only if it's a known case (`SPEED_FOR` in
+  `scripts/audio/build.mjs` slows one clip); otherwise describe it in the PR and ask.
+- A sentence: reword it (still short, uses the word, no other pack words).
+
+A changed hint or sentence is a new clip, so it shows up as "Not heard" again after the
+next deploy. Say so in the PR so it gets a second listen.
