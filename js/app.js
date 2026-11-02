@@ -77,10 +77,11 @@ var P = null; // current puzzle, from makePuzzle()
 // cur: selected word; pos: cursor letter index within it.
 var fill = {}, locked = {}, doneW = {}, cur = 0, pos = 0, misses = 0, finished = false;
 var missedW = {}; // word indexes with a wrong try in this puzzle
+var newPics = 0;  // pictures added to the collection in this puzzle
 
 function newPuzzle() {
   $("#done").hidden = true;
-  finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {};
+  finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {}; newPics = 0;
   var pool = entries(packId);
   if (pool.length < 3) { P = null; renderEmpty(); return; }
   var pp = packProgress(packId), words = pool.map(function (e) { return e.w; });
@@ -285,7 +286,7 @@ function complete(i, typed) {
       toast("🏀 You got it this time!");
     }
     st.n++;
-    if (!missedW[i]) st.ok++;
+    if (!missedW[i]) { if (!st.ok) newPics++; st.ok++; } // first first-try: its picture is collected
   }
   if (pp.round.indexOf(W.w) < 0) pp.round.push(W.w);
   store.set("progress", progress);
@@ -314,6 +315,7 @@ function finish() {
   update();
   var parts = [P.words.length + " words"];
   parts.push(misses === 0 ? "no slips" : misses === 1 ? "1 try again" : misses + " try-agains");
+  if (newPics) parts.push("+" + newPics + (newPics === 1 ? " picture" : " pictures"));
   $("#doneStats").textContent = parts.join(" · ");
   var newList = $("#doneNew"); newList.innerHTML = "";
   fresh.forEach(function (a) {
@@ -558,6 +560,42 @@ function closeAwards() {
   $("#award").hidden = true;
   $("#nextBtn").focus();
 }
+// Picture collection (sticker book), per pack: a word's picture is collected the first
+// time it's spelled right on the first try (stats ok > 0). Pictures only, never words;
+// tapping one says the word. Shows packs with something collected, plus the current one.
+function renderCollection() {
+  var wrap = $("#colList"); wrap.innerHTML = "";
+  Object.keys(PACKS).forEach(function (id) {
+    var words = entries(id), stats = packProgress(id).stats;
+    var got = words.filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
+    if (!words.length || (!got && id !== packId)) return;
+    var sec = document.createElement("section"); sec.className = "col-pack";
+    var h = document.createElement("h3"); h.textContent = PACKS[id].name + " · " + got + " of " + words.length;
+    var grid = document.createElement("div"); grid.className = "col-grid";
+    words.forEach(function (e) {
+      var have = stats[e.w] && stats[e.w].ok > 0;
+      var slot = document.createElement(have ? "button" : "span");
+      slot.className = "col-slot" + (have ? " got" : "");
+      if (have) {
+        slot.type = "button";
+        slot.setAttribute("aria-label", "Collected picture, hear the word");
+        setPic(slot, e.pic);
+        slot.addEventListener("click", function () { say("w", e.w, 0.85, true); });
+      } else {
+        slot.setAttribute("aria-label", "Not collected yet");
+      }
+      grid.appendChild(slot);
+    });
+    sec.append(h, grid);
+    wrap.appendChild(sec);
+  });
+}
+function showTab(col) {
+  $("#tabAch").setAttribute("aria-selected", String(!col));
+  $("#tabCol").setAttribute("aria-selected", String(col));
+  $("#achPanel").hidden = col; $("#colPanel").hidden = !col;
+  if (col) renderCollection();
+}
 function openAchievements() {
   var now = Date.now(), all = catalog(achState());
   $("#achDays").textContent = "Practiced " + daysThisWeek(days, now) + " of the last 7 days · " +
@@ -579,6 +617,7 @@ function openAchievements() {
     li.append(icon, text);
     list.appendChild(li);
   });
+  showTab(false);
   $("#achSheet").hidden = false;
   $("#achClose").focus();
 }
@@ -588,6 +627,8 @@ function saveSettings() { store.set("settings", settings); }
 $("#settingsBtn").addEventListener("click", openSheet);
 $("#trophyBtn").addEventListener("click", openAchievements);
 $("#awardNext").addEventListener("click", nextAward);
+$("#tabAch").addEventListener("click", function () { showTab(false); });
+$("#tabCol").addEventListener("click", function () { showTab(true); });
 $("#awardPrev").addEventListener("click", prevAward);
 $("#awardClose").addEventListener("click", closeAwards);
 $("#award").addEventListener("click", function (e) { if (e.target === $("#award")) closeAwards(); });
