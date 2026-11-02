@@ -18,7 +18,7 @@ const v = "?v=" + short;
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const out = join(root, "_site");
-const SITE = ["index.html", "styles.css", "packs.toml", "js"];
+const SITE = ["index.html", "styles.css", "packs.toml", "js", "favicon.svg", "apple-touch-icon.png"];
 // Written by scripts/audio/build.mjs in the deploy; without it the app uses the device voice.
 const OPTIONAL = ["audio.json"];
 
