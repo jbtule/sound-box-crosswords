@@ -51,9 +51,11 @@
     <div class="clueinfo">
       <div class="cluehead"><span id="clueLabel">1 Across</span><span id="clueSub"></span></div>
       <div class="tools">
-        <button class="tool" id="hearBtn" type="button">Hear it</button>
-        <button class="tool" id="clapBtn" type="button">Break it down</button>
-        <button class="tool" id="soundBtn" type="button" hidden>Sound it out</button>
+        <!-- The emoji are pictures for players who don't read the labels yet; screen readers
+             skip them. 🥁 for beats (syllables), not 👏: "Clap it" was taken as an instruction. -->
+        <button class="tool" id="hearBtn" type="button"><span class="ico" aria-hidden="true">👂</span>Hear it</button>
+        <button class="tool" id="clapBtn" type="button"><span class="ico" aria-hidden="true">🥁</span>Break it down</button>
+        <button class="tool" id="soundBtn" type="button" hidden><span class="ico" aria-hidden="true">🗣️</span>Sound it out</button>
       </div>
     </div>
     <p class="sent" id="clueSent" hidden></p>
