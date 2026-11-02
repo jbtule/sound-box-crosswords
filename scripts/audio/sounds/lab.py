@@ -55,6 +55,17 @@ VOICE, SPEED, SLOW = "af_heart", 0.8, 0.55
 # A stop at the end of a word is released on its own (no vowel after it): "t" from "cat".
 FINAL = {"b": ("cab", "kˈæ[b]"), "d": ("bed", "bˈɛ[d]"), "g": ("dog", "dˈɔ[ɡ]"), "k": ("book", "bˈʊ[k]"),
          "p": ("cap", "kˈæ[p]"), "t": ("cat", "kˈæ[t]"), "ch": ("much", "mˈʌ[ʧ]"), "j": ("badge", "bˈæ[ʤ]")}
+# More tries for sounds the first round didn't get right (g and j: voiced stops are barely
+# released at the end of a word). Each: (label, word with the target in [brackets],
+# "final" or "burst", speed, burst length in ms).
+EXTRA = {
+    "g": [(f"final-{w}{'-slow' if sp < SPEED else ''}", ps, "final", sp, 0)
+          for w, ps in [("bag", "bˈæ[ɡ]"), ("big", "bˈɪ[ɡ]"), ("leg", "lˈɛ[ɡ]"), ("egg", "ˈɛ[ɡ]")] for sp in (SPEED, SLOW)]
+         + [(f"burst{ms}-{w}", ps, "burst", SPEED, ms) for w, ps in [("go", "[ɡ]ˈO"), ("get", "[ɡ]ˈɛt"), ("gum", "[ɡ]ˈʌm")] for ms in (40, 50)],
+    "j": [(f"final-{w}{'-slow' if sp < SPEED else ''}", ps, "final", sp, 0)
+          for w, ps in [("edge", "ˈɛ[ʤ]"), ("page", "pˈA[ʤ]"), ("cage", "kˈA[ʤ]")] for sp in (SPEED, SLOW)]
+         + [(f"burst{ms}-{w}", ps, "burst", SPEED, ms) for w, ps in [("jam", "[ʤ]ˈæm"), ("jet", "[ʤ]ˈɛt"), ("job", "[ʤ]ˈɑb")] for ms in (40, 50)],
+}
 PEAK = 0.3  # every candidate is scaled to this peak, about the vowels' natural level
 HOLD_MS = 350
 # Lead and tail around the cut (ms): a stop needs its burst and a little breath after it
@@ -82,6 +93,13 @@ def candidates(name, word_ps, kind):
         fw, fps = FINAL[name]
         fa, fb = fps.index("["), fps.index("]") - 1
         out["final"] = g.cut_phonemes(fps.replace("[", "").replace("]", ""), VOICE, SPEED, fa, fb, 0, 150)
+    for label, xps, mode, sp, ms in EXTRA.get(name, []):
+        xa, xb = xps.index("["), xps.index("]") - 1
+        plain = xps.replace("[", "").replace("]", "")
+        if mode == "final":
+            out[label] = g.cut_phonemes(plain, VOICE, sp, xa, xb, 0, 150)
+        else:
+            out[label] = g.cut_phonemes(plain, VOICE, sp, xa, xb, 0, 30)[-int(ms / 1000 * g.SR):]
     if kind == "hold":
         out["held"] = g.cut_phonemes(target * 3, VOICE, SLOW)
         out["stretch"] = stretch(out["word"], HOLD_MS)
@@ -120,19 +138,19 @@ def main():
             with open(os.path.join(out_dir, fname), "wb") as f:
                 f.write(g.mp3(audio, g.SR))
             ms = int(1000 * len(audio) / g.SR)
-            cells.append(f'<td><button data-src="{fname}">▶ {method}</button><small>{ms} ms</small>'
-                         f'<label><input type="radio" name="{name}" value="{method}"> pick</label></td>')
-        cells.append(f'<td><label><input type="radio" name="{name}" value="none"> none good</label></td>')
+            cells.append(f'<span class="cand"><button data-src="{fname}">▶ {method}</button><small>{ms} ms</small>'
+                         f'<label><input type="radio" name="{name}" value="{method}"> pick</label></span>')
+        cells.append(f'<span class="cand"><label><input type="radio" name="{name}" value="none"> none good</label></span>')
         label = word + (f" / {FINAL[name][0]}" if name in FINAL else "")
-        rows.append(f"<tr><th>{html.escape(name)}</th><td>{html.escape(label)}</td><td>{kind}</td>{''.join(cells)}</tr>")
+        rows.append(f"<tr><th>{html.escape(name)}</th><td>{html.escape(label)}</td><td>{kind}</td><td>{''.join(cells)}</td></tr>")
         print(f"{name}: {len(cells)} candidates", flush=True)
     with open(os.path.join(out_dir, "index.html"), "w") as f:
         f.write("""<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>Sound candidates</title>
 <style>body{font:16px system-ui;margin:16px}table{border-collapse:collapse}td,th{padding:6px 8px;border-bottom:1px solid #ddd;text-align:left}
-button{font:inherit;padding:8px 12px;margin-right:6px;border-radius:8px;border:1px solid #bbb;background:#f6f8fb}small{color:#777;margin-right:6px}label{white-space:nowrap;font-size:14px}</style>
+button{font:inherit;padding:8px 12px;margin-right:6px;border-radius:8px;border:1px solid #bbb;background:#f6f8fb}small{color:#777;margin-right:6px}label{white-space:nowrap;font-size:14px}.cand{display:inline-block;margin:3px 8px 3px 0;padding:4px 6px;border:1px solid #e3e7ee;border-radius:10px}td,th{vertical-align:top}</style>
 <h1>Sound candidates</h1><p>Each sound several ways: <b>alone</b> (said by itself), <b>word</b> (cut from the example word), <b>slow</b> (the same, slower), and for sounds you can hold, <b>held</b> (written three times) and <b>stretch</b> (the word's cut, held longer). Pick the clearest one for each sound: stops clipped ("k", not "kuh"), held sounds held briefly ("mmm").</p>
-<table><tr><th>sound</th><th>as in</th><th>type</th><th colspan="6">candidates</th></tr>
+<table><tr><th>sound</th><th>as in</th><th>type</th><th>candidates</th></tr>
 """ + "\n".join(rows) + """</table>
 <p><button id="copy">Copy picks</button> <span id="msg"></span></p>
 <script>
