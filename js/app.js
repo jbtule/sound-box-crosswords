@@ -1,5 +1,4 @@
 // Game state, play logic, rendering, and the settings sheet.
-import { loadPacks } from "./words.js";
 import { confetti } from "./confetti.js";
 import { parseList, makePuzzle } from "./crossword.js";
 import { speak, say, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
@@ -29,6 +28,9 @@ if ("serviceWorker" in navigator && !/^(localhost|127\.0\.0\.1)$/.test(location.
 
 var PACKS, DEFAULT_CUSTOM;
 try {
+  // Imported here, not at the top: words.js pulls in the TOML parser from the CDN, and a
+  // failed static import would stop this whole module before it could show Try again.
+  var { loadPacks } = await import("./words.js");
   ({ packs: PACKS, starter: DEFAULT_CUSTOM } = await loadPacks());
 } catch (e) {
   // A home-screen app has no reload button, so offer one.
