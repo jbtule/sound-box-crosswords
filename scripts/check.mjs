@@ -54,7 +54,7 @@ if (!starter) errors.push(`packs.toml: missing [custom] words = """..."""`);
 const lists = Object.entries(packs).map(([id, p]) => ({ id, text: p.list }));
 lists.push({ id: "custom", text: starter });
 
-const LINE = /^([a-z]+(?:-[a-z]+)*) (\S+)$/;
+const LINE = /^([a-z]+(?:-[a-z]+)*) (\S+)(?: \(([^)]*)\))?$/;
 for (const { id, text } of lists) {
   if (!text) continue; // "mine" is filled in by the user
   const seen = new Set();
@@ -66,6 +66,11 @@ for (const { id, text } of lists) {
     if (w.length < 2 || w.length > 12) errors.push(`${id}: "${w}" must be 2–12 letters`);
     if (seen.has(w)) errors.push(`${id}: "${w}" is listed twice`);
     if (!/\p{Extended_Pictographic}/u.test(m[2])) errors.push(`${id}: "${w}" has no emoji picture`);
+    if (m[3] != null) {
+      const say = m[3].split("-"), beats = m[1].split("-").length;
+      if (say.length !== beats) errors.push(`${id}: "${w}" has ${beats} syllables but its (sounds) hint has ${say.length} parts`);
+      if (say.some((s) => !/^[a-z' ]+$/.test(s))) errors.push(`${id}: "${w}" sounds hint "${m[3]}" should be lowercase letters split by dashes`);
+    }
     seen.add(w);
   }
   if (parseList(text).length !== seen.size) errors.push(`${id}: parseList disagrees with the line count`);

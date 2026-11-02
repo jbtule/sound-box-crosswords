@@ -7,6 +7,9 @@
 #   words  one word per line: the word with dashes between syllables, a space, then an
 #          emoji for the picture. Dashes drive the syllable colors and "Clap it", so split
 #          words the way a teacher would clap them. Letters only, 2–12 letters.
+#          Optional: add (how-it-sounds) at the end, one part per syllable, when "Clap it"
+#          says a syllable wrong on its own: ba-nan-a 🍌 (buh-nan-uh). Only Clap it uses
+#          it; the boxes and the whole-word speech keep the real spelling.
 #
 # Run `npm run check` after editing; it catches typos and builds test puzzles.
 
@@ -63,8 +66,8 @@ cart 🛒
 worm 🪱
 arm 💪
 jar 🫙
-tur-tle 🐢
-bur-ger 🍔
+tur-tle 🐢 (tur-tul)
+bur-ger 🍔 (bur-gur)
 """
 
 [[pack]]
@@ -77,27 +80,27 @@ pump-kin 🎃
 bas-ket 🧺
 sun-set 🌅
 ro-bot 🤖
-lem-on 🍋
-ti-ger 🐅
+lem-on 🍋 (lem-un)
+ti-ger 🐅 (tie-gur)
 mag-net 🧲
 car-rot 🥕
 kit-ten 🐈
 pop-corn 🍿
-pen-cil ✏️
+pen-cil ✏️ (pen-sul)
 rock-et 🚀
-cac-tus 🌵
-can-dle 🕯️
-win-dow 🪟
+cac-tus 🌵 (kak-tus)
+can-dle 🕯️ (kan-dul)
+win-dow 🪟 (win-doe)
 sand-wich 🥪
-drag-on 🐉
+drag-on 🐉 (drag-un)
 hel-met ⛑️
 but-ton 🔘
-pan-da 🐼
-ze-bra 🦓
-liz-ard 🦎
-spi-der 🕷️
+pan-da 🐼 (pan-duh)
+ze-bra 🦓 (zee-bruh)
+liz-ard 🦎 (liz-erd)
+spi-der 🕷️ (spy-der)
 mon-key 🐒
-chick-en 🐔
+chick-en 🐔 (chick-in)
 cup-cake 🧁
 snow-man ⛄
 """
@@ -107,26 +110,26 @@ id = "three"
 name = "3 beats"
 note = "Three beats. Keep the last one from getting lost."
 words = """
-oc-to-pus 🐙
-ba-nan-a 🍌
+oc-to-pus 🐙 (ok-tuh-puss)
+ba-nan-a 🍌 (buh-nan-uh)
 but-ter-fly 🦋
-di-no-saur 🦕
-kan-ga-roo 🦘
-el-e-phant 🐘
-to-ma-to 🍅
-com-put-er 💻
-um-brel-la ☂️
-ham-bur-ger 🍔
-broc-co-li 🥦
-vol-ca-no 🌋
-tel-e-scope 🔭
-la-dy-bug 🐞
-go-ril-la 🦍
-pine-ap-ple 🍍
-straw-ber-ry 🍓
-croc-o-dile 🐊
-fla-min-go 🦩
-pi-an-o 🎹
+di-no-saur 🦕 (die-nuh-sore)
+kan-ga-roo 🦘 (kang-guh-roo)
+el-e-phant 🐘 (el-uh-funt)
+to-ma-to 🍅 (tuh-may-toe)
+com-put-er 💻 (kum-pyoo-ter)
+um-brel-la ☂️ (um-brel-luh)
+ham-bur-ger 🍔 (ham-bur-gur)
+broc-co-li 🥦 (brock-uh-lee)
+vol-ca-no 🌋 (vol-kay-no)
+tel-e-scope 🔭 (tel-uh-scope)
+la-dy-bug 🐞 (lay-dee-bug)
+go-ril-la 🦍 (guh-ril-luh)
+pine-ap-ple 🍍 (pine-ap-pul)
+straw-ber-ry 🍓 (straw-bair-ee)
+croc-o-dile 🐊 (krock-uh-dile)
+fla-min-go 🦩 (fluh-ming-go)
+pi-an-o 🎹 (pee-an-oh)
 """
 
 # Starter list for "My words" (the grown-up's own list) until they save their own.
@@ -136,7 +139,7 @@ ex-plore 🧭
 store 🏪
 more ➕
 snore 😴
-be-fore ⏮️
+be-fore ⏮️ (bih-fore)
 shore 🏖️
 chore 🧹
 score 🏆

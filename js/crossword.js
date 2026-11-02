@@ -3,7 +3,10 @@
 
 export const MAX_COLS = 11, MAX_ROWS = 12; // keeps the grid small enough for a phone
 
-// "but-ter-fly 🦋" lines → [{ syll: "but-ter-fly", w: "butterfly", pic: "🦋" }].
+// "ba-nan-a 🍌 (buh-nan-uh)" lines →
+//   [{ syll: "ba-nan-a", w: "banana", pic: "🍌", say: ["buh", "nan", "uh"] }].
+// The optional (…) says how Clap it should pronounce each syllable; it's ignored
+// (say: null) unless it has one part per syllable.
 // Skips blank or malformed lines, duplicates, and words outside 2–12 letters.
 export function parseList(text) {
   var out = [], seen = {};
@@ -14,7 +17,13 @@ export function parseList(text) {
     var w = syll.replace(/-/g, "");
     if (w.length < 2 || w.length > 12 || seen[w]) return;
     seen[w] = 1;
-    out.push({ syll: syll, w: w, pic: m[2].trim().split(/\s+/)[0] || "" });
+    var rest = m[2], say = null, hint = rest.match(/\(([^)]*)\)/);
+    if (hint) {
+      rest = rest.replace(hint[0], " ");
+      say = hint[1].split("-").map(function (s) { return s.trim(); });
+      if (say.length !== syll.split("-").length || say.some(function (s) { return !s; })) say = null;
+    }
+    out.push({ syll: syll, w: w, pic: rest.trim().split(/\s+/)[0] || "", say: say });
   });
   return out;
 }
@@ -56,7 +65,7 @@ function tryBuild(cands, target) {
       grid[kk] = e.w[k];
       dirUse[kk] = dirUse[kk] || {}; dirUse[kk][dir] = 1;
     }
-    placed.push({ w: e.w, syll: e.syll, pic: e.pic, r: r, c: c, dir: dir });
+    placed.push({ w: e.w, syll: e.syll, pic: e.pic, say: e.say, r: r, c: c, dir: dir });
   }
   var order = shuffle(cands.slice());
   put(order[0], 0, 0, Math.random() < 0.5 ? "A" : "D");
@@ -103,7 +112,7 @@ function build(pool, recent) {
 
 // Builds a puzzle from parsed entries. Returns { words, rows, cols, cells }:
 // - words[i]: { w, syll, pic, r, c, dir: "A"|"D", num, cells: ["r,c"...],
-//   chunks: syllables, sylOf: syllable index per letter }
+//   chunks: syllables, say: how to speak each syllable, sylOf: syllable index per letter }
 // - cells["r,c"]: { letter, words: [word indexes], num? }
 export function makePuzzle(pool, recent) {
   var placed = build(pool, recent || []);
@@ -117,6 +126,7 @@ export function makePuzzle(pool, recent) {
   placed.forEach(function (p, i) {
     p.r -= minR; p.c -= minC; p.cells = [];
     p.chunks = p.syll.split("-");
+    p.say = p.say || p.chunks;
     p.sylOf = [];
     p.chunks.forEach(function (ch, ci) { for (var x = 0; x < ch.length; x++) p.sylOf.push(ci); });
     for (var k = 0; k < p.w.length; k++) {

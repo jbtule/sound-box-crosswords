@@ -250,7 +250,7 @@ async function clap() {
       var ks = W.cells.slice(idx, idx + W.chunks[ci].length);
       idx += W.chunks[ci].length;
       ks.forEach(function (c) { var el = cellEl(c); el && el.classList.add("beat"); });
-      await speak(W.chunks[ci], 0.7, false);
+      await speak(W.say[ci], 0.7, false);
       await new Promise(function (r) { setTimeout(r, 250); });
       ks.forEach(function (c) { var el = cellEl(c); el && el.classList.remove("beat"); });
     }
