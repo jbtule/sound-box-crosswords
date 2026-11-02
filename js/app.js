@@ -1,4 +1,4 @@
-// Game state, play logic, rendering, and the grown-up settings sheet.
+// Game state, play logic, rendering, and the settings sheet.
 import { loadPacks } from "./words.js";
 import { parseList, makePuzzle } from "./crossword.js";
 import { speak, stopSpeech, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
@@ -20,7 +20,7 @@ try {
   throw e;
 }
 
-var settings = Object.assign({ check: "word", syl: true, kb: "abc", speakSel: true, voice: "" }, store.get("settings", {}));
+var settings = Object.assign({ syl: true, kb: "abc", speakSel: true, voice: "" }, store.get("settings", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
 var packId = store.get("pack", "");
@@ -66,7 +66,7 @@ function sizeBoard() {
 }
 function renderEmpty() {
   board.style.gridTemplateColumns = "";
-  board.innerHTML = '<p class="empty-msg">This pack needs at least 3 words. Open <b>Grown-ups</b> and add words under “Custom words”.</p>';
+  board.innerHTML = '<p class="empty-msg">This pack needs at least 3 words. Open <b>Settings</b> and add words under “Custom words”.</p>';
   $("#clueList").innerHTML = "";
   $("#pic").textContent = "✏️"; $("#clueLabel").textContent = "No puzzle yet"; $("#clueSub").textContent = "";
 }
@@ -166,27 +166,20 @@ function flash(kk, cls, ms) {
   el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
   setTimeout(function () { el.classList.remove(cls); }, ms || 450);
 }
-// Letter mode: wrong letters wiggle and are rejected. Word mode: letters are
-// accepted until the word is full, then checked together.
+// Letters are accepted until the word is full, then checked together, so the player
+// has to recall the whole spelling instead of guessing letter by letter.
 function input(ch) {
   if (!P || finished) return;
   var W = P.words[cur];
   if (doneW[cur]) { var nx = nextUnfinished(); if (nx < 0) return; select(nx, null, true); W = P.words[cur]; }
   if (locked[W.cells[pos]]) { var fe = firstEmpty(cur, pos); if (fe < 0) return; pos = fe; }
-  var kk = W.cells[pos], right = W.w[pos];
-  if (settings.check === "letter") {
-    if (ch !== right) { misses++; flash(kk, "wiggle"); return; }
-    fill[kk] = ch; locked[kk] = true;
-    if (settleCrossings(kk)) { update(); return; }
-  } else {
-    fill[kk] = ch;
-    if (W.cells.every(function (c) { return fill[c]; })) { checkWord(cur); return; }
-  }
+  fill[W.cells[pos]] = ch;
+  if (W.cells.every(function (c) { return fill[c]; })) { checkWord(cur); return; }
   var nxt = firstEmpty(cur, pos + 1);
   if (nxt >= 0) pos = nxt;
   update();
 }
-// Word mode: complete the word if right; otherwise flash wrong boxes, then clear them.
+// Complete the word if right; otherwise flash wrong boxes, then clear them.
 function checkWord(i) {
   var W = P.words[i];
   if (W.cells.every(function (c, j) { return fill[c] === W.w[j]; })) { complete(i); update(); return; }
@@ -216,6 +209,7 @@ function complete(i) {
   var W = P.words[i];
   W.cells.forEach(function (c, j) { fill[c] = W.w[j]; locked[c] = true; setTimeout(function () { flash(c, "pop"); }, j * 60); });
   speak(W.w, 0.9, false);
+  W.cells.forEach(settleCrossings); // its letters may have finished a crossing word
   if (Object.keys(doneW).length === P.words.length) { setTimeout(finish, 700); return; }
   if (i === cur) {
     var nx = nextUnfinished();
@@ -223,6 +217,7 @@ function complete(i) {
   }
 }
 function finish() {
+  if (finished) return;
   finished = true;
   stars[packId] = (stars[packId] || 0) + 1;
   store.set("stars", stars);
@@ -305,7 +300,7 @@ board.addEventListener("click", function (e) {
   }
 });
 
-/* ---------- packs + grown-up settings ---------- */
+/* ---------- packs + settings ---------- */
 function renderPacks() {
   var wrap = $("#packs"); wrap.innerHTML = "";
   Object.keys(PACKS).forEach(function (id) {
@@ -323,8 +318,6 @@ function renderPacks() {
   $("#packNote").textContent = PACKS[packId].note;
 }
 function openSheet() {
-  $("#chkLetter").checked = settings.check === "letter";
-  $("#chkWord").checked = settings.check === "word";
   $("#optSyl").checked = settings.syl;
   $("#optSpeakSel").checked = settings.speakSel;
   $("#kbAbc").checked = settings.kb === "abc";
@@ -358,7 +351,6 @@ function saveSettings() { store.set("settings", settings); }
 $("#settingsBtn").addEventListener("click", openSheet);
 $("#closeBtn").addEventListener("click", closeSheet);
 $("#sheet").addEventListener("click", function (e) { if (e.target === $("#sheet")) closeSheet(); });
-["chkLetter", "chkWord"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.check = e.target.value; saveSettings(); }); });
 $("#optSyl").addEventListener("change", function (e) { settings.syl = e.target.checked; saveSettings(); update(); });
 $("#optSpeakSel").addEventListener("change", function (e) { settings.speakSel = e.target.checked; saveSettings(); });
 $("#voiceSel").addEventListener("change", function (e) {

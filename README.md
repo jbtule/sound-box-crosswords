@@ -5,7 +5,7 @@ and 2- and 3-syllable words, plus a custom word list.
 
 - Syllables are color-coded in the grid so a dropped chunk stands out.
 - **Hear it** / **Clap it** read the word aloud whole or one syllable at a time.
-- Grown-up settings: check each letter or the whole word, letter pad layout, custom list
+- Settings: syllable colors, auto-speak, voice, letter pad layout, custom list
   (`ex-plore 🧭` — dashes mark syllables, an emoji becomes the picture).
 
 Live: https://tools.tuley.name/sound-box-crosswords/
@@ -21,7 +21,7 @@ settings are saved in the browser's localStorage.
 | `js/words.js` | Loads `packs.toml` (parsed with [smol-toml](https://github.com/squirrelchat/smol-toml) from a CDN) |
 | `js/crossword.js` | Puzzle generator (no DOM; tested by the check script) |
 | `js/speech.js` | Text-to-speech helpers |
-| `js/app.js` | Game play, rendering, grown-up settings |
+| `js/app.js` | Game play, rendering, settings |
 
 ## Developing
 

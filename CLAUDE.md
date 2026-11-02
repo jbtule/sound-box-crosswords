@@ -37,8 +37,9 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    removed for that reason.)
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
-7. **A grown-up can tune it** without code: whole-word (default) vs check-each-letter mode, syllable
-   colors on/off, auto-speak, voice, A–Z vs QWERTY pad, custom word list.
+7. **A grown-up can tune it** without code, in Settings: syllable colors on/off, auto-speak,
+   voice, A–Z vs QWERTY pad, custom word list. Nothing in Settings makes the game easier,
+   so it needs no lock. Keep it that way: don't add settings that weaken recall.
 
 When a request is ambiguous, prefer the option that better serves goals 1–4.
 
@@ -84,7 +85,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 
 ## Code map
 
-- `index.html`: markup only (board, clue bar, letter pad, grown-ups sheet).
+- `index.html`: markup only (board, clue bar, letter pad, settings sheet).
 - `styles.css`: all styles. Color tokens on `:root` with dark overrides at the top.
   `--cell` is the box color token; `--cell-size` is the box size set by `sizeBoard`.
 - `packs.toml`: the word packs, in display order. Each `[[pack]]` has `id` (saved progress
@@ -113,13 +114,13 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `setVoice` (a `voiceURI`, or "" for Automatic), `onVoicesChanged` (Safari loads voices late).
 - `js/app.js`: everything on screen.
   - Play state: `fill`, `locked`, `doneW`, `cur` (word), `pos` (letter index), `misses`.
-  - `input` / `checkWord` / `complete` / `settleCrossings`: letter vs whole-word checking.
-    In letter mode, wrong letters wiggle and are rejected; in word mode, wrong letters flash
-    and clear once all boxes are full. Finishing one word can finish a crossing word.
-    Whole word is the default: letter mode lets a stuck player guess letters until one sticks.
+  - `input` / `checkWord` / `complete` / `settleCrossings`: whole-word checking only. Letters
+    are accepted until the word is full; then wrong letters flash and clear. Finishing one
+    word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
+    player guess letters until one stuck.)
   - `clap`: the Clap it scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
-  - Grown-ups sheet: `openSheet` / `closeSheet` and the change handlers below them.
+  - Settings sheet: `openSheet` / `closeSheet` and the change handlers below them.
 
 ## Working on it
 

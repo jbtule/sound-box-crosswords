@@ -3,8 +3,8 @@
 // browser, and from node_modules in Node (scripts/check.mjs).
 import { parse } from "smol-toml";
 
-// Always last: the grown-up's own list, saved in localStorage.
-const MINE = { name: "Custom", note: "Your own word list. Change it under Grown-ups.", list: "" };
+// Always last: the custom list, saved in localStorage.
+const MINE = { name: "Custom", note: "Your own word list. Change it in Settings.", list: "" };
 
 // TOML text → { packs: { id: { name, note, list } } in file order, starter: "..." }.
 export function readPacks(text) {

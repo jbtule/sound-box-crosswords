@@ -30,7 +30,7 @@ function ranked() {
   } catch (e) { return []; }
 }
 
-// For the grown-ups picker: [{ id, label }], best first. `id` is the voiceURI, since
+// For the Settings voice picker: [{ id, label }], best first. `id` is the voiceURI, since
 // iOS can name a basic and an Enhanced voice the same ("Samantha").
 export function listVoices() {
   return ranked().map(function (v) {

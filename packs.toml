@@ -198,7 +198,7 @@ those "Those birds are flying south for the winter."
 done "I am done with my homework."
 """
 
-# Starter list for the "Custom" pack (the grown-up's own list) until they save their own.
+# Starter list for the "Custom" pack (edited in Settings) until they save their own.
 [custom]
 words = """
 ex-plore 🧭 (ex-plore)
