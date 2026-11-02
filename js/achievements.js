@@ -14,15 +14,19 @@ var TIERS = {
   days: [1, 3, 7, 14, 30, 60, 100]
 };
 
+// A fun name for each tier (same order as TIERS); the detail line says plainly what it took.
 var LABELS = {
-  clean: { icon: "✨", one: "First clean solve", many: " clean solves", detail: "A puzzle with no try-agains" },
-  comeback: { icon: "🔁", one: "First comeback", many: " comeback words", detail: "Right on the first try after a miss" },
-  days: { icon: "📅", one: "First day of practice", many: " days of practice", detail: "Days with a finished puzzle" }
+  clean: { icon: "✨", names: ["Spotless", "Squeaky Clean", "Sharp Speller", "Steady Hand", "Precision Pro", "Flawless Hundred"],
+    detail: function (n) { return n + (n === 1 ? " puzzle" : " puzzles") + " with no try-agains"; } },
+  comeback: { icon: "🔁", names: ["Bounce Back", "Comeback Kid", "Second Wind", "Unstoppable", "Comeback Legend"],
+    detail: function (n) { return n + (n === 1 ? " word" : " words") + " right after a miss"; } },
+  days: { icon: "📅", names: ["Day One", "Warming Up", "Full Week", "Two-Week Trek", "Marathon Month", "Sixty-Day Summit", "Century Club"],
+    detail: function (n) { return n + (n === 1 ? " day" : " days") + " of practice"; } }
 };
 
-function tierItem(track, n, have) {
-  var l = LABELS[track];
-  return { id: track + ":" + n, icon: l.icon, title: n === 1 ? l.one : n + l.many, detail: l.detail, goal: n, have: have };
+function tierItem(track, i, have) {
+  var l = LABELS[track], n = TIERS[track][i];
+  return { id: track + ":" + n, icon: l.icon, title: l.names[i], detail: l.detail(n), goal: n, have: have };
 }
 
 // Every achievement that could be shown: [{ id, icon, title, detail, goal, have, met }].
@@ -31,13 +35,13 @@ export function catalog(state) {
   var out = [];
   state.packs.forEach(function (p) {
     if (p.total < 3) return;
-    out.push({ id: "pack:" + p.id, icon: "🏁", title: "All of " + p.name, detail: "Every word in the pack", goal: p.total, have: p.done });
+    out.push({ id: "pack:" + p.id, icon: "🏁", title: "Full House: " + p.name, detail: "Every word in " + p.name, goal: p.total, have: p.done });
   });
   var have = { clean: state.clean, comeback: state.comeback, days: state.days.length };
   Object.keys(TIERS).forEach(function (track) {
     for (var i = 0; i < TIERS[track].length; i++) {
       var n = TIERS[track][i];
-      out.push(tierItem(track, n, have[track]));
+      out.push(tierItem(track, i, have[track]));
       if (have[track] < n) break; // only the next goal, not every future tier
     }
   });
