@@ -345,7 +345,6 @@ function finish() {
   if (settings.chime) chime();
   say("p", "You solved it!", 0.95);
   $("#nextBtn").focus();
-  renderInstall(); // the Home Screen tip appears after the first finished puzzle
   if (fresh.length) setTimeout(function () { showAwards(fresh); }, 1100); // after the solve celebration
 }
 function back() {
@@ -755,8 +754,9 @@ function renderInstall() {
   $("#installSec").hidden = !canInstall();
   $("#installIOS").hidden = !isIOS;
   $("#installBtn").hidden = isIOS || !installEvt;
-  // The tip at the top: from the first finished puzzle until ✕, How? or installing.
-  $("#installNudge").hidden = !canInstall() || !log.length || !!store.get("installNudge", "");
+  // The tip at the top, until ✕, How? or installing. Shown from the first visit: iOS
+  // doesn't carry progress from Safari over to the Home Screen app, so earlier is better.
+  $("#installNudge").hidden = !canInstall() || !!store.get("installNudge", "");
 }
 function installNow() {
   if (!installEvt) return;
