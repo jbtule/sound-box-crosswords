@@ -117,11 +117,24 @@ button{font:inherit;padding:8px 12px;margin-right:6px;border-radius:8px;border:1
 <script>
 // iPad Safari won't play media from a server without byte ranges (python -m http.server),
 // so every clip is fetched once into memory and played from there, straight from the tap.
+// A few at a time, retrying any that come back empty (the simple server drops some
+// under 160 at once); a button works once its clip is in.
 const player = new Audio(), clips = {};
-document.querySelectorAll("button[data-src]").forEach((b) => {
-  fetch(b.dataset.src).then((r) => r.blob()).then((blob) => { clips[b.dataset.src] = URL.createObjectURL(blob); });
-  b.onclick = () => { if (!clips[b.dataset.src]) return; player.src = clips[b.dataset.src]; player.play(); };
+const queue = [...document.querySelectorAll("button[data-src]")];
+queue.forEach((b) => {
+  b.disabled = true;
+  b.onclick = () => { player.src = clips[b.dataset.src]; player.play(); };
 });
+async function load(b, tries = 4) {
+  try {
+    const r = await fetch(b.dataset.src, { cache: "no-store" });
+    const blob = await r.blob();
+    if (!r.ok || !blob.size) throw new Error("empty");
+    clips[b.dataset.src] = URL.createObjectURL(new Blob([blob], { type: "audio/mpeg" }));
+    b.disabled = false;
+  } catch (e) { if (tries > 1) return load(b, tries - 1); b.title = "couldn't load"; }
+}
+for (let i = 0; i < 6; i++) (async function worker() { for (let b; (b = queue.shift()); ) await load(b); })();
 // Picks are kept in this browser; Copy picks puts them on the clipboard to paste back.
 const KEY = "sound-picks";
 let picks = {}; try { picks = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
