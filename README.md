@@ -12,3 +12,14 @@ Live: https://tools.tuley.name/sound-box-crosswords/
 
 Single self-contained `index.html`, no build step. Progress and settings are saved in the
 browser's localStorage.
+
+## Developing
+
+- Open `index.html` in a browser. That's the whole app.
+- Run `node scripts/check.mjs` before pushing. It checks that the script parses and that every
+  word list follows the `syl-la-bles emoji` format. CI runs it on every push and PR.
+- Workflows are kept clean under [zizmor](https://docs.zizmor.sh/): `zizmor .`
+- Pushing to `main` publishes to GitHub Pages (Settings → Pages → Deploy from a branch →
+  `main`, `/ (root)`).
+
+See `CLAUDE.md` for the goals behind the design and a map of the code.

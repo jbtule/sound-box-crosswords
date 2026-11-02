@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<style>
-:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-body{margin:0}
-img{max-width:100%}
-[hidden]{display:none!important}
-</style>
 <title>Sound Box Crosswords</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Picture crosswords for spelling practice: blends, bossy R, and 2- and 3-syllable words, with one box per letter and syllables in color.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#e9f0f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1828" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sound Box">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%A4%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lexend:wght@400;500;600;700&display=swap">
@@ -60,7 +60,10 @@ img{max-width:100%}
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 body {
+  margin: 0;
   background-color: var(--bg);
   background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 24px 24px;
@@ -90,10 +93,11 @@ h1 span { color: var(--accent); }
 .note { margin: -4px 0 0; color: var(--muted); font-size: 0.9rem; }
 
 .board-card { position: relative; background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 16px 12px; min-height: 160px; display: flex; justify-content: center; }
-.board { display: grid; gap: 4px; --cell: 40px; }
-.cell { width: var(--cell); height: var(--cell); background: var(--cell); border: 2px solid var(--cell-edge); border-radius: 7px; position: relative; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: calc(var(--cell) * 0.56); text-transform: lowercase; user-select: none; transition: background 0.15s, border-color 0.15s; }
-.void { width: var(--cell); height: var(--cell); }
-.cell .num { position: absolute; top: 1px; left: 3px; font-family: var(--body); font-size: max(9px, calc(var(--cell) * 0.24)); font-weight: 600; color: var(--muted); line-height: 1; }
+/* --cell is the box color token; --cell-size is set per puzzle by sizeBoard() */
+.board { display: grid; gap: 4px; --cell-size: 40px; }
+.cell { width: var(--cell-size); height: var(--cell-size); background: var(--cell); border: 2px solid var(--cell-edge); border-radius: 7px; position: relative; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: calc(var(--cell-size) * 0.56); text-transform: lowercase; user-select: none; transition: background 0.15s, border-color 0.15s; }
+.void { width: var(--cell-size); height: var(--cell-size); }
+.cell .num { position: absolute; top: 1px; left: 3px; font-family: var(--body); font-size: max(9px, calc(var(--cell-size) * 0.24)); font-weight: 600; color: var(--muted); line-height: 1; }
 .cell.sel { background: var(--accent-soft); border-color: var(--accent); }
 .cell.sel.syl-a { background: var(--sylA); border-color: var(--sylA-edge); }
 .cell.sel.syl-b { background: var(--sylB); border-color: var(--sylB-edge); }
@@ -435,7 +439,7 @@ textarea { width: 100%; min-height: 170px; border: 1.5px solid var(--key-edge); 
     var avail = board.parentElement.clientWidth - 24;
     var cell = Math.floor((avail - (P.cols - 1) * 4) / P.cols);
     cell = Math.max(24, Math.min(50, cell));
-    board.style.setProperty("--cell", cell + "px");
+    board.style.setProperty("--cell-size", cell + "px");
   }
   function renderEmpty() {
     board.style.gridTemplateColumns = "";
@@ -445,7 +449,7 @@ textarea { width: 100%; min-height: 170px; border: 1.5px solid var(--key-edge); 
   }
   function renderBoard() {
     board.innerHTML = "";
-    board.style.gridTemplateColumns = "repeat(" + P.cols + ", var(--cell))";
+    board.style.gridTemplateColumns = "repeat(" + P.cols + ", var(--cell-size))";
     for (var r = 0; r < P.rows; r++) for (var c = 0; c < P.cols; c++) {
       var kk = r + "," + c, cell = P.cells[kk], d = document.createElement("div");
       if (!cell) { d.className = "void"; board.appendChild(d); continue; }
@@ -484,7 +488,10 @@ textarea { width: 100%; min-height: 170px; border: 1.5px solid var(--key-edge); 
     order().forEach(function (i) {
       var W = P.words[i], b = document.createElement("button");
       b.type = "button"; b.className = "ctile"; b.dataset.i = i;
-      b.innerHTML = '<span class="e">' + (W.pic || "👂") + '</span><span class="l">' + W.num + (W.dir === "A" ? " across" : " down") + "</span>";
+      var e = document.createElement("span"), l = document.createElement("span");
+      e.className = "e"; e.textContent = W.pic || "👂";
+      l.className = "l"; l.textContent = W.num + (W.dir === "A" ? " across" : " down");
+      b.append(e, l);
       b.setAttribute("aria-label", W.num + (W.dir === "A" ? " across" : " down") + ", hear the word");
       b.addEventListener("click", function () { select(i, null, true, true); });
       list.appendChild(b);

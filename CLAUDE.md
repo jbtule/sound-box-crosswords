@@ -86,8 +86,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 
 ## Working on it
 
-- Keep the single-file structure. After editing, syntax-check the script, e.g. extract the
-  `<script>` contents and run `node --check`.
+- Keep the single-file structure. After editing, run `node scripts/check.mjs` (syntax-checks
+  the inline script and validates every pack's word list). CI runs the same check.
+- GitHub Actions workflows must pass `zizmor .`: SHA-pinned actions, minimal `permissions`,
+  `persist-credentials: false`.
+- CSS naming: `--cell` is the box color token; `--cell-size` is the box size set by `sizeBoard`.
 - Test in a narrow viewport (~380px) and in dark mode. Make sure long words (9+ letters)
   still fit and the letter pad stays tappable (keys ≥ 44px tall).
 - When adding words, check that the emoji clearly shows that word, and that the spelling
