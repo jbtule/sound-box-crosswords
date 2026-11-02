@@ -1,4 +1,4 @@
-/* Layout: one tall column — packs, the grid card, the current picture clue, a big letter pad, then all the clues. Graph-paper ground. */
+/* Layout: one tall column — packs, the current picture clue, the grid card with the letter pad right under it (eyes move between those two while typing), then all the clues. Graph-paper ground. */
 :root {
   --bg: #e9f0f7;
   --grid-line: rgba(70, 110, 160, 0.09);
