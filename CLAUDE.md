@@ -126,6 +126,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   fits a phone, avoids `recent` words. Returns `P` (`words`, `cells`, `rows`, `cols`); each
   word has `cells`, `chunks` (syllables) and `sylOf` (syllable index per letter).
 - `js/confetti.js`: `confetti(host)`, the solve celebration (skipped with reduced motion).
+- `js/chime.js`: `chime()`, a soft two-note Web Audio chime on solve (Settings toggle). The
+  audio context is unlocked on the first tap for iOS. It doesn't follow the mute switch:
+  iOS can only do that for the whole page, which would silence the recorded words too.
 - `js/speech.js`: `say(kind, text, rate, cancel)` (recorded clip or device voice, one
   queue; kinds `w` word, `s` syllable, `t` sentence, `p` phrase), `stopSpeech`,
   `speechEpoch`, `speak` (device voice only), `hasSpeech`; voice ranking (`score`), `listVoices`,

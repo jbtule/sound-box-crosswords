@@ -1,6 +1,7 @@
 // Game state, play logic, rendering, and the settings sheet.
 import { loadPacks } from "./words.js";
 import { confetti } from "./confetti.js";
+import { chime } from "./chime.js";
 import { parseList, makePuzzle } from "./crossword.js";
 import { speak, say, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
@@ -21,7 +22,7 @@ try {
   throw e;
 }
 
-var settings = Object.assign({ syl: true, kb: "qwerty", speakSel: true, voice: "" }, store.get("settings", {}));
+var settings = Object.assign({ syl: true, kb: "qwerty", speakSel: true, chime: true, voice: "" }, store.get("settings", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
 var packId = store.get("pack", "");
@@ -274,6 +275,7 @@ function finish() {
   $("#doneStats").textContent = parts.join(" · ");
   $("#done").hidden = false;
   confetti($(".board-card"));
+  if (settings.chime) chime();
   say("p", "You solved it!", 0.95);
   $("#nextBtn").focus();
 }
@@ -408,6 +410,7 @@ function renderProgressSheet() {
 function openSheet() {
   $("#optSyl").checked = settings.syl;
   $("#optSpeakSel").checked = settings.speakSel;
+  $("#optChime").checked = settings.chime;
   $("#kbAbc").checked = settings.kb === "abc";
   $("#kbQwerty").checked = settings.kb === "qwerty";
   $("#customText").value = customText;
@@ -442,6 +445,7 @@ $("#closeBtn").addEventListener("click", closeSheet);
 $("#sheet").addEventListener("click", function (e) { if (e.target === $("#sheet")) closeSheet(); });
 $("#optSyl").addEventListener("change", function (e) { settings.syl = e.target.checked; saveSettings(); update(); });
 $("#optSpeakSel").addEventListener("change", function (e) { settings.speakSel = e.target.checked; saveSettings(); });
+$("#optChime").addEventListener("change", function (e) { settings.chime = e.target.checked; saveSettings(); if (settings.chime) chime(); });
 $("#voiceSel").addEventListener("change", function (e) {
   settings.voice = e.target.value; saveSettings(); setVoice(settings.voice);
   speak("butterfly", 0.85, true);
