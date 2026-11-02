@@ -4,7 +4,7 @@
 //   remapped through the import map, and js/words.js passes the stamp on to packs.toml.
 // - The footer's GitHub badge shows the short sha and links to the commit.
 // The source files stay runnable as-is; locally the badge just reads "dev".
-import { readFileSync, writeFileSync, readdirSync, rmSync, mkdirSync, cpSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, rmSync, mkdirSync, cpSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 
@@ -19,10 +19,13 @@ const v = "?v=" + short;
 const root = fileURLToPath(new URL("..", import.meta.url));
 const out = join(root, "_site");
 const SITE = ["index.html", "styles.css", "packs.toml", "js"];
+// Written by scripts/audio/build.mjs in the deploy; without it the app uses the device voice.
+const OPTIONAL = ["audio.json"];
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out);
 for (const f of SITE) cpSync(join(root, f), join(out, f), { recursive: true });
+for (const f of OPTIONAL) if (existsSync(join(root, f))) cpSync(join(root, f), join(out, f));
 
 let html = readFileSync(join(root, "index.html"), "utf8");
 // Each replacement must match exactly once, so a markup change can't silently skip one.

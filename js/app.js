@@ -1,7 +1,7 @@
 // Game state, play logic, rendering, and the settings sheet.
 import { loadPacks } from "./words.js";
 import { parseList, makePuzzle } from "./crossword.js";
-import { speak, stopSpeech, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
+import { speak, say, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
 var $ = function (s) { return document.querySelector(s); };
 
@@ -134,10 +134,10 @@ function firstEmpty(i, from) {
   return -1;
 }
 // Says the word; if it has a context sentence, spelling-test style: word, sentence, word.
-// Speech queues, so the three play in order.
+// say() queues, so the three play in order.
 function sayWord(W, rate) {
-  speak(W.w, rate, true);
-  if (W.sentence) { speak(W.sentence, 0.9, false); speak(W.w, rate, false); }
+  say("w", W.w, rate, true);
+  if (W.sentence) { say("t", W.sentence, 0.9); say("w", W.w, rate); }
 }
 // Select word i with the cursor at letter p (or its first empty box). `say` speaks the
 // word if it changed and auto-speak is on; `force` speaks it regardless.
@@ -208,7 +208,7 @@ function complete(i) {
   doneW[i] = true;
   var W = P.words[i];
   W.cells.forEach(function (c, j) { fill[c] = W.w[j]; locked[c] = true; setTimeout(function () { flash(c, "pop"); }, j * 60); });
-  speak(W.w, 0.9, false);
+  say("w", W.w, 0.9);
   W.cells.forEach(settleCrossings); // its letters may have finished a crossing word
   if (Object.keys(doneW).length === P.words.length) { setTimeout(finish, 700); return; }
   if (i === cur) {
@@ -227,7 +227,7 @@ function finish() {
   parts.push(misses === 0 ? "no slips" : misses === 1 ? "1 try again" : misses + " try-agains");
   $("#doneStats").textContent = parts.join(" · ");
   $("#done").hidden = false;
-  speak("You solved it!", 0.95, false);
+  say("p", "You solved it!", 0.95);
   $("#nextBtn").focus();
 }
 function back() {
@@ -250,15 +250,16 @@ async function clap() {
   var W = P.words[cur], idx = 0;
   if (W.chunks.length < 2) { clapping = false; return; }
   stopSpeech();
-  for (var ci = 0; ci < W.chunks.length; ci++) {
+  var my = speechEpoch(); // another tap that stops speech also ends the clap
+  for (var ci = 0; ci < W.chunks.length && speechEpoch() === my; ci++) {
     var ks = W.cells.slice(idx, idx + W.chunks[ci].length);
     idx += W.chunks[ci].length;
     ks.forEach(function (c) { var el = cellEl(c); el && el.classList.add("beat"); });
-    await speak(W.say[ci], 0.7, false);
+    await say("s", W.say[ci], 0.7);
     await new Promise(function (r) { setTimeout(r, 250); });
     ks.forEach(function (c) { var el = cellEl(c); el && el.classList.remove("beat"); });
   }
-  await speak(W.w, 0.8, false);
+  if (speechEpoch() === my) await say("w", W.w, 0.8);
   clapping = false;
 }
 

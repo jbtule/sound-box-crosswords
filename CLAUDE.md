@@ -68,7 +68,18 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   spelling (goal 3), and it covers half the screen. Physical keyboards are handled directly.
 - **Target: iPad Safari**, also phones and desktop. Touch first; physical keyboards work too.
   Must fit ~380px wide; the grid sizes cells to fit (`sizeBoard`, 24–50px).
-- **Speech** uses the Web Speech API (`speechSynthesis`), slowed rates. It only works after a
+- **Recorded audio** for pack words, Clap it syllables, sentences, and "You solved it!":
+  Kokoro (open-source neural TTS, voice `af_heart`), pre-generated at deploy by
+  `scripts/audio/build.mjs` and served from Cloudflare Pages
+  (`sound-box-crosswords.asset-data.stream`, project `sound-box-crosswords-audio`). Clip
+  names hash model + voice + speed + text, so only new or changed text is generated; the
+  rest is downloaded from the live host. The site ships `audio.json` (`"kind:text"` → clip);
+  `say(kind, text)` in `speech.js` plays a clip or falls back to the device voice (Custom
+  words, local dev, network failure). Kokoro runs on Linux only (the macOS espeak wheel is
+  broken): locally use Apple's `container` with a python:3.12 image. Python deps are
+  hash-pinned in `scripts/audio/requirements.txt` (recompile with the command in
+  `requirements.in`); model files are checksum-verified in `kokoro.sh`.
+- **Device speech** (fallback) uses the Web Speech API (`speechSynthesis`), slowed rates. It only works after a
   user tap on iOS. Fail quietly if unavailable. Voices are whatever the device has, so the
   app ranks them: downloaded Premium > Enhanced > basic, en-US first, novelty/robotic Apple
   voices excluded. With no downloads it behaves as before; once a grown-up downloads a
@@ -111,7 +122,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   keeps the layout with the most words and smallest area, max 11 columns × 12 rows so it
   fits a phone, avoids `recent` words. Returns `P` (`words`, `cells`, `rows`, `cols`); each
   word has `cells`, `chunks` (syllables) and `sylOf` (syllable index per letter).
-- `js/speech.js`: `speak`, `stopSpeech`, `hasSpeech`; voice ranking (`score`), `listVoices`,
+- `js/speech.js`: `say(kind, text, rate, cancel)` (recorded clip or device voice, one
+  queue; kinds `w` word, `s` syllable, `t` sentence, `p` phrase), `stopSpeech`,
+  `speechEpoch`, `speak` (device voice only), `hasSpeech`; voice ranking (`score`), `listVoices`,
   `setVoice` (a `voiceURI`, or "" for Automatic), `onVoicesChanged` (Safari loads voices late).
 - `js/app.js`: everything on screen.
   - Play state: `fill`, `locked`, `doneW`, `cur` (word), `pos` (letter index), `misses`.

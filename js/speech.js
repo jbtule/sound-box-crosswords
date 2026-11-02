@@ -57,8 +57,8 @@ export function currentVoiceName() { return voice ? voice.name : ""; }
 // Safari can deliver the voice list after page load; this runs whenever it changes.
 export function onVoicesChanged(fn) { listeners.push(fn); }
 
-// Resolves when speech ends (or after a timeout, since onend doesn't always fire).
-// `cancel` stops anything already speaking first.
+// Device voice. Resolves when speech ends, or after a timeout scaled to the text,
+// since onend doesn't always fire. `cancel` stops anything already speaking first.
 export function speak(text, rate, cancel) {
   return new Promise(function (resolve) {
     if (!synth) { setTimeout(resolve, 500); return; }
@@ -67,7 +67,7 @@ export function speak(text, rate, cancel) {
       var u = new SpeechSynthesisUtterance(text);
       if (voice) u.voice = voice;
       u.lang = "en-US"; u.rate = rate || 0.85;
-      var t = setTimeout(resolve, 2200);
+      var t = setTimeout(resolve, 1500 + text.length * 120);
       u.onend = function () { clearTimeout(t); resolve(); };
       u.onerror = function () { clearTimeout(t); resolve(); };
       synth.speak(u);
@@ -75,6 +75,86 @@ export function speak(text, rate, cancel) {
   });
 }
 
+/* ---------- recorded clips ----------
+   Pack words, Clap it syllables, and sentences are pre-recorded (Kokoro, built by
+   scripts/audio/build.mjs at deploy). audio.json maps "kind:text" to a clip on the audio
+   host; anything without a clip (Custom words, local dev) uses the device voice. */
+var clips = {}, clipBase = "", player = null, finishClip = null;
+var queue = Promise.resolve(), epoch = 0;
+// The device-voice rate each kind's recording corresponds to. A slower requested rate
+// (Hear it) plays the clip slightly slower; never faster than recorded.
+var NORMAL = { w: 0.85, s: 0.7, t: 0.9, p: 0.95 };
+
+(function loadClips() {
+  var url = new URL("../audio.json", import.meta.url);
+  url.search = new URL(import.meta.url).search; // same ?v= cache-busting stamp
+  fetch(url).then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (m) { if (m && m.clips) { clips = m.clips; clipBase = m.base; } })
+    .catch(function () {});
+})();
+
+// One shared <audio> element. iOS only lets audio start inside a tap, and later clips
+// start after awaits, so play a moment of silence on the first tap to unlock it.
+function getPlayer() { if (!player) { player = new Audio(); player.preload = "auto"; } return player; }
+var SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+function unlock() {
+  document.removeEventListener("pointerdown", unlock, true);
+  document.removeEventListener("keydown", unlock, true);
+  var a = getPlayer();
+  if (a.src) return;
+  a.src = SILENCE;
+  var p = a.play();
+  if (p && p.catch) p.catch(function () {});
+}
+document.addEventListener("pointerdown", unlock, true);
+document.addEventListener("keydown", unlock, true);
+
+// Resolves true when the clip ends, false if it fails (the caller then uses the device voice).
+function playClip(url, rate) {
+  return new Promise(function (resolve) {
+    var a = getPlayer(), done = false;
+    function end(ok) {
+      if (done) return;
+      done = true; finishClip = null; clearTimeout(t);
+      a.onended = a.onerror = null;
+      resolve(ok);
+    }
+    var t = setTimeout(function () { end(true); }, 15000);
+    finishClip = end;
+    a.onended = function () { end(true); };
+    a.onerror = function () { end(false); };
+    a.src = url;
+    a.defaultPlaybackRate = a.playbackRate = rate;
+    var p = a.play();
+    if (p && p.catch) p.catch(function () { end(false); });
+  });
+}
+
+// Plays (or speaks) one item after anything already queued. kind: "w" word, "s" Clap it
+// syllable, "t" context sentence, "p" phrase. `cancel` clears the queue first.
+// Returns a promise for when this item is done.
+export function say(kind, text, rate, cancel) {
+  if (cancel) stopSpeech();
+  var my = epoch;
+  queue = queue.then(function () {
+    if (my !== epoch) return;
+    var key = clips[kind + ":" + text];
+    if (!key) return speak(text, rate, false);
+    var r = Math.min(1, (rate || NORMAL[kind]) / NORMAL[kind]);
+    return playClip(clipBase + key + ".mp3", r).then(function (ok) {
+      if (!ok && my === epoch) return speak(text, rate, false);
+    });
+  });
+  return queue;
+}
+
+// Stops the clip or speech in progress and drops anything queued.
 export function stopSpeech() {
+  epoch++;
+  queue = Promise.resolve();
+  if (finishClip) finishClip(true);
+  if (player) { try { player.pause(); } catch (e) {} }
   try { if (synth) synth.cancel(); } catch (e) {}
 }
+// Changes whenever speech is stopped, so a running sequence (Clap it) can tell.
+export function speechEpoch() { return epoch; }

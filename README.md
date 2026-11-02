@@ -20,7 +20,8 @@ settings are saved in the browser's localStorage.
 | `packs.toml` | Word packs, one word per line. **Edit this to add words or packs.** |
 | `js/words.js` | Loads `packs.toml` (parsed with [smol-toml](https://github.com/squirrelchat/smol-toml) from a CDN) |
 | `js/crossword.js` | Puzzle generator (no DOM; tested by the check script) |
-| `js/speech.js` | Text-to-speech helpers |
+| `js/speech.js` | Plays recorded clips, falls back to the device voice |
+| `scripts/audio/` | Generates recorded audio with [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) at deploy |
 | `js/app.js` | Game play, rendering, settings |
 
 ## Developing
@@ -36,5 +37,8 @@ settings are saved in the browser's localStorage.
 - Pushing to `main` deploys to GitHub Pages through `.github/workflows/ci.yml`, but only if
   the check passes. `scripts/stamp.mjs` copies the site files to `_site/` and stamps the
   commit into them: `?v=<sha>` on every local file for cache busting, and the footer badge.
+- The same push first builds the recorded audio and deploys it to Cloudflare Pages
+  (`sound-box-crosswords.asset-data.stream`); only new or changed words are generated.
+  Setup and details are in the comment at the top of `ci.yml`.
 
 See `CLAUDE.md` for the goals behind the design and a map of the code.
