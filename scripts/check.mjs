@@ -3,6 +3,7 @@
 //    manifest's icons exist.
 // 2. packs.toml parses, and every word list follows the `syl-la-bles emoji` format.
 // 3. The generator builds valid puzzles from every pack.
+// 4. Every color scheme keeps the syllable colors clearly apart and readable.
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -174,9 +175,54 @@ for (const { id, text } of lists) {
   if (avg > best + 1.5) errors.push(`${id}: takes ${avg.toFixed(1)} puzzles on average to cover ${pool.length} words (best possible ${best})`);
 }
 
+// Color schemes (js/palettes.js): the syllable bands are the core mechanic, so in every
+// scheme, light and dark, the two bands must stay clearly apart, letters must read on
+// them, and the accent (cursor ring) must stand out from the band edges and from the
+// "wrong" red. The bars are Classic's own numbers, rounded down.
+const { PALETTES } = await import("../js/palettes.js");
+const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+const lin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const lum = (h) => { const [r, g, b] = hex(h).map(lin); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+const lab = (h) => { // CIELAB, D65
+  const [r, g, b] = hex(h).map(lin);
+  const f = (t) => (t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116);
+  const X = f((0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047), Y = f(0.2126 * r + 0.7152 * g + 0.0722 * b), Z = f((0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883);
+  return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)];
+};
+const apart = (a, b) => { const [p, q] = [lab(a), lab(b)]; return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]); };
+const css = readFileSync(join(root, "styles.css"), "utf8");
+const tokens = (block) => Object.fromEntries([...block.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
+const base = {
+  light: tokens(css.slice(css.indexOf(":root {"), css.indexOf("}", css.indexOf(":root {")))),
+  dark: tokens(css.slice(css.indexOf(':root[data-theme="dark"] {'), css.indexOf("}", css.indexOf(':root[data-theme="dark"] {'))))
+};
+for (const pal of PALETTES) {
+  for (const mode of ["light", "dark"]) {
+    const t = pal[mode], b = base[mode], at = `palette ${pal.id} (${mode})`;
+    for (const k of Object.keys(t)) {
+      if (!/^#[0-9a-f]{6}$/i.test(t[k])) errors.push(`${at}: ${k} must be a #rrggbb color`);
+      if (pal.id === "classic" && t[k] !== b[k]) errors.push(`${at}: ${k} is ${t[k]} but styles.css has ${b[k]}`);
+    }
+    if (errors.some((e) => e.startsWith(at))) continue;
+    for (const k of ["--sylA", "--sylB", "--accent-soft"]) {
+      if (contrast(b["--ink"], t[k]) < 7) errors.push(`${at}: letters are hard to read on ${k}`);
+    }
+    if (apart(t["--sylA"], t["--sylB"]) < 25) errors.push(`${at}: the two syllable colors are too alike`);
+    if (apart(t["--sylA-edge"], t["--sylB-edge"]) < 50) errors.push(`${at}: the two syllable edges are too alike`);
+    for (const k of ["--sylA-edge", "--sylB-edge"]) {
+      if (contrast(t[k], b["--card"]) < 3) errors.push(`${at}: ${k} is too faint`);
+      if (apart(t["--accent"], t[k]) < 30) errors.push(`${at}: the cursor color is too close to ${k}`);
+    }
+    if (contrast(t["--accent"], b["--card"]) < 2.5) errors.push(`${at}: --accent is too faint`);
+    if (apart(t["--accent"], b["--bad"]) < 30) errors.push(`${at}: --accent is too close to the "wrong" red`);
+  }
+}
+
 if (errors.length) {
   console.error([...new Set(errors)].map((e) => "✗ " + e).join("\n"));
   process.exit(1);
 }
 console.log(`✓ scripts parse; ${lists.length} word lists OK; ${RUNS} puzzles built per list`);
 console.log(`✓ puzzles to cover each pack: ${coverage.join(", ")}`);
+console.log(`✓ ${PALETTES.length} color schemes keep syllables apart in light and dark`);
