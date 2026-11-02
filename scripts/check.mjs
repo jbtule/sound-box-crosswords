@@ -41,11 +41,27 @@ const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).depende
 if (!cdn || cdn[1] !== pkg) errors.push(`index.html import map uses smol-toml ${cdn?.[1]}, package.json has ${pkg}`);
 
 // qr.svg (the share sheet's QR code) is generated; keep it current with its address.
+const { SHARE_URL: SHARE_ADDR } = await import("./qr.mjs");
 {
   const { SHARE_URL, QR_FILE, qrSvg } = await import("./qr.mjs");
   if (!existsSync(QR_FILE) || readFileSync(QR_FILE, "utf8") !== await qrSvg()) errors.push("qr.svg is out of date: run npm run qr");
   if (!readFileSync(join(root, "js", "app.js"), "utf8").includes(`url: "${SHARE_URL}"`)) errors.push(`js/app.js SHARE.url should be ${SHARE_URL}`);
   if (!html.includes(`>${SHARE_URL}</code>`)) errors.push(`index.html share link should show ${SHARE_URL}`);
+}
+
+// The link-preview image: present, 1200×630, and where the og:image tag points.
+{
+  const card = join(root, "social-card.png");
+  const ogImage = html.match(/<meta property="og:image" content="([^"]+)">/)?.[1];
+  if (!existsSync(card)) errors.push("social-card.png is missing: run npm run card");
+  else {
+    const png = readFileSync(card);
+    if (png.readUInt32BE(16) !== 1200 || png.readUInt32BE(20) !== 630) errors.push("social-card.png should be 1200×630");
+  }
+  if (!ogImage || !ogImage.startsWith(SHARE_ADDR) || !existsSync(join(root, ogImage.slice(SHARE_ADDR.length)))) {
+    errors.push(`index.html og:image should be ${SHARE_ADDR}social-card.png`);
+  }
+  if (!html.includes(`<meta property="og:url" content="${SHARE_ADDR}">`)) errors.push(`index.html og:url should be ${SHARE_ADDR}`);
 }
 
 const { parse } = await import("smol-toml");
