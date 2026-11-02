@@ -97,7 +97,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   spelled syllables, which TTS misreads alone (`vol` → "volume", `ap` → "A P", `to` →
   "too", `ger` → "jer"). **Required for every multi-syllable pack word** (optional in a
   grown-up's own list). Use real words or 3+ letter spellings with a clear vowel; the
-  check flags short parts and common abbreviations. Syllable splits should match how a
+  check flags short parts and common abbreviations. Last, an optional `"context sentence"`
+  that uses the word: *Hear it*, the picture, and auto-speak then say word, sentence, word
+  (spelling-test style; `sayWord` in `app.js`). **Required for pack words with no emoji**,
+  and it tells homophones apart (their/there). Spoken only, never shown. Syllable splits should match how a
   teacher would clap the word.
 - `js/words.js`: `loadPacks` fetches and parses `packs.toml`; `readPacks` turns TOML text
   into `{ packs, starter }` and appends the built-in `mine` pack.

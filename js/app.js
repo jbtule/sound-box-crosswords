@@ -133,6 +133,12 @@ function firstEmpty(i, from) {
   for (var s = 0; s < n; s++) { var j = (from + s) % n; if (!fill[W.cells[j]]) return j; }
   return -1;
 }
+// Says the word; if it has a context sentence, spelling-test style: word, sentence, word.
+// Speech queues, so the three play in order.
+function sayWord(W, rate) {
+  speak(W.w, rate, true);
+  if (W.sentence) { speak(W.sentence, 0.9, false); speak(W.w, rate, false); }
+}
 // Select word i with the cursor at letter p (or its first empty box). `say` speaks the
 // word if it changed and auto-speak is on; `force` speaks it regardless.
 function select(i, p, say, force) {
@@ -142,7 +148,7 @@ function select(i, p, say, force) {
   var fe = firstEmpty(i);
   pos = p != null ? p : (fe < 0 ? 0 : fe);
   update();
-  if (say && (force || (changed && settings.speakSel))) speak(P.words[i].w, 0.85, true);
+  if (say && (force || (changed && settings.speakSel))) sayWord(P.words[i], 0.85);
 }
 // After cell kk changes, complete any crossing word that is now fully correct.
 function settleCrossings(kk) {
@@ -374,8 +380,8 @@ $("#saveBtn").addEventListener("click", function () {
 });
 
 /* ---------- start ---------- */
-$("#pic").addEventListener("click", function () { if (P) speak(P.words[cur].w, 0.85, true); });
-$("#hearBtn").addEventListener("click", function () { if (P) speak(P.words[cur].w, 0.75, true); });
+$("#pic").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0.85); });
+$("#hearBtn").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0.75); });
 $("#clapBtn").addEventListener("click", clap);
 $("#newBtn").addEventListener("click", newPuzzle);
 $("#nextBtn").addEventListener("click", newPuzzle);

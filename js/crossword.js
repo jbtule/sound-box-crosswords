@@ -4,9 +4,10 @@
 export const MAX_COLS = 11, MAX_ROWS = 12; // keeps the grid small enough for a phone
 
 // "ba-nan-a 🍌 (buh-nan-uh)" lines →
-//   [{ syll: "ba-nan-a", w: "banana", pic: "🍌", say: ["buh", "nan", "uh"] }].
+//   [{ syll: "ba-nan-a", w: "banana", pic: "🍌", say: ["buh", "nan", "uh"], sentence: "" }].
 // The optional (…) says how Clap it should pronounce each syllable; it's ignored
-// (say: null) unless it has one part per syllable.
+// (say: null) unless it has one part per syllable. An optional "quoted sentence" at the
+// end is spoken for context: their "The kids hung their coats."
 // Skips blank or malformed lines, duplicates, and words outside 2–12 letters.
 export function parseList(text) {
   var out = [], seen = {};
@@ -18,13 +19,16 @@ export function parseList(text) {
     var w = syll.replace(/-/g, "");
     if (w.length < 2 || w.length > 12 || seen[w]) return;
     seen[w] = 1;
-    var rest = m[2], say = null, hint = rest.match(/\(([^)]*)\)/);
+    var rest = m[2].replace(/[\u201C\u201D]/g, '"'), sentence = "", say = null;
+    var quote = rest.match(/"([^"]*)"/);
+    if (quote) { sentence = quote[1].trim(); rest = rest.replace(quote[0], " "); }
+    var hint = rest.match(/\(([^)]*)\)/);
     if (hint) {
       rest = rest.replace(hint[0], " ");
       say = hint[1].split("-").map(function (s) { return s.trim(); });
       if (say.length !== syll.split("-").length || say.some(function (s) { return !s; })) say = null;
     }
-    out.push({ syll: syll, w: w, pic: rest.trim().split(/\s+/)[0] || "", say: say });
+    out.push({ syll: syll, w: w, pic: rest.trim().split(/\s+/)[0] || "", say: say, sentence: sentence });
   });
   return out;
 }
@@ -66,7 +70,7 @@ function tryBuild(cands, target) {
       grid[kk] = e.w[k];
       dirUse[kk] = dirUse[kk] || {}; dirUse[kk][dir] = 1;
     }
-    placed.push({ w: e.w, syll: e.syll, pic: e.pic, say: e.say, r: r, c: c, dir: dir });
+    placed.push({ w: e.w, syll: e.syll, pic: e.pic, say: e.say, sentence: e.sentence, r: r, c: c, dir: dir });
   }
   var order = shuffle(cands.slice());
   put(order[0], 0, 0, Math.random() < 0.5 ? "A" : "D");

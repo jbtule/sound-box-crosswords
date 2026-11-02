@@ -4,15 +4,24 @@
 #   id     short name used to save progress; don't change it once a pack is in use
 #   name   label on the pack button
 #   note   one short line shown under the buttons
-#   words  one word per line: the word with dashes between syllables, a space, then an
-#          emoji for the picture. Leave the emoji off for words a picture can't show
-#          without misleading (their, would); the app shows a sound-wave "listen" icon. Dashes drive the syllable colors and "Clap it", so split
-#          words the way a teacher would clap them. Letters only (apostrophes OK: don't), 2–12 letters.
-#          Words with 2+ syllables also need (how-it-sounds) at the end, one part per
-#          syllable: ba-nan-a 🍌 (buh-nan-uh). "Clap it" says these, because a syllable
-#          spoken alone is often misread ("vol" → "volume", "ap" → "A P"). Use real words or
-#          3+ letter spellings ("app", "tell", "vahl"); "uh" for the soft unstressed vowel.
-#          The boxes and the whole-word speech keep the real spelling.
+#   words  one word per line, in this order (only the word is required):
+#
+#     ba-nan-a  🍌  (buh-nan-uh)  "We ate a banana."
+#     word      picture  sounds   sentence
+#
+#     word      Dashes between syllables, split the way a teacher would clap. They drive
+#               the syllable colors and "Clap it". Letters only (apostrophes OK: don't),
+#               2–12 letters.
+#     picture   One emoji that clearly shows the word. Leave it off if no emoji can show
+#               it without misleading (their, would); the app shows a sound-wave icon.
+#     sounds    Required for 2+ syllables: how "Clap it" should say each syllable, one
+#               part per syllable. A syllable spoken alone is often misread ("vol" →
+#               "volume", "ap" → "A P"), so use real words or 3+ letter spellings ("app",
+#               "tell", "vahl"), and "uh" for the soft unstressed vowel. The boxes and the
+#               whole-word speech keep the real spelling.
+#     sentence  Required when there's no picture; optional otherwise. Must use the word.
+#               Spoken for context (word, sentence, word), which also tells homophones
+#               apart: their "The kids hung their coats on the hooks."
 #
 # Run `npm run check` after editing; it catches typos and builds test puzzles.
 
@@ -143,23 +152,23 @@ words = """
 wheel 🛞
 beach 🏖️
 sweep 🧹
-mis-read (miss-reed)
-com-pete (kum-peet)
+mis-read (miss-reed) "I misread the sign and went the wrong way."
+com-pete (kum-peet) "Our teams will compete in the big race."
 light 💡
 pies 🥧
 shy 🫣
 ex-cit-ed 🤩 (ex-site-ted)
 sun-shine ☀️ (sun-shine)
 cow-boy 🤠 (cow-boy)
-in-side (in-side)
+in-side (in-side) "It is raining, so we will play inside."
 sea-food 🦐 (sea-food)
 su-per-mar-ket 🛒 (soo-purr-mahr-kit)
-some-bod-y (sum-bah-dee)
-their
-a-round (uh-round)
-they
-would
-al-ways (all-ways)
+some-bod-y (sum-bah-dee) "Somebody left a jacket on the bus."
+their "The kids hung their coats on the hooks."
+a-round (uh-round) "We walked all the way around the lake."
+they "They are coming over after school."
+would "Would you like to play a game?"
+al-ways (all-ways) "I always brush my teeth before bed."
 """
 
 [[pack]]
@@ -171,22 +180,22 @@ yard 🏡
 storm ⛈️
 more ➕
 ex-plore 🧭 (ex-plore)
-u-ni-form (you-nuh-form)
+u-ni-form (you-nuh-form) "She wears her uniform to soccer practice."
 third 🥉
 germs 🦠
 burn-ing 🔥 (burn-ing)
-un-hurt (uhn-hurt)
-ob-serve (uhb-zurv)
-ex-it (eggs-it)
-stomp
+un-hurt (uhn-hurt) "He fell off his bike but was unhurt."
+ob-serve (uhb-zurv) "We observe the ants with a magnifying glass."
+ex-it (eggs-it) "Walk to the exit by the front door."
+stomp "The elephants stomp through the mud."
 chick-en 🐔 (chick-in)
-pub-lish (pub-lish)
+pub-lish (pub-lish) "Our class will publish a book of poems."
 pan-ic 😱 (pan-ick)
-these
-don't
-on-ly (own-lee)
-those
-done
+these "These shoes are too small for me."
+don't "Please don't forget your lunch."
+on-ly (own-lee) "I could find only one sock."
+those "Those birds are flying south for the winter."
+done "I am done with my homework."
 """
 
 # Starter list for the "Custom" pack (the grown-up's own list) until they save their own.
