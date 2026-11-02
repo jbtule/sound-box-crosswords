@@ -28,22 +28,28 @@ export const VOICE = "af_heart";
 export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95 };
 export const PHRASES = ["You solved it!"];
 const ENCODING = "mp3-64k-mono-trim-v1"; // bump to regenerate every clip
+// How generate.py renders each kind: "cut" says the word inside a phrase and cuts it out
+// (single words and syllables mispronounce alone); "text" says the text as is.
+export const METHOD = { w: "cut", s: "cut", t: "text", p: "text" };
+const CUT = "cut-next-v1"; // bump when the cut method changes
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
 export function keyFor(kind, text) {
-  const id = JSON.stringify([MODEL, VOICE, SPEED[kind], ENCODING, text]);
+  const parts = [MODEL, VOICE, SPEED[kind], ENCODING];
+  if (METHOD[kind] === "cut") parts.push(CUT); // "text" clips keep their original keys
+  const id = JSON.stringify([...parts, text]);
   return createHash("sha256").update(id).digest("hex").slice(0, 20);
 }
 
-// Every clip the packs (and the starter Custom list) need: [{ id: "w:volcano", key, kind, text, speed, voice }].
+// Every clip the packs (and the starter Custom list) need: [{ id: "w:volcano", key, kind, text, speed, voice, method }].
 export function planClips() {
   const { packs, starter } = readPacks(readFileSync(join(root, "packs.toml"), "utf8"));
   const lists = Object.values(packs).map((p) => p.list).concat(starter);
   const clips = new Map();
   const add = (kind, text) => {
     const id = kind + ":" + text;
-    if (!clips.has(id)) clips.set(id, { id, key: keyFor(kind, text), kind, text, speed: SPEED[kind], voice: VOICE });
+    if (!clips.has(id)) clips.set(id, { id, key: keyFor(kind, text), kind, text, speed: SPEED[kind], voice: VOICE, method: METHOD[kind] });
   };
   for (const list of lists) {
     for (const e of parseList(list)) {

@@ -11,6 +11,7 @@
 #             say/word/fin/ini  speak it inside a carrier phrase and cut it out using the
 #             model's per-phoneme durations (exposed from the ONNX graph)
 #   @speed    override the plan's speed;  #N  use style vector N instead of len(tokens)
+#   +N, ~N    carrier cuts: start N ms before the target / end N ms after it (default 30)
 import json
 import os
 import re
@@ -99,6 +100,11 @@ CARRIERS = {  # misaki phonemes; W = target
     "word": "ðə wˈɜɹd W ɪz hˈɪɹ.",
     "fin": "ðə wˈɜɹd ɪz W.",
     "ini": "W ɪz ðə wˈɜɹd.",
+    "finc": "ðə wˈɜɹd ɪz, W.",  # comma: a pause before the target, so its onset stands alone
+    "next": "ənd nˈɛkst, W.",
+    "then": "ənd ðˈɛn, W.",
+    "okay": "ˈOkA, W.",
+    "mid": "ənd nˈɛkst, W, ˈOkA.",  # pauses on both sides; the target isn't phrase-final
 }
 
 
@@ -122,7 +128,15 @@ def run(variant, c):
     mm = re.search(r"#(\d+)", v)
     if mm:
         sl, v = int(mm.group(1)), v[:mm.start()] + v[mm.end():]
+    pre, post = 0, 30
+    mm = re.search(r"\+(\d+)", v)  # +N: start the cut N ms earlier
+    if mm:
+        pre, v = int(mm.group(1)), v[:mm.start()] + v[mm.end():]
+    mm = re.search(r"~(\d+)", v)  # ~N: end the cut N ms after the target (default 30)
+    if mm:
+        post, v = int(mm.group(1)), v[:mm.start()] + v[mm.end():]
     t = c["text"]
+    v = re.sub(r"^(base|esp|e2m|mis)dot$", r"\1:dot", v)  # e2mdot = e2m:dot
     src, _, how = v.partition(":")
     if src == "base":
         text = t + {"": "", "dot": ".", "excl": "!"}[how]
@@ -134,7 +148,7 @@ def run(variant, c):
     elif how in ("dot", "excl"):
         a, _ = synth(ps + {"dot": ".", "excl": "!"}[how], spd, sl)
     elif how in CARRIERS:
-        a, info = carrier_cut(ps, CARRIERS[how], spd)
+        a, info = carrier_cut(ps, CARRIERS[how], spd, ext_ms=(pre, post))
     else:
         raise SystemExit("bad variant " + variant)
     info["ps"] = ps

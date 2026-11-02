@@ -1,7 +1,9 @@
-# Kokoro text-to-speech (ONNX runtime, no PyTorch) and an MP3 encoder (no ffmpeg).
+# Kokoro text-to-speech (ONNX runtime, no PyTorch) and an MP3 encoder (no ffmpeg). onnx
+# exposes the model's per-phoneme durations, for cutting a word out of a phrase.
 # Needs Python 3.12 (kokoro-onnx supports < 3.14; CI pins it). Compile requirements.txt
 # with hashes, in Linux (matches the CI runner):
 #   container run --rm --mount type=virtiofs,source="$PWD/scripts/audio",target=/a --workdir /a \
 #     docker.io/library/python:3.12-slim sh -c 'pip install -q pip-tools && pip-compile --generate-hashes --strip-extras requirements.in'
 kokoro-onnx==0.4.9
 lameenc==1.9.0
+onnx==1.23.2
