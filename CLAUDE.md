@@ -150,7 +150,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   edits always show.
 - Updates in a home-screen app: it usually resumes rather than relaunching, so on each
   return to the screen `app.js` compares its `?v=` stamp with the live page's and
-  reloads when nothing would be lost (no letters on the board, no sheet or popup open),
+  reloads unless a sheet or popup is open (the puzzle in progress is saved and comes back),
   or else at the next new puzzle (`updateReady`).
 - `styles.css`: all styles. Color tokens on `:root` with dark overrides at the top.
   `--cell` is the box color token; `--cell-size` is the box size set by `sizeBoard`.
@@ -233,6 +233,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `js/app.js`: everything on screen.
   - Play state: `fill`, `locked`, `doneW`, `cur` (word), `pos` (letter index), `misses`,
     `missedW` (words with a wrong try this puzzle).
+  - The puzzle in progress (`puzzle`, per edition): its layout, letters, finished words and
+    selection, saved by `update()` (`savePuzzle`) and restored at launch (`loadPuzzle`,
+    `restorePuzzle` in `crossword.js`) if its pack still has every word; cleared once solved.
   - Saved progress (`sbx:progress`, per pack): `done`, `round` (coverage), and
     `stats[word]` = `{ n, ok, miss }` (typed completions, first-try right, wrong tries);
     words finished by a crossing word don't count as typed. `sbx:log`: finished puzzles.

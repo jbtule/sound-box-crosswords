@@ -151,7 +151,34 @@ function build(pool, recent, fresh) {
 // - cells["r,c"]: { letter, words: [word indexes], num? }
 // `recent`: words to avoid repeating; `fresh`: words to cover first (see build).
 export function makePuzzle(pool, recent, fresh) {
-  var placed = build(pool, recent || [], fresh || []);
+  return assemble(build(pool, recent || [], fresh || []));
+}
+
+// Rebuilds a saved puzzle ([{ w, r, c, dir }], as saved by the app) from the current word
+// list, so a puzzle in progress survives a reload. Each word's details (hint, sentence,
+// picture, sounds) come from the list as it is now; null if any word is gone or the
+// layout no longer fits together.
+export function restorePuzzle(pool, saved) {
+  if (!Array.isArray(saved) || !saved.length) return null;
+  var byW = {};
+  pool.forEach(function (e) { byW[e.w] = e; });
+  var placed = [];
+  for (var i = 0; i < saved.length; i++) {
+    var s = saved[i], e = s && byW[s.w];
+    if (!e || (s.dir !== "A" && s.dir !== "D") || !(s.r >= 0) || !(s.c >= 0)) return null;
+    placed.push({ w: e.w, syll: e.syll, pic: e.pic, say: e.say, sentence: e.sentence, sounds: e.sounds, r: s.r, c: s.c, dir: s.dir });
+  }
+  var P = assemble(placed);
+  for (var kk in P.cells) {
+    var cell = P.cells[kk];
+    var ok = cell.words.every(function (i) { var W = P.words[i]; return W.w[W.cells.indexOf(kk)] === cell.letter; });
+    if (!ok) return null;
+  }
+  return P;
+}
+
+// Placed words → the puzzle: moved to start at 0,0, cells collected, clues numbered.
+function assemble(placed) {
   var minR = Infinity, minC = Infinity, maxR = -Infinity, maxC = -Infinity;
   placed.forEach(function (p) {
     minR = Math.min(minR, p.r); minC = Math.min(minC, p.c);
