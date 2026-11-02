@@ -228,5 +228,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   fits the pack's pattern. If no emoji shows it without misleading (their, would, done),
   leave the emoji off rather than picking a loose match.
 - Keep the copy short and plain; players are young and some text is read by a grown-up.
+- License: PolyForm Noncommercial 1.0.0 (`LICENSE.md`, whose first line is the
+  `Required Notice:` copyright that must travel with copies). The README lists the
+  third-party parts; add any new dependency, font or asset there with its license.
 - This repo is public. Keep it about the general learner profile; don't add personal details
   about any specific child (name, school, diagnoses).
