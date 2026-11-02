@@ -76,7 +76,7 @@ export function speak(text, rate, cancel) {
 }
 
 /* ---------- recorded clips ----------
-   Pack words, Clap it syllables, and sentences are pre-recorded (Kokoro, built by
+   Pack words, Break it down syllables, and sentences are pre-recorded (Kokoro, built by
    scripts/audio/build.mjs at deploy). audio.json maps "kind:text" to a clip on the audio
    host; anything without a clip (Custom words, local dev) uses the device voice. */
 var clips = {}, clipBase = "", player = null, finishClip = null;
@@ -130,7 +130,7 @@ function playClip(url, rate) {
   });
 }
 
-// Plays (or speaks) one item after anything already queued. kind: "w" word, "s" Clap it
+// Plays (or speaks) one item after anything already queued. kind: "w" word, "s" Break it down
 // syllable, "t" context sentence, "p" phrase. `cancel` clears the queue first.
 // Returns a promise for when this item is done.
 export function say(kind, text, rate, cancel) {
@@ -156,5 +156,5 @@ export function stopSpeech() {
   if (player) { try { player.pause(); } catch (e) {} }
   try { if (synth) synth.cancel(); } catch (e) {}
 }
-// Changes whenever speech is stopped, so a running sequence (Clap it) can tell.
+// Changes whenever speech is stopped, so a running sequence (Break it down) can tell.
 export function speechEpoch() { return epoch; }

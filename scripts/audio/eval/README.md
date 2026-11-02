@@ -1,6 +1,6 @@
 # Pronunciation eval for the Kokoro clips
 
-Some recorded clips said the wrong sounds, mostly *Clap it* syllables: "pub" (from
+Some recorded clips said the wrong sounds, mostly *Break it down* syllables: "pub" (from
 `pub-lish`) came out as "pubby". This folder holds the tools that measured it and chose
 the fix now in `generate.py` (the `cut` method). The build doesn't use this folder.
 

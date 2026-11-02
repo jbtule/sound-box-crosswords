@@ -5,7 +5,7 @@ export const MAX_COLS = 11, MAX_ROWS = 12; // keeps the grid small enough for a 
 
 // "ba-nan-a 🍌 (buh-nan-uh)" lines →
 //   [{ syll: "ba-nan-a", w: "banana", pic: "🍌", say: ["buh", "nan", "uh"], sentence: "" }].
-// The optional (…) says how Clap it should pronounce each syllable; it's ignored
+// The optional (…) says how Break it down should pronounce each syllable; it's ignored
 // (say: null) unless it has one part per syllable. An optional "quoted sentence" at the
 // end is spoken for context: their "The kids hung their coats."
 // Skips blank or malformed lines, duplicates, and words outside 2–12 letters.

@@ -1,7 +1,7 @@
 # Checks every push and PR. Pushes to main then deploy across two hosts (the same split
 # as qr-link-pdf):
 #
-#   Cloudflare Pages  pre-recorded audio (Kokoro "af_heart") for every pack word, Clap it
+#   Cloudflare Pages  pre-recorded audio (Kokoro "af_heart") for every pack word, Break it down
 #                     syllable, and sentence, at sound-box-crosswords.asset-data.stream.
 #                     Cloudflare has no bandwidth cap; GitHub Pages has a soft one.
 #   GitHub Pages      the app, at tools.tuley.name/sound-box-crosswords/

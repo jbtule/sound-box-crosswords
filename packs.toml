@@ -10,11 +10,11 @@
 #     word      picture  sounds   sentence
 #
 #     word      Dashes between syllables, split the way a teacher would clap. They drive
-#               the syllable colors and "Clap it". Letters only (apostrophes OK: don't),
+#               the syllable colors and "Break it down". Letters only (apostrophes OK: don't),
 #               2–12 letters.
 #     picture   One emoji that clearly shows the word. Leave it off if no emoji can show
 #               it without misleading (their, would); the app shows a sound-wave icon.
-#     sounds    Required for 2+ syllables: how "Clap it" should say each syllable, one
+#     sounds    Required for 2+ syllables: how "Break it down" should say each syllable, one
 #               part per syllable. A syllable spoken alone is often misread ("vol" →
 #               "volume", "ap" → "A P"), so use real words or 3+ letter spellings ("app",
 #               "tell", "vahl"), and "uh" for the soft unstressed vowel. The boxes and the

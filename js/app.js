@@ -178,7 +178,7 @@ function update() {
   $("#clueSub").textContent = W.w.length + " boxes · " + n + (n === 1 ? " beat" : " beats");
   // Only this word is blanked; pack sentences avoid the pack's other words (the check enforces it).
   $("#clueSent").textContent = W.sentence ? blankSentence(W.sentence, [W.w]) : "";
-  $("#clapBtn").hidden = n < 2; // nothing to clap in a one-beat word
+  $("#clapBtn").hidden = n < 2; // nothing to break down in a one-beat word
   document.querySelectorAll(".ctile").forEach(function (t) {
     var i = +t.dataset.i;
     t.classList.toggle("cur", i === cur && !finished);
@@ -357,7 +357,7 @@ function back() {
   update();
 }
 
-/* ---------- scaffold: Clap it ---------- */
+/* ---------- scaffold: Break it down ---------- */
 // Speaks each syllable slowly while its boxes light up, then the whole word.
 // Multi-syllable words only; the button is hidden for one-beat words.
 var clapping = false;

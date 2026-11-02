@@ -112,7 +112,7 @@ for (const { id, text } of lists) {
     const beats = m[1].split("-").length;
     // Spoken alone, syllables get misread as abbreviations ("vol" → "volume", "ap" → "A P"),
     // so every multi-syllable word spells out how each syllable sounds.
-    if (beats > 1 && m[3] == null) errors.push(`${id}: "${m[1]}" needs a (how-it-sounds) hint for Clap it`);
+    if (beats > 1 && m[3] == null) errors.push(`${id}: "${m[1]}" needs a (how-it-sounds) hint for Break it down`);
     if (m[3] != null) {
       const say = m[3].split("-");
       if (say.length !== beats) errors.push(`${id}: "${w}" has ${beats} syllables but its (sounds) hint has ${say.length} parts`);

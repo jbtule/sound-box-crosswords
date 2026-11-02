@@ -1,4 +1,4 @@
-// Builds the pre-recorded audio (Kokoro "af_heart") for every pack word, Clap it
+// Builds the pre-recorded audio (Kokoro "af_heart") for every pack word, Break it down
 // syllable, and context sentence, then lays out the Cloudflare Pages project:
 //   ASSET_BASE=https://sound-box-crosswords.asset-data.stream/ node scripts/audio/build.mjs
 //
@@ -23,7 +23,7 @@ import { parseList } from "../../js/crossword.js";
 
 export const MODEL = "kokoro-v1.0";
 export const VOICE = "af_heart";
-// Kokoro speed per kind of clip: w = word, s = Clap it syllable, t = context sentence,
+// Kokoro speed per kind of clip: w = word, s = Break it down syllable, t = context sentence,
 // p = fixed phrase. js/speech.js uses the same kind letters.
 export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95 };
 export const PHRASES = ["You solved it!"];
