@@ -4,7 +4,7 @@ Picture crosswords for targeted spelling practice: consonant blends, bossy-R vow
 and 2- and 3-syllable words, plus a custom word list.
 
 - Syllables are color-coded in the grid so a dropped chunk stands out.
-- **Hear it** / **Clap it** read the word aloud whole or one syllable at a time.
+- **Hear it** / **Break it down** read the word aloud whole or one syllable at a time.
 - Settings: syllable colors, auto-speak, voice, letter pad layout, custom list
   (`ex-plore 🧭` — dashes mark syllables, an emoji becomes the picture).
 

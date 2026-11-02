@@ -31,8 +31,10 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    spell a pack word, even split into syllables; the check enforces this for notes.
 4. **Attention-friendly.** Short puzzles (5–6 words), immediate feedback, quick wins, low
    friction, no timers, no penalties or lost progress, minimal reading of instructions.
-5. **Scaffolds the player can use on their own:** *Hear it* (whole word) and *Clap it*
-   (syllable by syllable with the boxes lighting up; shown only for multi-syllable words). These model the strategies practiced
+5. **Scaffolds the player can use on their own:** *Hear it* (whole word) and *Break it down*
+   (syllable by syllable with the boxes lighting up; shown only for multi-syllable words;
+   it was once "Clap it", which a player took as an instruction to clap, so name buttons for
+   what they do). These model the strategies practiced
    offline: clap syllables, tap sounds, say the word slowly while writing. Scaffolds help
    the player *hear* the word; they never reveal letters. (A "Show a letter" hint was
    removed for that reason.)
@@ -68,7 +70,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   spelling (goal 3), and it covers half the screen. Physical keyboards are handled directly.
 - **Target: iPad Safari**, also phones and desktop. Touch first; physical keyboards work too.
   Must fit ~380px wide; the grid sizes cells to fit (`sizeBoard`, 24–50px).
-- **Recorded audio** for pack words, Clap it syllables, sentences, and "You solved it!":
+- **Recorded audio** for pack words, Break it down syllables, sentences, and "You solved it!":
   Kokoro (open-source neural TTS, voice `af_heart`), pre-generated at deploy by
   `scripts/audio/build.mjs` and served from Cloudflare Pages
   (`sound-box-crosswords.asset-data.stream`, project `sound-box-crosswords-audio`). Words
@@ -124,9 +126,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   is keyed by it; don't rename), `name`, `note` (shown under the chips), and `words`;
   `[custom] words` is the starter "Custom" list. **Word list format** (packs and the custom list share it): one entry per
   line, `syl-la-bles emoji`, e.g. `but-ter-fly 🦋`. Dashes mark syllables and drive the
-  coloring and *Clap it*. Letters (plus apostrophes, e.g. `don't`; the
+  coloring and *Break it down*. Letters (plus apostrophes, e.g. `don't`; the
   player types the apostrophe into its own box with the pad's `'` key), 2–12 characters. `(how-it-sounds)` at the end, one part
-  per syllable, e.g. `ba-nan-a 🍌 (buh-nan-uh)`: *Clap it* speaks those instead of the
+  per syllable, e.g. `ba-nan-a 🍌 (buh-nan-uh)`: *Break it down* speaks those instead of the
   spelled syllables, which TTS misreads alone (`vol` → "volume", `ap` → "A P", `to` →
   "too", `ger` → "jer"). **Required for every multi-syllable pack word** (optional in a
   grown-up's own list). Use real words or 3+ letter spellings with a clear vowel; the
@@ -188,7 +190,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     are accepted until the word is full; then wrong letters flash and clear. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
     player guess letters until one stuck.)
-  - `clap`: the Clap it scaffold. `back`: erase.
+  - `clap`: the Break it down scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
   - Settings sheet: `openSheet` / `closeSheet` and the change handlers below them.
 

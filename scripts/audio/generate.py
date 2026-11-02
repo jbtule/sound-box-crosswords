@@ -4,7 +4,7 @@
 #
 # Methods:
 #   text  kokoro.create(text): sentences and phrases.
-#   cut   words and Clap it syllables. Said alone, a short word gains sounds ("pub" ->
+#   cut   words and Break it down syllables. Said alone, a short word gains sounds ("pub" ->
 #         "pubby", "stomp" -> "istampy"), so the target is said at the end of a phrase
 #         ("and next, pub.") and cut out using the model's own per-phoneme durations.
 #         Phonemes are espeak's, mapped to misaki's alphabet (what Kokoro was trained on).
@@ -29,7 +29,7 @@ SR = 24000
 
 
 def trim(audio, sr, threshold=0.01, pad=0.05):
-    """Drop leading/trailing silence (keeping a little padding) so Clap it beats and
+    """Drop leading/trailing silence (keeping a little padding) so Break it down beats and
     taps respond quickly."""
     loud = np.flatnonzero(np.abs(audio) > threshold)
     if not len(loud):
