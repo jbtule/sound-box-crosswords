@@ -19,9 +19,10 @@ function fit(ctx, text, weightFamily, size, min, maxW) {
   return size;
 }
 
-// a = { icon, title, detail }, when = timestamp, pics = up to 6 emoji from the collection.
+// a = { icon, title, detail }, when = timestamp, pics = up to 6 emoji from the collection,
+// edition = the edition's name when there's more than one (e.g. "Kindergarten"), else "".
 // Resolves to a PNG Blob.
-export async function renderCard(a, when, pics) {
+export async function renderCard(a, when, pics, edition) {
   // Draw with the app's fonts, not a fallback (they load from Google Fonts).
   try {
     await Promise.all([
@@ -59,6 +60,11 @@ export async function renderCard(a, when, pics) {
   ctx.fillStyle = accent;
   ctx.font = "600 40px " + body;
   ctx.fillText("SOUND BOX CROSSWORDS", W / 2, 180);
+  if (edition) {
+    ctx.fillStyle = muted;
+    ctx.font = "500 34px " + body;
+    ctx.fillText(edition.toUpperCase(), W / 2, 228);
+  }
 
   ctx.font = "320px " + emoji;
   ctx.fillText(a.icon, W / 2, 470);

@@ -662,7 +662,8 @@ function toast(text) {
 var awardQueue = [], awardIndex = 0, awardSeen = 0, awardFrom = null;
 function showAwards(list, from) {
   awardQueue = list; awardIndex = 0; awardSeen = from ? Infinity : -1; awardFrom = from || null;
-  $("#awardKicker").textContent = from ? "Achievement" : "New achievement!";
+  // The edition's name when there's more than one, since Seed or Liftoff exist in each.
+  $("#awardKicker").textContent = (from ? "Achievement" : "New achievement!") + (EDITIONS.length > 1 ? " · " + EDITION.name : "");
   $("#award").hidden = false;
   showAward();
 }
@@ -680,7 +681,7 @@ function sharePics() { // a few collected pictures for the card (pictures only, 
 function prepareShare(a) {
   shareFor = a.id; shareBlob = null;
   $("#awardShare").hidden = true;
-  renderCard(a, earned[a.id] || Date.now(), sharePics()).then(function (b) {
+  renderCard(a, earned[a.id] || Date.now(), sharePics(), EDITIONS.length > 1 ? EDITION.name : "").then(function (b) {
     if (shareFor !== a.id) return; // moved on to another card meanwhile
     shareBlob = b;
     $("#awardShare").hidden = false;
