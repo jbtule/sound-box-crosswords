@@ -200,6 +200,19 @@ var WAVE = '<svg class="wave" viewBox="0 0 24 24" aria-hidden="true"><path d="M3
 function setPic(el, pic) { if (pic) el.textContent = pic; else el.innerHTML = WAVE; }
 function cellEl(kk) { return board.querySelector('[data-k="' + kk + '"]'); }
 // Syncs the board, clue bar, and clue tiles with the play state.
+// The clue's sentence with each blank drawn as small boxes, one per letter, like the grid.
+function showSentence(text) {
+  var el = $("#clueSent"); el.textContent = "";
+  text.split(/(_+)/).forEach(function (part) {
+    if (!/^_+$/.test(part)) { if (part) el.appendChild(document.createTextNode(part)); return; }
+    var blank = document.createElement("span");
+    blank.className = "blank";
+    blank.setAttribute("role", "img");
+    blank.setAttribute("aria-label", "blank, " + part.length + (part.length === 1 ? " letter" : " letters"));
+    for (var i = 0; i < part.length; i++) blank.appendChild(document.createElement("span"));
+    el.appendChild(blank);
+  });
+}
 function update() {
   if (!P) return;
   var W = P.words[cur];
@@ -220,7 +233,7 @@ function update() {
   var n = W.chunks.length;
   $("#clueSub").textContent = W.w.length + " boxes · " + n + (n === 1 ? " beat" : " beats");
   // Only this word is blanked; pack sentences avoid the pack's other words (the check enforces it).
-  $("#clueSent").textContent = W.sentence ? blankSentence(W.sentence, [W.w]) : "";
+  showSentence(W.sentence ? blankSentence(W.sentence, [W.w]) : "");
   $("#clapBtn").hidden = n < 2; // nothing to break down in a one-beat word
   document.querySelectorAll(".ctile").forEach(function (t) {
     var i = +t.dataset.i;

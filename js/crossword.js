@@ -170,11 +170,12 @@ export function makePuzzle(pool, recent, fresh) {
   return { words: placed, rows: maxR - minR + 1, cols: maxC - minC + 1, cells: cells };
 }
 
-// The context sentence as shown on screen: each of `words` (and its -s, -es, -ed, -ing
-// forms) becomes a blank, so the sentence never spells a word in the puzzle.
+// The context sentence as shown on screen: each of `words` becomes a blank with one "_"
+// per box (the grid already shows the length), so the sentence never spells a word in
+// the puzzle. An ending on it (-s, -es, -d, -ed, -ing, 's) stays: "____ed".
 export function blankSentence(sentence, words) {
   var alt = words.map(function (w) { return w.replace(/'/g, "['’]"); }).join("|");
   if (!alt) return sentence;
-  var re = new RegExp("(^|[^a-z'’])(?:" + alt + ")(?:s|es|d|ed|ing|['’]s)?(?![a-z'’])", "gi");
-  return sentence.replace(re, "$1____");
+  var re = new RegExp("(^|[^a-z'’])(" + alt + ")(s|es|d|ed|ing|['’]s)?(?![a-z'’])", "gi");
+  return sentence.replace(re, function (m, pre, word, end) { return pre + "_".repeat(word.length) + (end || ""); });
 }
