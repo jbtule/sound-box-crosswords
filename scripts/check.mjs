@@ -45,8 +45,16 @@ for (const [i, p] of (raw.pack || []).entries()) {
   for (const f of ["id", "name", "note", "words"]) {
     if (typeof p[f] !== "string" || !p[f].trim()) errors.push(`${label}: needs ${f} = "..."`);
   }
-  if (p.id === "mine") errors.push(`${label}: id "mine" is reserved for the grown-up's own list`);
+  if (p.id === "mine") errors.push(`${label}: id "mine" is reserved for the Custom list`);
   if (ids.has(p.id)) errors.push(`${label}: id "${p.id}" is used twice`);
+  // The note is shown on screen, so it must not spell out a pack word, even split
+  // into syllables ("fr-og"). That would turn recall into copying.
+  if (typeof p.note === "string" && typeof p.words === "string") {
+    const shown = new Set(p.note.toLowerCase().replace(/[-'\u2019]/g, "").split(/[^a-z]+/));
+    for (const e of parseList(p.words)) {
+      if (shown.has(e.w.replace(/'/g, ""))) errors.push(`${label}: note gives away "${e.w}"`);
+    }
+  }
   ids.add(p.id);
 }
 if (!starter) errors.push(`packs.toml: missing [custom] words = """..."""`);

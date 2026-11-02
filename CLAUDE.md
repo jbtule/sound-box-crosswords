@@ -27,7 +27,8 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    school words and word families (e.g. the `-ore` family: explore, store, before).
 3. **Recall, not recognition.** The player must produce the spelling from a picture and the spoken
    word. Never show the written word as a clue. Avoid features that let the player guess their way
-   through (e.g. offering only the letters in the word).
+   through (e.g. offering only the letters in the word). On-screen text (pack notes, help) must never
+   spell a pack word, even split into syllables; the check enforces this for notes.
 4. **Attention-friendly.** Short puzzles (5–6 words), immediate feedback, quick wins, low
    friction, no timers, no penalties or lost progress, minimal reading of instructions.
 5. **Scaffolds the player can use on their own:** *Hear it* (whole word) and *Clap it*
