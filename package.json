@@ -1,11 +1,15 @@
 {
   "private": true,
   "type": "module",
-  "description": "No build step. The browser loads smol-toml from a CDN via the import map in index.html; this copy is for scripts/check.mjs.",
+  "description": "No build step. The browser loads smol-toml from a CDN via the import map in index.html; this copy is for scripts/check.mjs. qrcode (dev) renders qr.svg: npm run qr.",
   "scripts": {
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "qr": "node scripts/qr.mjs"
   },
   "dependencies": {
     "smol-toml": "1.9.1"
+  },
+  "devDependencies": {
+    "qrcode": "1.5.4"
   }
 }
