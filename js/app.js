@@ -754,9 +754,11 @@ function renderInstall() {
   $("#installSec").hidden = !canInstall();
   $("#installIOS").hidden = !isIOS;
   $("#installBtn").hidden = isIOS || !installEvt;
-  // The tip at the top, until ✕, How? or installing. Shown from the first visit: iOS
-  // doesn't carry progress from Safari over to the Home Screen app, so earlier is better.
+  // The tip at the top, until ✕ or installing. Its button installs where the browser can
+  // (Add), and otherwise opens the steps in Settings (How?). Shown from the first visit:
+  // iOS doesn't carry progress from Safari over to the Home Screen app, so earlier is better.
   $("#installNudge").hidden = !canInstall() || !!store.get("installNudge", "");
+  $("#installHow").textContent = installEvt ? "Add" : "How?";
 }
 function installNow() {
   if (!installEvt) return;
@@ -768,10 +770,10 @@ function installNow() {
 window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); installEvt = e; renderInstall(); });
 window.addEventListener("appinstalled", function () { installed = true; renderInstall(); });
 $("#installBtn").addEventListener("click", installNow);
-function dropNudge() { store.set("installNudge", "done"); renderInstall(); }
-$("#installNo").addEventListener("click", function () { dropNudge(); $("#settingsBtn").focus(); });
+$("#installNo").addEventListener("click", function () {
+  store.set("installNudge", "done"); renderInstall(); $("#settingsBtn").focus();
+});
 $("#installHow").addEventListener("click", function () {
-  dropNudge();
   if (installEvt) { installNow(); return; }
   openSheet();
   $("#installSec").scrollIntoView({ block: "start" });
