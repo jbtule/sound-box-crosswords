@@ -580,7 +580,8 @@ function renderCollection() {
       if (have) {
         slot.type = "button";
         slot.setAttribute("aria-label", "Collected picture, hear the word");
-        slot.textContent = e.pic || stickers[e.w]; // the game shows a sound wave; the collection, an instrument
+        if (e.pic) slot.textContent = e.pic;
+        else slot.innerHTML = stickers[e.w]; // the game shows a sound wave; the collection, a sound sticker
         slot.addEventListener("click", function () { say("w", e.w, 0.85, true); });
       } else {
         slot.setAttribute("aria-label", "Not collected yet");
