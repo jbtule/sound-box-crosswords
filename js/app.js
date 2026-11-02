@@ -20,7 +20,7 @@ try {
   throw e;
 }
 
-var settings = Object.assign({ check: "letter", syl: true, kb: "abc", speakSel: true }, store.get("settings", {}));
+var settings = Object.assign({ check: "word", syl: true, kb: "abc", speakSel: true }, store.get("settings", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
 var packId = store.get("pack", "");

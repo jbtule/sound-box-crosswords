@@ -37,7 +37,7 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    removed for that reason.)
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
-7. **A grown-up can tune it** without code: check-each-letter vs whole-word mode, syllable
+7. **A grown-up can tune it** without code: whole-word (default) vs check-each-letter mode, syllable
    colors on/off, auto-speak, A–Z vs QWERTY pad, custom word list.
 
 When a request is ambiguous, prefer the option that better serves goals 1–4.
@@ -100,6 +100,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   - `input` / `checkWord` / `complete` / `settleCrossings`: letter vs whole-word checking.
     In letter mode, wrong letters wiggle and are rejected; in word mode, wrong letters flash
     and clear once all boxes are full. Finishing one word can finish a crossing word.
+    Whole word is the default: letter mode lets a stuck player guess letters until one sticks.
   - `clap`: the Clap it scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
   - Grown-ups sheet: `openSheet` / `closeSheet` and the change handlers below them.
