@@ -2,8 +2,12 @@
 // wrong. /listen/ lists every edition's packs; /listen/?edition=<id>&pack=<id> is one
 // pack's page (no edition means packs.toml's). It reads the same editions.toml, packs
 // files and audio.json as the app, so it plays exactly what the app plays.
-// Marks live in localStorage ("sbx:listen"), keyed by clip: a clip's key hashes its text
-// and voice settings, so a changed hint is a new clip and shows up as not heard.
+// Marks live in localStorage ("sbx:listen"), keyed by word, part and clip (markKey): the
+// same recording can be right in one word and wrong in another ("dee" for la-dy's dy, but
+// not for some-bod-y's y), and a clip's key hashes its text and voice settings, so a
+// changed hint is a new clip and shows up as not heard. Marks from before were keyed by
+// clip alone; their ✓ still counts for any word not marked since (their ✗ doesn't, since
+// it may have been about another word).
 import { readPacks, readEditions } from "../js/words.js";
 import { SOUNDS, EXAMPLE } from "../js/phonics.js";
 import { parseList, clipsFor } from "../js/crossword.js";
@@ -18,7 +22,14 @@ var STORE = "sbx:listen";
 var marks = {};
 try { marks = JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { marks = {}; }
 function saveMarks() { try { localStorage.setItem(STORE, JSON.stringify(marks)); } catch (e) {} }
-function state(key) { var m = marks[key]; return !m ? "new" : m.ok ? "ok" : "bad"; }
+function markKey(w, c) { return c.key ? [w, c.kind, c.part || c.text, c.key].join("|") : null; }
+function markOf(c) {
+  if (c.mk in marks) return marks[c.mk];
+  var old = marks[c.key];
+  return old && old.ok ? old : null;
+}
+function state(c) { var m = markOf(c); return !m || m.cleared ? "new" : m.ok ? "ok" : "bad"; }
+function withMarkKeys(word) { word.clips.forEach(function (c) { c.mk = markKey(word.w, c); }); return word; }
 
 // The live site's copies when running locally (no audio.json without a deploy).
 async function getJSON(rel, fallback) {
@@ -50,13 +61,13 @@ function pages(ed, multi, data, audio, withPhrases) {
   }
   function fromList(id, name, list) {
     out.push({ id: id, edition: ed, short: name, name: (multi ? ed.name + " · " : "") + name,
-      words: parseList(list).map(function (e) { return { w: e.w, syll: e.syll, pic: e.pic, clips: withKeys(clipsFor(e)).concat(soundItOut(e)) }; }) });
+      words: parseList(list).map(function (e) { return withMarkKeys({ w: e.w, syll: e.syll, pic: e.pic, clips: withKeys(clipsFor(e)).concat(soundItOut(e)) }); }) });
   }
   Object.keys(data.packs).forEach(function (id) { if (id !== "mine") fromList(id, data.packs[id].name, data.packs[id].list); });
   if (data.starter) fromList("custom", "Custom starter", data.starter);
   var phrases = Object.keys(audio.clips).filter(function (k) { return k.startsWith("p:"); }).map(function (k) { return k.slice(2); });
   if (phrases.length && withPhrases) {
-    out.push({ id: "phrases", edition: ed, short: "Phrases", name: (multi ? ed.name + " · " : "") + "Phrases", words: phrases.map(function (p, i) { return { w: "phrase" + i, syll: p, pic: "", clips: withKeys([{ kind: "p", text: p }]) }; }) });
+    out.push({ id: "phrases", edition: ed, short: "Phrases", name: (multi ? ed.name + " · " : "") + "Phrases", words: phrases.map(function (p, i) { return withMarkKeys({ w: "phrase" + i, syll: p, pic: "", clips: withKeys([{ kind: "p", text: p }]) }); }) });
   }
   return out;
 }
@@ -67,8 +78,8 @@ function counts(pagesToCount) {
   [].concat(pagesToCount).forEach(function (page) { page.words.forEach(function (w) {
     w.clips.forEach(function (clip) {
       if (!clip.key) { if (!seen[clip.kind + ":" + clip.text]) c.missing++; seen[clip.kind + ":" + clip.text] = 1; return; }
-      if (seen[clip.key]) return; // a syllable shared by two words counts once
-      seen[clip.key] = 1; c.total++; c[state(clip.key)]++;
+      if (seen[clip.mk]) return; // the same word in two places counts once
+      seen[clip.mk] = 1; c.total++; c[state(clip)]++;
     });
   }); });
   return c;
@@ -127,7 +138,7 @@ function soundsPage(audio) {
   return {
     id: "sounds", edition: SOUNDS_ED, short: "Sounds", name: "Sounds",
     words: SOUNDS.map(function (n) {
-      return { w: n, syll: n + " · as in " + EXAMPLE[n], pic: "", clips: [{ kind: "f", text: n, key: audio.clips["f:" + n] || null }] };
+      return withMarkKeys({ w: n, syll: n + " · as in " + EXAMPLE[n], pic: "", clips: [{ kind: "f", text: n, key: audio.clips["f:" + n] || null }] });
     })
   };
 }
@@ -178,7 +189,7 @@ function renderEdition(all, ed, multi) {
 function wordState(w) {
   var keyed = w.clips.filter(function (c) { return c.key; });
   if (!keyed.length) return "none";
-  var st = keyed.map(function (c) { return state(c.key); });
+  var st = keyed.map(function (c) { return state(c); });
   return st.indexOf("bad") >= 0 ? "bad" : st.indexOf("new") >= 0 ? "new" : "ok";
 }
 var MARK = { bad: "✗", new: "•", ok: "✓", none: "–" };
@@ -216,7 +227,7 @@ function renderPack(page, base) {
   var list = $("#list"); list.innerHTML = "";
   var shown = 0;
   page.words.forEach(function (w) {
-    var clips = w.clips.filter(function (c) { return c.key && (filter === "all" || state(c.key) === filter); });
+    var clips = w.clips.filter(function (c) { return c.key && (filter === "all" || state(c) === filter); });
     if (!clips.length) return;
     shown++;
     var card = el("section", "card word"), h = el("h2");
@@ -229,7 +240,7 @@ function renderPack(page, base) {
     card.appendChild(h);
     var ul = el("ul", "clips"), buttons = [];
     clips.forEach(function (c) {
-      var li = el("li", "clip is-" + state(c.key));
+      var li = el("li", "clip is-" + state(c));
       var btn = el("button", "play", "▶");
       btn.type = "button"; btn.setAttribute("aria-label", "Play " + KIND[c.kind] + ": " + c.text);
       var items = c.kind === "sio" ? sioItems(c, base, btn) : [{ url: base + c.key + ".mp3", btn: btn }];
@@ -245,24 +256,25 @@ function renderPack(page, base) {
       var note = el("input", "note");
       note.type = "text"; note.placeholder = "What's wrong? (optional)";
       function sync() {
-        var s = state(c.key);
+        var s = state(c);
         li.className = "clip is-" + s;
         yes.setAttribute("aria-pressed", String(s === "ok"));
         no.setAttribute("aria-pressed", String(s === "bad"));
         note.hidden = s !== "bad";
-        note.value = (marks[c.key] && marks[c.key].note) || "";
+        note.value = (markOf(c) && markOf(c).note) || "";
       }
       function mark(ok) {
-        var cur = state(c.key);
-        if ((ok && cur === "ok") || (!ok && cur === "bad")) delete marks[c.key]; // tap again to clear
-        else marks[c.key] = { ok: ok, t: Date.now() };
+        var cur = state(c);
+        // Tap again to clear (kept as "cleared" so an older ✓ for the clip doesn't come back).
+        if ((ok && cur === "ok") || (!ok && cur === "bad")) marks[c.mk] = { cleared: true, t: Date.now() };
+        else marks[c.mk] = { ok: ok, t: Date.now() };
         saveMarks(); sync(); setupReport([page], page.name);
-        if (!ok && state(c.key) === "bad") note.focus();
+        if (!ok && state(c) === "bad") note.focus();
       }
       yes.addEventListener("click", function () { mark(true); });
       no.addEventListener("click", function () { mark(false); });
       note.addEventListener("input", function () {
-        if (marks[c.key]) { marks[c.key].note = note.value; saveMarks(); setupReport([page], page.name); }
+        if (state(c) === "bad") { marks[c.mk].note = note.value; saveMarks(); setupReport([page], page.name); }
       });
       mk.appendChild(yes); mk.appendChild(no);
       li.appendChild(btn); li.appendChild(what); li.appendChild(mk); li.appendChild(note);
@@ -283,9 +295,9 @@ function badLines(pagesToReport) {
   pagesToReport.forEach(function (page) {
     page.words.forEach(function (w) {
       w.clips.forEach(function (c) {
-        if (!c.key || state(c.key) !== "bad" || seen[page.id + c.key]) return;
-        seen[page.id + c.key] = 1;
-        var note = marks[c.key].note ? " — " + marks[c.key].note.trim() : "";
+        if (!c.key || state(c) !== "bad" || seen[page.id + c.mk]) return;
+        seen[page.id + c.mk] = 1;
+        var note = marks[c.mk].note ? " — " + marks[c.mk].note.trim() : "";
         var what = c.kind === "s" ? 'syllable "' + c.part + '" (hint "' + c.text + '")' : KIND[c.kind].toLowerCase() + ' "' + c.text + '"';
         var ref = c.kind === "sio"
           ? c.text.split(" · ").map(function (n) { return "f:" + n; }).join(" ") + " then w:" + w.w + "; a bad sound is fixed in scripts/audio/sounds/picks.json, a bad split in the word's {…}"

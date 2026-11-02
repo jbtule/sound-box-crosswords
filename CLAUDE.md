@@ -138,8 +138,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   lists all 46 single sounds.
   It reads `packs.toml` and `audio.json` like the app (locally it falls back to the live
   `audio.json`), and `clipsFor` in `crossword.js` decides each word's clips for both it and
-  the audio build. Marks are per device (`sbx:listen`), keyed by clip, so a changed hint
-  shows up as not heard. Report copies the ✗ list or opens a GitHub issue. It spells
+  the audio build. Marks are per device (`sbx:listen`), keyed by word, part and clip (the same
+  recording can be right in one word and wrong in another), so a changed hint shows up as
+  not heard. Report copies the ✗ list or opens a GitHub issue. It spells
   every pack word, so nothing in the app links to it and it's `noindex` (the check
   enforces both).
 - `sw.js`: service worker, so a home-screen launch works offline. The page and unstamped
