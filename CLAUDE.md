@@ -195,7 +195,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   fits a phone, avoids `recent` words. Returns `P` (`words`, `cells`, `rows`, `cols`); each
   word has `cells`, `chunks` (syllables) and `sylOf` (syllable index per letter).
 - `js/confetti.js`: `confetti(host)`, the solve celebration (skipped with reduced motion).
-- `js/achievements.js`: no DOM. `catalog(state)` lists achievements (pack champion; tiered
+- `js/achievements.js`: no DOM. `catalog(state)` lists achievements (pack champion; for school units (`isUnit`: ids
+  ending `-unit<N>`) a Legend once Champion is reached, every word right on the first try,
+  which unlocks no colors; tiered
   clean solves, comeback words, practice days, showing only the next unmet tier), `award`
   records newly met ones in `sbx:achievements` ({ id: time }); earned ones are never taken
   away (no streaks). Inputs saved by `app.js`: `sbx:counts` { clean, comeback } and
