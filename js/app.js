@@ -79,6 +79,7 @@ var fill = {}, locked = {}, doneW = {}, cur = 0, pos = 0, misses = 0, finished =
 var missedW = {}; // word indexes with a wrong try in this puzzle
 
 function newPuzzle() {
+  if (updateReady) { location.reload(); return; }
   $("#done").hidden = true;
   finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {};
   var pool = entries(packId);
@@ -643,6 +644,28 @@ if (window.IntersectionObserver) new IntersectionObserver(function (es) {
   kbEl.classList.toggle("floating", !e.isIntersecting && e.boundingClientRect.top > 0);
 }).observe($("#kbEnd"));
 if (!hasSpeech) { ["hearBtn", "clapBtn"].forEach(function (id) { $("#" + id).title = "Sound isn't available in this browser"; }); }
+
+// A home-screen app usually resumes instead of relaunching, so it would keep running an
+// old deploy. Each time it comes back on screen, compare this build's ?v= stamp with the
+// live page's. If it changed, reload now when nothing would be lost (no letters typed, no
+// sheet or popup open), or else at the next new puzzle. Unstamped (local) builds skip it.
+var BUILD = new URL(import.meta.url).searchParams.get("v"), updateReady = false;
+function safeToReload() {
+  var typed = Object.keys(fill).some(function (k) { return fill[k]; });
+  return (finished || !typed) && $("#sheet").hidden && $("#achSheet").hidden && $("#award").hidden;
+}
+document.addEventListener("visibilitychange", function () {
+  if (!BUILD || updateReady || document.visibilityState !== "visible") return;
+  fetch(new URL("../", import.meta.url), { cache: "no-store" })
+    .then(function (r) { return r.ok ? r.text() : ""; })
+    .then(function (html) {
+      var live = html.match(/js\/app\.js\?v=([0-9a-f]+)/);
+      if (!live || live[1] === BUILD) return;
+      updateReady = true;
+      if (safeToReload()) location.reload();
+    })
+    .catch(function () {});
+});
 
 checkAchievements(); // quietly award anything already met (e.g. from before this update)
 renderPacks();

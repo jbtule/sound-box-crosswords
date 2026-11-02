@@ -108,6 +108,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   and audio clips are saved copy first. Clips are answered by byte range (Safari's
   `<audio>` asks for ranges). Registered by `app.js`, but not on localhost, so local
   edits always show.
+- Updates in a home-screen app: it usually resumes rather than relaunching, so on each
+  return to the screen `app.js` compares its `?v=` stamp with the live page's and
+  reloads when nothing would be lost (no letters on the board, no sheet or popup open),
+  or else at the next new puzzle (`updateReady`).
 - `styles.css`: all styles. Color tokens on `:root` with dark overrides at the top.
   `--cell` is the box color token; `--cell-size` is the box size set by `sizeBoard`.
 - `packs.toml`: the word packs, in display order. Each `[[pack]]` has `id` (saved progress
