@@ -23,34 +23,9 @@
 #               Spoken for context (word, sentence, word), which also tells homophones
 #               apart: their "The kids hung their coats on the hooks."
 #
+# School units go first, newest at the top (add Unit 4 above Unit 3).
+#
 # Run `npm run check` after editing; it catches typos and builds test puzzles.
-
-[[pack]]
-id = "g3-2026-unit2"
-name = "Unit 2"
-note = "3rd grade 2026 school words. A sound wave means listen, then spell."
-words = """
-wheel 🛞
-beach 🏖️
-sweep 🧹
-mis-read (miss-reed) "I misread the sign and went the wrong way."
-com-pete (kum-peet) "Our teams will compete in the big race."
-light 💡
-pies 🥧
-shy 🫣
-ex-cit-ed 🤩 (ex-site-ted)
-sun-shine ☀️ (sun-shine)
-cow-boy 🤠 (cow-boy)
-in-side (in-side) "It is raining, so we will play inside."
-sea-food 🦐 (sea-food)
-su-per-mar-ket 🛒 (soo-purr-mahr-kit)
-some-bod-y (sum-bah-dee) "Somebody left a jacket on the bus."
-their "The kids hung their coats on the hooks."
-a-round (uh-round) "We walked all the way around the lake."
-they "They are coming over after school."
-would "Would you like to play a game?"
-al-ways (all-ways) "I always brush my teeth before bed."
-"""
 
 [[pack]]
 id = "g3-2026-unit3"
@@ -77,6 +52,33 @@ don't "Please don't forget your lunch."
 on-ly (own-lee) "I could find only one sock."
 those "Those birds are flying south for the winter."
 done "I am done with my homework."
+"""
+
+[[pack]]
+id = "g3-2026-unit2"
+name = "Unit 2"
+note = "3rd grade 2026 school words. A sound wave means listen, then spell."
+words = """
+wheel 🛞
+beach 🏖️
+sweep 🧹
+mis-read (miss-reed) "I misread the sign and went the wrong way."
+com-pete (kum-peet) "Our teams will compete in the big race."
+light 💡
+pies 🥧
+shy 🫣
+ex-cit-ed 🤩 (ex-site-ted)
+sun-shine ☀️ (sun-shine)
+cow-boy 🤠 (cow-boy)
+in-side (in-side) "It is raining, so we will play inside."
+sea-food 🦐 (sea-food)
+su-per-mar-ket 🛒 (soo-purr-mahr-kit)
+some-bod-y (sum-bah-dee) "Somebody left a jacket on the bus."
+their "The kids hung their coats on the hooks."
+a-round (uh-round) "We walked all the way around the lake."
+they "They are coming over after school."
+would "Would you like to play a game?"
+al-ways (all-ways) "I always brush my teeth before bed."
 """
 
 [[pack]]
