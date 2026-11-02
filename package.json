@@ -1,15 +1,17 @@
 {
   "private": true,
   "type": "module",
-  "description": "No build step. The browser loads smol-toml from a CDN via the import map in index.html; this copy is for scripts/check.mjs. qrcode (dev) renders qr.svg: npm run qr.",
+  "description": "No build step. The browser loads smol-toml from a CDN via the import map in index.html; this copy is for scripts/check.mjs. Dev only: qrcode renders qr.svg (npm run qr), playwright renders social-card.png (npm run card).",
   "scripts": {
     "check": "node scripts/check.mjs",
-    "qr": "node scripts/qr.mjs"
+    "qr": "node scripts/qr.mjs",
+    "card": "node scripts/card.mjs"
   },
   "dependencies": {
     "smol-toml": "1.9.1"
   },
   "devDependencies": {
+    "playwright": "1.63.0",
     "qrcode": "1.5.4"
   }
 }
