@@ -3,7 +3,7 @@ import { loadPacks } from "./words.js";
 import { confetti } from "./confetti.js";
 import { chime } from "./chime.js";
 import { catalog, award, dayKey, daysThisWeek } from "./achievements.js";
-import { parseList, makePuzzle } from "./crossword.js";
+import { parseList, makePuzzle, blankSentence } from "./crossword.js";
 import { speak, say, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
 var $ = function (s) { return document.querySelector(s); };
@@ -115,6 +115,7 @@ function renderEmpty() {
   board.innerHTML = '<p class="empty-msg">This pack needs at least 3 words. Open <b>Settings</b> and add words under “Custom words”.</p>';
   $("#clueList").innerHTML = "";
   $("#pic").textContent = "✏️"; $("#clueLabel").textContent = "No puzzle yet"; $("#clueSub").textContent = "";
+  $("#clueSent").hidden = true;
 }
 function renderBoard() {
   board.innerHTML = "";
@@ -127,6 +128,9 @@ function renderBoard() {
     d.innerHTML = (cell.num ? '<span class="num">' + cell.num + "</span>" : "") + '<span class="ch"></span>';
     board.appendChild(d);
   }
+  // The sentence line is there for the whole puzzle if any word has one, so the layout
+  // doesn't jump between words.
+  $("#clueSent").hidden = !P.words.some(function (W) { return W.sentence; });
   sizeBoard();
 }
 // Words with no emoji get a drawn sound-wave icon: listen, then spell.
@@ -153,6 +157,8 @@ function update() {
   $("#clueLabel").textContent = W.num + (W.dir === "A" ? " Across" : " Down");
   var n = W.chunks.length;
   $("#clueSub").textContent = W.w.length + " boxes · " + n + (n === 1 ? " beat" : " beats");
+  // Only this word is blanked; pack sentences avoid the pack's other words (the check enforces it).
+  $("#clueSent").textContent = W.sentence ? blankSentence(W.sentence, [W.w]) : "";
   $("#clapBtn").hidden = n < 2; // nothing to clap in a one-beat word
   document.querySelectorAll(".ctile").forEach(function (t) {
     var i = +t.dataset.i;

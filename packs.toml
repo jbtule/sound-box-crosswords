@@ -22,6 +22,7 @@
 #     sentence  Required when there's no picture; optional otherwise. Must use the word.
 #               Spoken for context (word, sentence, word), which also tells homophones
 #               apart: their "The kids hung their coats on the hooks."
+#               Also shown with the word as a blank, so don't use other words from the pack.
 #
 # School units go first, newest at the top (add Unit 4 above Unit 3).
 #

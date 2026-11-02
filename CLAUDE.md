@@ -123,7 +123,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   check flags short parts and common abbreviations. Last, an optional `"context sentence"`
   that uses the word: *Hear it*, the picture, and auto-speak then say word, sentence, word
   (spelling-test style; `sayWord` in `app.js`). **Required for pack words with no emoji**,
-  and it tells homophones apart (their/there). Spoken only, never shown. Syllable splits should match how a
+  and it tells homophones apart (their/there). Also shown under the clue with the word as a blank (`blankSentence` in
+  `crossword.js`), so it must not use another word from the same pack; the check enforces this. Syllable splits should match how a
   teacher would clap the word.
 - `js/words.js`: `loadPacks` fetches and parses `packs.toml`; `readPacks` turns TOML text
   into `{ packs, starter }` and appends the built-in `mine` pack.

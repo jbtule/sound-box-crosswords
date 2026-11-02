@@ -158,3 +158,12 @@ export function makePuzzle(pool, recent, fresh) {
   Object.keys(numAt).forEach(function (kk) { cells[kk].num = numAt[kk]; });
   return { words: placed, rows: maxR - minR + 1, cols: maxC - minC + 1, cells: cells };
 }
+
+// The context sentence as shown on screen: each of `words` (and its -s, -es, -ed, -ing
+// forms) becomes a blank, so the sentence never spells a word in the puzzle.
+export function blankSentence(sentence, words) {
+  var alt = words.map(function (w) { return w.replace(/'/g, "['’]"); }).join("|");
+  if (!alt) return sentence;
+  var re = new RegExp("(^|[^a-z'’])(?:" + alt + ")(?:s|es|d|ed|ing|['’]s)?(?![a-z'’])", "gi");
+  return sentence.replace(re, "$1____");
+}

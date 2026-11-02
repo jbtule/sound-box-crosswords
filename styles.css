@@ -133,6 +133,8 @@ h1 span { color: var(--accent); }
 .tools { display: flex; gap: 8px; flex-wrap: wrap; }
 .tool { border: 1.5px solid var(--key-edge); background: var(--key); border-radius: 12px; padding: 7px 12px; font-weight: 600; font-size: 0.9rem; }
 .tool:active { transform: translateY(1px); }
+/* Context sentence with the word as a blank. Room for two lines so it doesn't jump. */
+.sent { grid-column: 1 / -1; margin: 0; min-height: 2.8em; line-height: 1.4; font-size: 1rem; }
 
 /* The pad sticks to the bottom of the screen while its place in the layout is below the
    fold (short screens), so typing never needs scrolling. Its background is always solid
