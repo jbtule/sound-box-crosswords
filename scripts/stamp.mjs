@@ -54,4 +54,10 @@ swap(`id="buildLink" href="${repo}"`, `id="buildLink" href="${repo}/commit/${sha
 swap('<span id="buildSha">dev</span>', `<span id="buildSha">${short}</span>`);
 
 writeFileSync(join(out, "index.html"), html);
+
+// The listen check's badge too (same markup).
+html = readFileSync(join(root, "listen", "index.html"), "utf8");
+swap(`id="buildLink" href="${repo}"`, `id="buildLink" href="${repo}/commit/${sha}"`);
+swap('<span id="buildSha">dev</span>', `<span id="buildSha">${short}</span>`);
+writeFileSync(join(out, "listen", "index.html"), html);
 console.log(`✓ _site/ stamped with ${short}`);
