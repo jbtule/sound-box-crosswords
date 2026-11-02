@@ -39,8 +39,9 @@ export function shuffle(a) {
 }
 
 // One random greedy layout. Each word after the first must cross a placed word;
-// among legal spots, prefer the ones with the most crossings.
-function tryBuild(cands, target) {
+// among legal spots, prefer the ones with the most crossings. `first` words are tried
+// before `rest`, so they win the open spots.
+function tryBuild(first, rest, target) {
   var grid = {}, dirUse = {}, placed = [];
   var key = function (r, c) { return r + "," + c; };
   function canPlace(w, r, c, dir, first) {
@@ -72,7 +73,7 @@ function tryBuild(cands, target) {
     }
     placed.push({ w: e.w, syll: e.syll, pic: e.pic, say: e.say, sentence: e.sentence, r: r, c: c, dir: dir });
   }
-  var order = shuffle(cands.slice());
+  var order = shuffle(first.slice()).concat(shuffle(rest.slice()));
   put(order[0], 0, 0, Math.random() < 0.5 ? "A" : "D");
   for (var i = 1; i < order.length && placed.length < target; i++) {
     var e = order[i], opts = [], best = 0;
@@ -95,22 +96,29 @@ function tryBuild(cands, target) {
   return placed;
 }
 
-// Best of many random layouts: most words, then smallest area. Aims for 6 words
-// (5 if they're long) and skips `recent` words when the pool has enough others.
-function build(pool, recent) {
-  var fresh = pool.filter(function (e) { return recent.indexOf(e.w) < 0; });
-  var base = shuffle(fresh.length >= 6 ? fresh : pool.slice()).slice(0, 10);
+// Best of many random layouts. Aims for 6 words (5 if they're long). Scored by how many
+// `fresh` words it fits (not yet done this round, so the pack is covered in as few
+// puzzles as possible), then total words, then smallest area. Other words are filler,
+// least recent first; `recent` words are used last.
+function build(pool, recent, fresh) {
+  var isFresh = function (e) { return fresh.indexOf(e.w) >= 0; };
+  var first = shuffle(pool.filter(isFresh)).slice(0, 10);
+  var others = shuffle(pool.filter(function (e) { return !isFresh(e); }));
+  others.sort(function (a, b) { return (recent.indexOf(a.w) >= 0) - (recent.indexOf(b.w) >= 0); });
+  var rest = others.slice(0, Math.max(4, 10 - first.length));
+  var base = first.concat(rest);
   var avg = base.reduce(function (s, e) { return s + e.w.length; }, 0) / base.length;
   var target = Math.min(base.length, avg > 7 ? 5 : 6);
-  var bestSet = null, bestScore = -1;
-  for (var t = 0; t < 60; t++) {
-    var p = tryBuild(base, target);
+  var bestSet = null, bestScore = -Infinity;
+  for (var t = 0; t < 80; t++) {
+    var p = first.length ? tryBuild(first, rest, target) : tryBuild(rest, [], target);
     var rs = [], cs = [];
     p.forEach(function (q) { rs.push(q.r, q.r + (q.dir === "D" ? q.w.length - 1 : 0)); cs.push(q.c, q.c + (q.dir === "A" ? q.w.length - 1 : 0)); });
     var area = (Math.max.apply(null, rs) - Math.min.apply(null, rs) + 1) * (Math.max.apply(null, cs) - Math.min.apply(null, cs) + 1);
-    var score = p.length * 1000 - area;
+    var nFresh = p.filter(isFresh).length;
+    var score = nFresh * 10000 + p.length * 1000 - area;
     if (score > bestScore) { bestScore = score; bestSet = p; }
-    if (p.length >= target && t > 20) break;
+    if (p.length >= target && nFresh >= Math.min(target, first.length) && t > 20) break;
   }
   return bestSet;
 }
@@ -119,8 +127,9 @@ function build(pool, recent) {
 // - words[i]: { w, syll, pic, r, c, dir: "A"|"D", num, cells: ["r,c"...],
 //   chunks: syllables, say: how to speak each syllable, sylOf: syllable index per letter }
 // - cells["r,c"]: { letter, words: [word indexes], num? }
-export function makePuzzle(pool, recent) {
-  var placed = build(pool, recent || []);
+// `recent`: words to avoid repeating; `fresh`: words to cover first (see build).
+export function makePuzzle(pool, recent, fresh) {
+  var placed = build(pool, recent || [], fresh || []);
   var minR = Infinity, minC = Infinity, maxR = -Infinity, maxC = -Infinity;
   placed.forEach(function (p) {
     minR = Math.min(minR, p.r); minC = Math.min(minC, p.c);

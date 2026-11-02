@@ -127,8 +127,33 @@ for (const { id, text } of lists) {
   if (fewest < 4) errors.push(`${id}: some puzzles only fit ${fewest} words`);
 }
 
+// Coverage: building puzzles from the words not done yet this round (like the app does)
+// should see every word in close to the fewest possible puzzles (about 6 words each).
+const coverage = [];
+for (const { id, text } of lists) {
+  const pool = parseList(text);
+  if (pool.length < 6 || id === "custom") continue;
+  const trials = 20, counts = [];
+  for (let t = 0; t < trials; t++) {
+    const seen = new Set();
+    let recent = [], n = 0;
+    while (seen.size < pool.length && n < 50) {
+      const fresh = pool.map((e) => e.w).filter((w) => !seen.has(w));
+      const P = makePuzzle(pool, recent, fresh);
+      P.words.forEach((W) => seen.add(W.w));
+      recent = P.words.map((W) => W.w).concat(recent).slice(0, 8);
+      n++;
+    }
+    counts.push(n);
+  }
+  const avg = counts.reduce((a, b) => a + b) / trials, best = Math.ceil(pool.length / 6);
+  coverage.push(`${id} ${avg.toFixed(1)} (best ${best})`);
+  if (avg > best + 1.5) errors.push(`${id}: takes ${avg.toFixed(1)} puzzles on average to cover ${pool.length} words (best possible ${best})`);
+}
+
 if (errors.length) {
   console.error([...new Set(errors)].map((e) => "✗ " + e).join("\n"));
   process.exit(1);
 }
 console.log(`✓ scripts parse; ${lists.length} word lists OK; ${RUNS} puzzles built per list`);
+console.log(`✓ puzzles to cover each pack: ${coverage.join(", ")}`);

@@ -26,6 +26,18 @@ var stars = store.get("stars", {});
 var packId = store.get("pack", "");
 if (!PACKS[packId]) packId = Object.keys(PACKS)[0];
 var recent = []; // words from recent puzzles, avoided in the next one
+// Per pack: `done` = words completed at least once (the % shown); `round` = words completed
+// since the pack was last fully covered, so new puzzles bring in the rest first.
+var progress = store.get("progress", {});
+// Finished puzzles, newest first: { t: ms, pack, n: words, m: try-agains }. Counts only,
+// never the words: Settings isn't locked and would show the spellings.
+var log = store.get("log", []);
+var LOG_MAX = 200;
+function packProgress(id) {
+  var pp = progress[id] = progress[id] || {};
+  pp.done = pp.done || {}; pp.round = pp.round || [];
+  return pp;
+}
 
 function entries(id) { return parseList(id === "mine" ? customText : PACKS[id].list); }
 
@@ -40,7 +52,10 @@ function newPuzzle() {
   finished = false; fill = {}; locked = {}; doneW = {}; misses = 0;
   var pool = entries(packId);
   if (pool.length < 3) { P = null; renderEmpty(); return; }
-  P = makePuzzle(pool, recent);
+  var pp = packProgress(packId), words = pool.map(function (e) { return e.w; });
+  var fresh = words.filter(function (w) { return pp.round.indexOf(w) < 0; });
+  if (!fresh.length) { pp.round = []; fresh = words; store.set("progress", progress); } // new round
+  P = makePuzzle(pool, recent, fresh);
   recent = P.words.map(function (p) { return p.w; }).concat(recent).slice(0, 8);
   // Apostrophes (don't) are given: filled and locked, so typing skips over them.
   Object.keys(P.cells).forEach(function (kk) { if (P.cells[kk].letter === "'") { fill[kk] = "'"; locked[kk] = true; } });
@@ -209,6 +224,11 @@ function complete(i) {
   var W = P.words[i];
   W.cells.forEach(function (c, j) { fill[c] = W.w[j]; locked[c] = true; setTimeout(function () { flash(c, "pop"); }, j * 60); });
   say("w", W.w, 0.9);
+  var pp = packProgress(packId);
+  pp.done[W.w] = true;
+  if (pp.round.indexOf(W.w) < 0) pp.round.push(W.w);
+  store.set("progress", progress);
+  renderProgress();
   W.cells.forEach(settleCrossings); // its letters may have finished a crossing word
   if (Object.keys(doneW).length === P.words.length) { setTimeout(finish, 700); return; }
   if (i === cur) {
@@ -221,6 +241,9 @@ function finish() {
   finished = true;
   stars[packId] = (stars[packId] || 0) + 1;
   store.set("stars", stars);
+  log.unshift({ t: Date.now(), pack: packId, n: P.words.length, m: misses });
+  log = log.slice(0, LOG_MAX);
+  store.set("log", log);
   renderPacks();
   update();
   var parts = [P.words.length + " words"];
@@ -317,6 +340,39 @@ function renderPacks() {
     wrap.appendChild(b);
   });
   $("#packNote").textContent = PACKS[packId].note;
+  renderProgress();
+}
+// Words in pack `id` completed at least once: { done, total }.
+function coverage(id) {
+  var words = entries(id), done = packProgress(id).done;
+  return { done: words.filter(function (e) { return done[e.w]; }).length, total: words.length };
+}
+function renderProgress() {
+  var c = coverage(packId), el = $("#packProg");
+  el.hidden = !c.total;
+  el.querySelector(".fill").style.width = (c.total ? Math.round(100 * c.done / c.total) : 0) + "%";
+  el.querySelector(".txt").textContent = c.done + " of " + c.total + " words done";
+}
+// Settings: per-pack coverage and the puzzle log.
+function renderProgressSheet() {
+  var rows = $("#progressPacks"); rows.innerHTML = "";
+  Object.keys(PACKS).forEach(function (id) {
+    var c = coverage(id);
+    if (!c.total) return;
+    var li = document.createElement("li");
+    li.textContent = PACKS[id].name + ": " + Math.round(100 * c.done / c.total) + "% of words (" + c.done + "/" + c.total + ")" +
+      " · " + (stars[id] || 0) + (stars[id] === 1 ? " puzzle" : " puzzles");
+    rows.appendChild(li);
+  });
+  var list = $("#progressLog"); list.innerHTML = "";
+  var fmt = { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
+  log.slice(0, 30).forEach(function (e) {
+    var li = document.createElement("li");
+    li.textContent = new Date(e.t).toLocaleString(undefined, fmt) + " · " + (PACKS[e.pack] ? PACKS[e.pack].name : e.pack) +
+      " · " + e.n + " words · " + (e.m === 0 ? "no slips" : e.m === 1 ? "1 try again" : e.m + " try-agains");
+    list.appendChild(li);
+  });
+  $("#progressEmpty").hidden = log.length > 0;
 }
 function openSheet() {
   $("#optSyl").checked = settings.syl;
@@ -325,6 +381,7 @@ function openSheet() {
   $("#kbQwerty").checked = settings.kb === "qwerty";
   $("#customText").value = customText;
   renderVoices();
+  renderProgressSheet();
   $("#saveMsg").textContent = "";
   $("#sheet").hidden = false;
   $("#closeBtn").focus();

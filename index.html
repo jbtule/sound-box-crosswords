@@ -25,6 +25,7 @@
   </div>
   <div class="packs" id="packs" role="group" aria-label="Word packs"></div>
   <p class="note" id="packNote"></p>
+  <div class="progress" id="packProg" hidden><div class="track"><div class="fill"></div></div><span class="txt"></span></div>
 
   <section class="board-card" aria-label="Crossword">
     <div class="board" id="board"></div>
@@ -75,6 +76,13 @@
         <label><input type="checkbox" id="optSyl"> Color each syllable</label>
         <label><input type="checkbox" id="optSpeakSel"> Say the word when a picture is chosen</label>
       </div>
+    </div>
+    <div>
+      <h3>Progress</h3>
+      <ul class="plain" id="progressPacks"></ul>
+      <h3 class="sub">Recent puzzles</h3>
+      <p class="help" id="progressEmpty">No finished puzzles yet.</p>
+      <ul class="plain log" id="progressLog"></ul>
     </div>
     <div>
       <h3>Voice</h3>
