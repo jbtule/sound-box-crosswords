@@ -1,0 +1,66 @@
+# Kindergarten edition: word packs in the same format as packs.toml (see the notes at the
+# top of that file). Starter packs until the school's own lists are added; school units
+# go first, newest at the top.
+#
+# Run `npm run check` after editing.
+
+[[pack]]
+id = "k-short-vowels"
+name = "Short vowels"
+note = "Three letters with a short vowel sound in the middle. Say each sound."
+words = """
+cat 🐈
+dog 🐕
+pig 🐖
+sun ☀️
+bus 🚌
+bed 🛏️
+map 🗺️
+fox 🦊
+bug 🐛
+web 🕸️
+ant 🐜
+bat 🦇
+box 📦
+ten 🔟
+can 🥫
+hat 🎩
+"""
+
+# The class's high-frequency words; add each new list here as it comes home (one
+# growing pack). "I" can't be included: every word needs at least two boxes.
+# words_in_text: these words may appear in the note and in each other's sentences, since
+# spotting a word printed nearby is part of learning to read it. A clue's own word is
+# still blanked.
+[[pack]]
+id = "k-hfw"
+name = "High frequency words"
+note = "Everyday words to know by heart. Listen to the sentence, then spell."
+words_in_text = true
+words = """
+my "I like my red hat."
+the "We see the big dog."
+go "We go to the park."
+like "I like to play."
+to "I go to school."
+we "We like to read."
+see "I see a bird."
+and "Mom and I go to the store."
+can "I can jump high."
+is "The sky is blue."
+"""
+
+# The starter Custom list for this grade (Settings → Custom words). Swap in this week's words.
+[custom]
+words = """
+hop "Bunnies hop in the grass."
+sit "Please sit on the rug."
+run "I like to run fast."
+red "The apple is red."
+big "An elephant is big."
+top "The cat sat on top of the box."
+hot "The soup is too hot."
+sad "The puppy looks sad."
+bad "The milk went bad."
+dad "My dad reads me a story."
+"""

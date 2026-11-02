@@ -10,12 +10,19 @@ import { speak, say, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, o
 
 var $ = function (s) { return document.querySelector(s); };
 
-// Per-device storage under the "sbx:" prefix. Private mode or blocked storage just
-// means nothing is remembered.
-var store = {
-  get: function (k, d) { try { var v = localStorage.getItem("sbx:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set: function (k, v) { try { localStorage.setItem("sbx:" + k, JSON.stringify(v)); } catch (e) {} }
-};
+// Saved data. `device` is shared by every edition ("sbx:" prefix: which edition, the Home
+// Screen tip); `store` is the current edition's own (its prefix from storagePrefix(), set
+// at startup), so each grade keeps its own progress, achievements and settings. Private
+// mode or blocked storage just means nothing is remembered.
+function storage(prefix) {
+  return {
+    get: function (k, d) { try { var v = localStorage.getItem(prefix() + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(prefix() + k, JSON.stringify(v)); } catch (e) {} }
+  };
+}
+var PREFIX = "sbx:";
+var device = storage(function () { return "sbx:"; });
+var store = storage(function () { return PREFIX; });
 
 // Offline copy (sw.js), so a home-screen launch works without a connection. Skipped on
 // localhost so local edits always show. On the first visit everything loads before the
@@ -31,12 +38,48 @@ if ("serviceWorker" in navigator && !/^(localhost|127\.0\.0\.1)$/.test(location.
     .catch(function () {});
 }
 
-var PACKS, DEFAULT_CUSTOM;
+// Which grade's word lists (editions.toml). In order: a ?edition= link (then remembered),
+// the one picked before, the original edition for anyone with progress from before there
+// were editions, the only one, or else ask once ("Which grade?"), before the first puzzle.
+async function pickEdition(eds) {
+  var byId = function (id) { return eds.find(function (e) { return e.id === id; }); };
+  var params = new URLSearchParams(location.search), asked = params.get("edition");
+  if (asked !== null) {
+    params.delete("edition");
+    history.replaceState(null, "", location.pathname + (params.toString() ? "?" + params : "") + location.hash);
+    if (byId(asked)) { device.set("edition", asked); return byId(asked); }
+  }
+  var saved = byId(device.get("edition", ""));
+  if (saved) return saved;
+  var before = ["progress", "log", "settings", "achievements"].some(function (k) { return device.get(k, null) != null; });
+  var original = eds.find(function (e) { return e.file === "packs.toml"; });
+  if (before && original) { device.set("edition", original.id); return original; }
+  if (eds.length === 1) return eds[0];
+  var chosen = await new Promise(function (resolve) {
+    var box = $("#gradeChoices"); box.innerHTML = "";
+    eds.forEach(function (e) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "primary"; b.textContent = e.name;
+      b.addEventListener("click", function () { resolve(e); });
+      box.appendChild(b);
+    });
+    $("#gradeAsk").hidden = false;
+    box.firstChild.focus();
+  });
+  $("#gradeAsk").hidden = true;
+  device.set("edition", chosen.id);
+  return chosen;
+}
+
+var PACKS, DEFAULT_CUSTOM, EDITIONS, EDITION;
 try {
   // Imported here, not at the top: words.js pulls in the TOML parser from the CDN, and a
   // failed static import would stop this whole module before it could show Try again.
-  var { loadPacks } = await import("./words.js");
-  ({ packs: PACKS, starter: DEFAULT_CUSTOM } = await loadPacks());
+  var { loadPacks, loadEditions, storagePrefix } = await import("./words.js");
+  EDITIONS = await loadEditions();
+  EDITION = await pickEdition(EDITIONS);
+  PREFIX = storagePrefix(EDITION);
+  ({ packs: PACKS, starter: DEFAULT_CUSTOM } = await loadPacks(EDITION.file));
 } catch (e) {
   // A home-screen app has no reload button, so offer one.
   $("#board").innerHTML = '<p class="empty-msg">Couldn’t load the word packs. Check the connection, then try again.</p>' +
@@ -45,7 +88,7 @@ try {
   throw e;
 }
 
-var settings = Object.assign({ syl: true, kb: "qwerty", speakSel: true, chime: true, voice: "" }, store.get("settings", {}));
+var settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true, voice: "" }, store.get("settings", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
 var packId = store.get("pack", "");
@@ -498,7 +541,24 @@ function renderProgressSheet() {
   });
   $("#progressEmpty").hidden = log.length > 0;
 }
+// Settings → Grade: one radio per edition; switching reloads into that grade's own lists,
+// progress and settings. Hidden when there's only one.
+function renderGrades() {
+  var box = $("#gradeList"); box.innerHTML = "";
+  $("#gradeSec").hidden = EDITIONS.length < 2;
+  EDITIONS.forEach(function (e) {
+    var label = document.createElement("label"), input = document.createElement("input");
+    input.type = "radio"; input.name = "grade"; input.value = e.id; input.checked = e.id === EDITION.id;
+    input.addEventListener("change", function () {
+      device.set("edition", e.id);
+      location.replace(location.pathname);
+    });
+    label.append(input, " " + e.name);
+    box.appendChild(label);
+  });
+}
 function openSheet() {
+  renderGrades();
   $("#optSyl").checked = settings.syl;
   $("#optSpeakSel").checked = settings.speakSel;
   $("#optChime").checked = settings.chime;
@@ -681,7 +741,8 @@ function showTab(name) {
 }
 function openAchievements() {
   var now = Date.now(), all = catalog(achState());
-  $("#achDays").textContent = "Practiced " + daysThisWeek(days, now) + " of the last 7 days · " +
+  $("#achDays").textContent = (EDITIONS.length > 1 ? EDITION.name + " · " : "") +
+    "Practiced " + daysThisWeek(days, now) + " of the last 7 days · " +
     days.length + (days.length === 1 ? " day" : " days") + " in all";
   var list = $("#achList"); list.innerHTML = "";
   // Earned first (newest first), then what's next.
@@ -771,7 +832,7 @@ function renderInstall() {
   // The tip at the top, until ✕ or installing. Its button installs where the browser can
   // (Add), and otherwise opens the steps in Settings (How?). Shown from the first visit:
   // iOS doesn't carry progress from Safari over to the Home Screen app, so earlier is better.
-  $("#installNudge").hidden = !canInstall() || !!store.get("installNudge", "");
+  $("#installNudge").hidden = !canInstall() || !!device.get("installNudge", "");
   $("#installHow").textContent = installEvt ? "Add" : "How?";
 }
 function installNow() {
@@ -785,7 +846,7 @@ window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault()
 window.addEventListener("appinstalled", function () { installed = true; renderInstall(); });
 $("#installBtn").addEventListener("click", installNow);
 $("#installNo").addEventListener("click", function () {
-  store.set("installNudge", "done"); renderInstall(); $("#settingsBtn").focus();
+  device.set("installNudge", "done"); renderInstall(); $("#settingsBtn").focus();
 });
 $("#installHow").addEventListener("click", function () {
   if (installEvt) { installNow(); return; }
@@ -796,18 +857,46 @@ renderInstall();
 
 /* ---------- share the app ---------- */
 // A quiet footer link for handing the app to another family: a QR code to scan in person,
-// the device's share sheet where there is one, and Copy link. The fixed address, not
-// location.href, so it matches qr.svg.
-var SHARE = { title: "Sound Box Crosswords", text: "Sound crosswords for spelling practice.", url: "https://tools.tuley.name/sound-box-crosswords/" };
+// the device's share sheet where there is one, and Copy link. The site's fixed address
+// (not location.href), plus ?edition= to share just this grade; that link opens straight
+// into it. The QR code is drawn by the qrcode library, loaded the first time this opens;
+// without it (offline before it was ever loaded) the link and buttons still work.
+var SHARE_BASE = "https://tools.tuley.name/sound-box-crosswords/";
+var SHARE = { title: "Sound Box Crosswords", text: "Sound crosswords for spelling practice.", url: SHARE_BASE };
+var qrLib = null;
+function loadQR() {
+  if (!qrLib) qrLib = import("qrcode").then(function (m) { return m.default || m; });
+  return qrLib;
+}
+function renderShare() {
+  var one = EDITIONS.length > 1 && $("#shareOne").checked;
+  var want = SHARE.url = SHARE_BASE + (one ? "?edition=" + encodeURIComponent(EDITION.id) : "");
+  $("#shareUrl").textContent = want;
+  loadQR()
+    .then(function (Q) { return Q.toString(want, { type: "svg", errorCorrectionLevel: "M", margin: 2 }); })
+    .then(function (svg) {
+      if (want !== SHARE.url) return; // the choice changed while drawing
+      $("#shareQr").innerHTML = svg;
+      $("#shareQr").setAttribute("aria-label", "QR code for " + want.replace(/^https:\/\//, ""));
+      $("#shareQr").hidden = $("#shareScan").hidden = false;
+    }, function () {
+      qrLib = null; // try again next time
+      $("#shareQr").hidden = $("#shareScan").hidden = true;
+    });
+}
 var canShare = typeof navigator.share === "function" && (typeof navigator.canShare !== "function" || navigator.canShare(SHARE));
 $("#shareGo").hidden = !canShare;
 function openShare() {
+  $("#shareScope").hidden = EDITIONS.length < 2;
+  $("#shareOneName").textContent = EDITION.name;
+  renderShare();
   $("#shareCopy").textContent = "Copy link";
   $("#shareSheet").hidden = false;
   $("#shareClose").focus();
 }
 function closeShare() { $("#shareSheet").hidden = true; $("#shareBtn").focus(); }
 $("#shareBtn").addEventListener("click", openShare);
+["shareOne", "shareAll"].forEach(function (id) { $("#" + id).addEventListener("change", renderShare); });
 $("#shareClose").addEventListener("click", closeShare);
 $("#shareSheet").addEventListener("click", function (e) { if (e.target === $("#shareSheet")) closeShare(); });
 $("#shareGo").addEventListener("click", function () {

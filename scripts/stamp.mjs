@@ -1,7 +1,8 @@
 // Builds the GitHub Pages site in _site/ from the repo files, stamped with a commit:
 //   node scripts/stamp.mjs <full-commit-sha>
 // - Cache busting: styles.css and every js/*.js get ?v=<short sha>. The JS modules are
-//   remapped through the import map, and js/words.js passes the stamp on to packs.toml.
+//   remapped through the import map, and js/words.js passes the stamp on to editions.toml
+//   and the packs files.
 // - The footer's GitHub badge shows the short sha and links to the commit.
 // The source files stay runnable as-is; locally the badge just reads "dev".
 import { readFileSync, writeFileSync, readdirSync, rmSync, mkdirSync, cpSync, existsSync } from "node:fs";
@@ -19,7 +20,8 @@ const v = "?v=" + short;
 const root = fileURLToPath(new URL("..", import.meta.url));
 const out = join(root, "_site");
 const SITE = ["index.html", "styles.css", "packs.toml", "js", "favicon.svg", "apple-touch-icon.png",
-  "manifest.webmanifest", "icon-192.png", "icon-512.png", "sw.js", "qr.svg", "social-card.png", "listen"];
+  "manifest.webmanifest", "icon-192.png", "icon-512.png", "sw.js", "social-card.png", "listen",
+  "editions.toml", "editions"];
 // Written by scripts/audio/build.mjs in the deploy; without it the app uses the device voice.
 const OPTIONAL = ["audio.json"];
 

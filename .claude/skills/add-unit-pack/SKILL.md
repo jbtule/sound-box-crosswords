@@ -11,10 +11,19 @@ plays well: the right syllable split, an honest picture or none, a "how it sound
 the voice says correctly, and a sentence where one helps. The grown-up reviews your
 judgment calls in the PR, so make them easy to see.
 
-Read the header of `packs.toml` (the entry format) and the Goals in `CLAUDE.md` first. The
+Read the header of `packs.toml` (the entry format), `editions.toml` (one packs file per
+grade), and the Goals in `CLAUDE.md` first. The
 rules below add to them; they don't replace them.
 
 ## 1. Get the list
+
+- **Which grade (edition):** find it in `editions.toml` and work in that edition's file
+  (`packs.toml` for 3rd grade, `editions/kindergarten.toml` for Kindergarten). If it's not
+  clear which child or grade the list is for, ask. A grade that isn't there yet needs a
+  new `[[edition]]` and file; ask before adding one.
+- **Kindergarten high-frequency lists** go into the growing `k-hfw` pack rather than a
+  new Unit pack. That pack sets `words_in_text = true`, so its sentences may use the
+  other words naturally. One-letter words ("I", "a") can't be added: say so in the PR.
 
 - **What you need:** the words, the grade, the school year, and the unit number. If the
   unit number or grade isn't given, look at the newest Unit pack in `packs.toml` (its `id`
@@ -33,7 +42,7 @@ Follow "Working on it" in `CLAUDE.md`: a worktree in `.claude/worktrees/`, branc
 
 ## 3. The pack block
 
-Add it at the top of `packs.toml`, above the previous unit (newest first):
+Add it at the top of the edition's packs file, above the previous unit (newest first):
 
 ```toml
 [[pack]]
@@ -106,7 +115,7 @@ alone, and a TTS voice misreads short or odd parts ("vol" → "volume", "ap" →
 
 ## 6. Pull request
 
-Commit only `packs.toml` (stage it by name). Open a PR titled `Add Unit N spelling pack`
+Commit only the edition's packs file (stage it by name). Open a PR titled `Add Unit N spelling pack`
 with:
 
 - **The source:** where the list came from and anything you were unsure about
@@ -123,7 +132,7 @@ Leave merging to Jay.
 
 The deploy records every new word, syllable and sentence. In the PR, and when telling Jay
 it's ready, give the listen check link for the new pack:
-`https://tools.tuley.name/sound-box-crosswords/listen/?pack=<id>`. Its "Not heard" view
+`https://tools.tuley.name/sound-box-crosswords/listen/?edition=<edition id>&pack=<id>`. Its "Not heard" view
 shows just the new recordings to play and mark ✓ or ✗.
 
 A ✗ comes back as pasted text or a GitHub issue ("Recordings to fix: …"), one line per
