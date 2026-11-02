@@ -43,9 +43,9 @@ export function catalog(state) {
     if (p.total < 3) return;
     out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "Every word in " + p.name, goal: p.total, have: p.done });
     // Then a Legend: every word right on the first try (at some point, not all at once).
-    // Shown once Champion is reached, as the next goal. It doesn't unlock colors (palettes
-    // count pack: achievements only).
-    if (p.done >= p.total) {
+    // Shown once Champion is reached, as the next goal; not for the Custom list ("mine"). It
+    // doesn't unlock colors (palettes count pack: achievements only).
+    if (p.done >= p.total && p.id !== "mine") {
       out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "Every word in " + p.name + " right on the first try", goal: p.total, have: p.firsts || 0 });
     }
   });
