@@ -1,0 +1,143 @@
+# Word packs for Sound Box Crosswords. Packs show up in the order listed here.
+#
+# Each [[pack]] has:
+#   id     short name used to save progress; don't change it once a pack is in use
+#   name   label on the pack button
+#   note   one short line shown under the buttons
+#   words  one word per line: the word with dashes between syllables, a space, then an
+#          emoji for the picture. Dashes drive the syllable colors and "Clap it", so split
+#          words the way a teacher would clap them. Letters only, 2–12 letters.
+#
+# Run `npm run check` after editing; it catches typos and builds test puzzles.
+
+[[pack]]
+id = "blends"
+name = "Blends"
+note = "Two consonants side by side. Say both sounds: fr-og, ne-st."
+words = """
+frog 🐸
+flag 🚩
+drum 🥁
+crab 🦀
+sled 🛷
+clock 🕰️
+swan 🦢
+skunk 🦨
+plant 🪴
+truck 🚚
+nest 🪺
+tent ⛺
+hand ✋
+gift 🎁
+milk 🥛
+drop 💧
+stop 🛑
+plug 🔌
+brick 🧱
+ant 🐜
+spoon 🥄
+tree 🌳
+smile 😃
+"""
+
+[[pack]]
+id = "bossy"
+name = "Bossy R"
+note = "The R changes the vowel: ar, or, er, ir, ur."
+words = """
+car 🚗
+star ⭐
+horn 📯
+corn 🌽
+fork 🍴
+shark 🦈
+scarf 🧣
+shirt 👕
+bird 🐦
+girl 👧
+purse 👛
+storm ⛈️
+horse 🐴
+dart 🎯
+cart 🛒
+worm 🪱
+arm 💪
+jar 🫙
+tur-tle 🐢
+bur-ger 🍔
+"""
+
+[[pack]]
+id = "two"
+name = "2 beats"
+note = "Clap the two beats, then spell one beat at a time."
+words = """
+rab-bit 🐇
+pump-kin 🎃
+bas-ket 🧺
+sun-set 🌅
+ro-bot 🤖
+lem-on 🍋
+ti-ger 🐅
+mag-net 🧲
+car-rot 🥕
+kit-ten 🐈
+pop-corn 🍿
+pen-cil ✏️
+rock-et 🚀
+cac-tus 🌵
+can-dle 🕯️
+win-dow 🪟
+sand-wich 🥪
+drag-on 🐉
+hel-met ⛑️
+but-ton 🔘
+pan-da 🐼
+ze-bra 🦓
+liz-ard 🦎
+spi-der 🕷️
+mon-key 🐒
+chick-en 🐔
+cup-cake 🧁
+snow-man ⛄
+"""
+
+[[pack]]
+id = "three"
+name = "3 beats"
+note = "Three beats. Keep the last one from getting lost."
+words = """
+oc-to-pus 🐙
+ba-nan-a 🍌
+but-ter-fly 🦋
+di-no-saur 🦕
+kan-ga-roo 🦘
+el-e-phant 🐘
+to-ma-to 🍅
+com-put-er 💻
+um-brel-la ☂️
+ham-bur-ger 🍔
+broc-co-li 🥦
+vol-ca-no 🌋
+tel-e-scope 🔭
+la-dy-bug 🐞
+go-ril-la 🦍
+pine-ap-ple 🍍
+straw-ber-ry 🍓
+croc-o-dile 🐊
+fla-min-go 🦩
+pi-an-o 🎹
+"""
+
+# Starter list for "My words" (the grown-up's own list) until they save their own.
+[custom]
+words = """
+ex-plore 🧭
+store 🏪
+more ➕
+snore 😴
+be-fore ⏮️
+shore 🏖️
+chore 🧹
+score 🏆
+"""

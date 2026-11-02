@@ -1,5 +1,5 @@
 // Game state, play logic, rendering, and the grown-up settings sheet.
-import { PACKS, DEFAULT_CUSTOM } from "./words.js";
+import { loadPacks } from "./words.js";
 import { parseList, makePuzzle } from "./crossword.js";
 import { speak, stopSpeech, hasSpeech } from "./speech.js";
 
@@ -12,11 +12,19 @@ var store = {
   set: function (k, v) { try { localStorage.setItem("sbx:" + k, JSON.stringify(v)); } catch (e) {} }
 };
 
+var PACKS, DEFAULT_CUSTOM;
+try {
+  ({ packs: PACKS, starter: DEFAULT_CUSTOM } = await loadPacks());
+} catch (e) {
+  $("#board").innerHTML = '<p class="empty-msg">Couldn’t load the word packs. Check the connection and reload.</p>';
+  throw e;
+}
+
 var settings = Object.assign({ check: "letter", syl: true, kb: "abc", speakSel: true }, store.get("settings", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
-var packId = store.get("pack", "blends");
-if (!PACKS[packId]) packId = "blends";
+var packId = store.get("pack", "");
+if (!PACKS[packId]) packId = Object.keys(PACKS)[0];
 var recent = []; // words from recent puzzles, avoided in the next one
 
 function entries(id) { return parseList(id === "mine" ? customText : PACKS[id].list); }

@@ -16,5 +16,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # ubuntu-latest ships Node; the check script has no dependencies.
-      - run: node scripts/check.mjs
+      # ubuntu-latest ships Node and npm. The browser loads smol-toml from a CDN;
+      # this install is only for the check script.
+      - run: npm ci --ignore-scripts
+      - run: npm run check

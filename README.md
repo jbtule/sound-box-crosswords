@@ -10,14 +10,15 @@ and 2- and 3-syllable words, plus a custom word list.
 
 Live: https://tools.tuley.name/sound-box-crosswords/
 
-Plain HTML, CSS and JavaScript modules, with no build step or dependencies. Progress and
+Plain HTML, CSS and JavaScript modules, with no build step. Progress and
 settings are saved in the browser's localStorage.
 
 | File | What's in it |
 | --- | --- |
 | `index.html` | Page markup |
 | `styles.css` | Styles and light/dark color tokens |
-| `js/words.js` | Word packs, one word per line. **Edit this to add words.** |
+| `packs.toml` | Word packs, one word per line. **Edit this to add words or packs.** |
+| `js/words.js` | Loads `packs.toml` (parsed with [smol-toml](https://github.com/squirrelchat/smol-toml) from a CDN) |
 | `js/crossword.js` | Puzzle generator (no DOM; tested by the check script) |
 | `js/speech.js` | Text-to-speech helpers |
 | `js/app.js` | Game play, rendering, grown-up settings |
@@ -26,9 +27,11 @@ settings are saved in the browser's localStorage.
 
 - Serve the folder and open it: `python3 -m http.server`, then http://localhost:8000.
   (Opening `index.html` directly from disk won't load the modules.)
-- Run `node scripts/check.mjs` (or `npm run check`) before pushing. It checks syntax and
+- `npm install` once, then `npm run check` before pushing. It checks syntax and
   links, validates every word list, and builds test puzzles from each pack. CI runs it on
   every push and PR.
+- Upgrading smol-toml: change the version in both `package.json` and the import map in
+  `index.html`. The check fails if they differ.
 - Workflows are kept clean under [zizmor](https://docs.zizmor.sh/): `zizmor .`
 - Pushing to `main` publishes to GitHub Pages (Settings → Pages → Deploy from a branch →
   `main`, `/ (root)`).

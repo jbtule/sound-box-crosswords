@@ -1,6 +1,6 @@
-// Sanity checks. No dependencies: `node scripts/check.mjs`.
+// Sanity checks: `npm run check` (after `npm install`).
 // 1. Every js/*.js file parses, and index.html points at files that exist.
-// 2. Every built-in word list follows the `syl-la-bles emoji` format.
+// 2. packs.toml parses, and every word list follows the `syl-la-bles emoji` format.
 // 3. The generator builds valid puzzles from every pack.
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
@@ -22,11 +22,37 @@ for (const [, ref] of html.matchAll(/(?:src|href)="(?!https?:|data:)([^"]+)"/g))
   if (!existsSync(join(root, ref))) errors.push(`index.html links to missing file ${ref}`);
 }
 
-const { PACKS, DEFAULT_CUSTOM } = await import("../js/words.js");
+// The browser gets smol-toml from the CDN URL in index.html; Node uses node_modules.
+const cdn = html.match(/"smol-toml": "[^"]*smol-toml@([^/"]+)\//);
+const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).dependencies["smol-toml"];
+if (!cdn || cdn[1] !== pkg) errors.push(`index.html import map uses smol-toml ${cdn?.[1]}, package.json has ${pkg}`);
+
+const { parse } = await import("smol-toml");
+const { readPacks } = await import("../js/words.js");
 const { parseList, makePuzzle, MAX_COLS, MAX_ROWS } = await import("../js/crossword.js");
 
-const lists = Object.entries(PACKS).map(([id, p]) => ({ id, text: p.list }));
-lists.push({ id: "DEFAULT_CUSTOM", text: DEFAULT_CUSTOM });
+const tomlText = readFileSync(join(root, "packs.toml"), "utf8");
+let raw = { pack: [] }, packs = {}, starter = "";
+try {
+  raw = parse(tomlText);
+  ({ packs, starter } = readPacks(tomlText));
+} catch (e) {
+  errors.push(`packs.toml: ${e.message}`);
+}
+const ids = new Set();
+for (const [i, p] of (raw.pack || []).entries()) {
+  const label = `packs.toml pack #${i + 1}${p.id ? ` (${p.id})` : ""}`;
+  for (const f of ["id", "name", "note", "words"]) {
+    if (typeof p[f] !== "string" || !p[f].trim()) errors.push(`${label}: needs ${f} = "..."`);
+  }
+  if (p.id === "mine") errors.push(`${label}: id "mine" is reserved for the grown-up's own list`);
+  if (ids.has(p.id)) errors.push(`${label}: id "${p.id}" is used twice`);
+  ids.add(p.id);
+}
+if (!starter) errors.push(`packs.toml: missing [custom] words = """..."""`);
+
+const lists = Object.entries(packs).map(([id, p]) => ({ id, text: p.list }));
+lists.push({ id: "custom", text: starter });
 
 const LINE = /^([a-z]+(?:-[a-z]+)*) (\S+)$/;
 for (const { id, text } of lists) {
@@ -43,7 +69,7 @@ for (const { id, text } of lists) {
     seen.add(w);
   }
   if (parseList(text).length !== seen.size) errors.push(`${id}: parseList disagrees with the line count`);
-  if (id !== "DEFAULT_CUSTOM" && lines.length < 10) errors.push(`${id}: only ${lines.length} words; packs need variety to build puzzles`);
+  if (id !== "custom" && lines.length < 10) errors.push(`${id}: only ${lines.length} words; packs need variety to build puzzles`);
 }
 
 const RUNS = 50;

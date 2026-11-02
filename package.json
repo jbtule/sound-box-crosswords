@@ -1,8 +1,11 @@
 {
   "private": true,
   "type": "module",
-  "description": "No dependencies. This file only tells Node that js/*.js are ES modules, for scripts/check.mjs.",
+  "description": "No build step. The browser loads smol-toml from a CDN via the import map in index.html; this copy is for scripts/check.mjs.",
   "scripts": {
     "check": "node scripts/check.mjs"
+  },
+  "dependencies": {
+    "smol-toml": "1.9.1"
   }
 }

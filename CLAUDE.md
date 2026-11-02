@@ -49,10 +49,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 
 ## Technical constraints
 
-- **Plain static files, no build step.** No framework, no bundler, no dependencies. Browser
-  ES modules loaded straight from `index.html`; GitHub Pages serves the repo as-is.
-  `package.json` exists only to mark `js/*.js` as modules for Node (and `npm run check`).
-  Fonts from Google Fonts (Fredoka for display, Lexend for body). Everything else is local.
+- **Plain static files, no build step.** No framework, no bundler. Browser ES modules
+  loaded straight from `index.html`; GitHub Pages serves the repo as-is.
+- **Dependencies are fine** when they earn their place. Browser deps load from a CDN via
+  the import map in `index.html`, pinned to an exact version that matches `package.json`
+  (the check enforces this), so the same bare import works in the browser and Node.
+  Currently just `smol-toml`. Fonts from Google Fonts (Fredoka for display, Lexend for body).
 - **Target: iPad Safari**, also phones and desktop. Touch first; physical keyboards work too.
   Must fit ~380px wide; the grid sizes cells to fit (`sizeBoard`, 24–50px).
 - **Speech** uses the Web Speech API (`speechSynthesis`), en-US voice, slowed rates. It only
@@ -70,11 +72,14 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `index.html`: markup only (board, clue bar, letter pad, grown-ups sheet).
 - `styles.css`: all styles. Color tokens on `:root` with dark overrides at the top.
   `--cell` is the box color token; `--cell-size` is the box size set by `sizeBoard`.
-- `js/words.js`: `PACKS` (each has `name`, `note` shown under the chips, and `list`) and
-  `DEFAULT_CUSTOM`. **Word list format** (packs and the custom list share it): one entry per
+- `packs.toml`: the word packs, in display order. Each `[[pack]]` has `id` (saved progress
+  is keyed by it; don't rename), `name`, `note` (shown under the chips), and `words`;
+  `[custom] words` is the starter "My words" list. **Word list format** (packs and the custom list share it): one entry per
   line, `syl-la-bles emoji`, e.g. `but-ter-fly 🦋`. Dashes mark syllables and drive the
   coloring and *Clap it*. Letters only, 2–12 letters. Syllable splits should match how a
   teacher would clap the word.
+- `js/words.js`: `loadPacks` fetches and parses `packs.toml`; `readPacks` turns TOML text
+  into `{ packs, starter }` and appends the built-in `mine` pack.
 - `js/crossword.js`: no DOM, runs in Node. `parseList` reads word lists. `makePuzzle(pool,
   recent)` builds a crossword: greedy placement with crossing checks, many random attempts,
   keeps the layout with the most words and smallest area, max 11 columns × 12 rows so it
@@ -94,8 +99,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 
 - Run locally with any static server, e.g. `python3 -m http.server`, then open
   http://localhost:8000. Opening `index.html` as a file won't work (modules need http).
-- After editing, run `node scripts/check.mjs`: syntax-checks `js/`, checks local links in
-  `index.html`, validates every word list, and builds 50 puzzles per pack. CI runs it too.
+- After editing, run `npm run check` (needs `npm install` once): syntax-checks `js/`,
+  checks local links in `index.html`, validates `packs.toml` and every word list, checks
+  the import map matches `package.json`, and builds 50 puzzles per pack. CI runs it too.
 - GitHub Actions workflows must pass `zizmor .`: SHA-pinned actions, minimal `permissions`,
   `persist-credentials: false`.
 - Test in a narrow viewport (~380px) and in dark mode. Make sure long words (9+ letters)
