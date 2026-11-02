@@ -19,6 +19,7 @@
   --key-edge: #c9d6e5;
   --scrim: rgba(16, 25, 42, 0.45);
   --shadow: 0 1px 2px rgba(27, 42, 65, 0.08), 0 6px 18px rgba(27, 42, 65, 0.07);
+  --float-shadow: 0 -1px 0 rgba(27, 42, 65, 0.08), 0 -8px 20px rgba(27, 42, 65, 0.12);
   --display: "Fredoka", "Lexend", system-ui, sans-serif;
   --body: "Lexend", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -29,6 +30,7 @@
     --sylA: #1c4a3a; --sylA-edge: #4fcf97; --sylB: #3a2f60; --sylB-edge: #a98cf2;
     --ok: #4fcf97; --bad: #ff6f86; --key: #22314f; --key-edge: #364a6f; --scrim: rgba(0, 0, 0, 0.6);
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 18px rgba(0,0,0,0.25);
+    --float-shadow: 0 -1px 0 rgba(0,0,0,0.35), 0 -8px 20px rgba(0,0,0,0.35);
     color-scheme: dark;
   }
 }
@@ -38,6 +40,7 @@
   --sylA: #1c4a3a; --sylA-edge: #4fcf97; --sylB: #3a2f60; --sylB-edge: #a98cf2;
   --ok: #4fcf97; --bad: #ff6f86; --key: #22314f; --key-edge: #364a6f; --scrim: rgba(0, 0, 0, 0.6);
   --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 18px rgba(0,0,0,0.25);
+  --float-shadow: 0 -1px 0 rgba(0,0,0,0.35), 0 -8px 20px rgba(0,0,0,0.35);
   color-scheme: dark;
 }
 
@@ -116,7 +119,14 @@ h1 span { color: var(--accent); }
 .tool { border: 1.5px solid var(--key-edge); background: var(--key); border-radius: 12px; padding: 7px 12px; font-weight: 600; font-size: 0.9rem; }
 .tool:active { transform: translateY(1px); }
 
-.keyboard { display: flex; flex-direction: column; gap: 6px; user-select: none; }
+/* The pad sticks to the bottom of the screen while its place in the layout is below the
+   fold (short screens), so typing never needs scrolling. Its background is always solid
+   (so nothing shows through, even before app.js notices it's floating); .floating adds the
+   shadow. --kb-h (its height) keeps the cursor box from hiding behind it. */
+.keyboard { display: flex; flex-direction: column; gap: 6px; user-select: none; position: sticky; bottom: 0; z-index: 5; margin-inline: -8px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px)); border-radius: 16px 16px 0 0; background: var(--bg); transition: box-shadow 0.15s; }
+.keyboard.floating { box-shadow: var(--float-shadow); }
+.kb-end { height: 1px; margin-top: -15px; }
+.cell { scroll-margin-top: 12px; scroll-margin-bottom: calc(var(--kb-h, 0px) + 12px); }
 .krow { display: flex; gap: 6px; justify-content: center; }
 .key { flex: 1 1 0; max-width: 54px; min-width: 0; height: 50px; border: 1.5px solid var(--key-edge); border-bottom-width: 3px; background: var(--card); border-radius: 10px; font-family: var(--display); font-weight: 600; font-size: 1.35rem; text-transform: lowercase; padding: 0; }
 .key:active { transform: translateY(2px); border-bottom-width: 1.5px; }
@@ -158,5 +168,5 @@ textarea { width: 100%; min-height: 170px; border: 1.5px solid var(--key-edge); 
 @media (prefers-reduced-motion: reduce) {
   .cell.wiggle, .cell.pop { animation: none; }
   .cell.beat { transform: none; }
-  .cell, .key, .progress .fill { transition: none; }
+  .cell, .key, .progress .fill, .keyboard { transition: none; }
 }
