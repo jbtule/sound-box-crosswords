@@ -783,12 +783,13 @@ renderInstall();
 
 /* ---------- share the app ---------- */
 // A quiet footer link for handing the app to another family: a QR code to scan in person,
-// plus the share sheet where there is one, or Copy link. The fixed address, not
+// the device's share sheet where there is one, and Copy link. The fixed address, not
 // location.href, so it matches qr.svg.
 var SHARE = { title: "Sound Box Crosswords", text: "Picture crosswords for spelling practice.", url: "https://tools.tuley.name/sound-box-crosswords/" };
 var canShare = typeof navigator.share === "function" && (typeof navigator.canShare !== "function" || navigator.canShare(SHARE));
+$("#shareGo").hidden = !canShare;
 function openShare() {
-  $("#shareGo").textContent = canShare ? "Share…" : "Copy link";
+  $("#shareCopy").textContent = "Copy link";
   $("#shareSheet").hidden = false;
   $("#shareClose").focus();
 }
@@ -797,8 +798,10 @@ $("#shareBtn").addEventListener("click", openShare);
 $("#shareClose").addEventListener("click", closeShare);
 $("#shareSheet").addEventListener("click", function (e) { if (e.target === $("#shareSheet")) closeShare(); });
 $("#shareGo").addEventListener("click", function () {
-  var btn = $("#shareGo");
-  if (canShare) { navigator.share(SHARE).then(closeShare, function () {}); return; } // dismissed: stay open
+  navigator.share(SHARE).then(closeShare, function () {}); // dismissed: stay open
+});
+$("#shareCopy").addEventListener("click", function () {
+  var btn = $("#shareCopy");
   Promise.resolve().then(function () { return navigator.clipboard.writeText(SHARE.url); })
     .then(function () { btn.textContent = "Copied!"; }, function () { btn.textContent = "Couldn't copy"; })
     .then(function () { setTimeout(function () { btn.textContent = "Copy link"; }, 2000); });

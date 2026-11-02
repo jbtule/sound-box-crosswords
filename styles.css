@@ -212,6 +212,7 @@ h1 span { color: var(--accent); }
 .share-panel { align-items: stretch; text-align: center; }
 .share-panel .help { margin: 0; }
 #shareUrl { overflow-wrap: anywhere; }
+.share-copy { min-height: 44px; padding: 0 18px; font-size: 0.95rem; }
 /* Dark on white whatever the theme: phone cameras read that most easily. */
 .share-qr { display: block; width: 200px; height: auto; margin: 0 auto; padding: 8px; background: #fff; border: 1.5px solid var(--key-edge); border-radius: 12px; }
 .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
