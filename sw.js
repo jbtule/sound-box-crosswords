@@ -21,7 +21,8 @@ const LOOSE = { ignoreVary: true };
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k !== CACHE) await caches.delete(k);
+    // Other apps share this origin (tools.tuley.name) and its cache storage: only clear ours.
+    for (const k of await caches.keys()) if (k.startsWith("sbx-") && k !== CACHE) await caches.delete(k);
     await self.clients.claim();
   })());
 });

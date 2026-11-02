@@ -741,6 +741,45 @@ $("#saveBtn").addEventListener("click", function () {
   setTimeout(closeSheet, 600);
 });
 
+/* ---------- add to Home Screen ---------- */
+// Full screen, offline (sw.js), and Safari can clear a site's saved data after weeks
+// unused, which it doesn't do for Home Screen apps. iPad/iPhone have no install prompt, so
+// Settings shows the Share steps; browsers that fire beforeinstallprompt get a button.
+// Hidden once running from the Home Screen.
+var installed = navigator.standalone === true || !!(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+var installEvt = null;
+function canInstall() { return !installed && (isIOS || !!installEvt); }
+function renderInstall() {
+  $("#installSec").hidden = !canInstall();
+  $("#installIOS").hidden = !isIOS;
+  $("#installBtn").hidden = isIOS || !installEvt;
+  // The tip at the top, until ✕ or installing. Its button installs where the browser can
+  // (Add), and otherwise opens the steps in Settings (How?). Shown from the first visit:
+  // iOS doesn't carry progress from Safari over to the Home Screen app, so earlier is better.
+  $("#installNudge").hidden = !canInstall() || !!store.get("installNudge", "");
+  $("#installHow").textContent = installEvt ? "Add" : "How?";
+}
+function installNow() {
+  if (!installEvt) return;
+  var evt = installEvt;
+  installEvt = null; // a prompt can only be shown once
+  evt.prompt();
+  evt.userChoice.then(renderInstall, renderInstall);
+}
+window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); installEvt = e; renderInstall(); });
+window.addEventListener("appinstalled", function () { installed = true; renderInstall(); });
+$("#installBtn").addEventListener("click", installNow);
+$("#installNo").addEventListener("click", function () {
+  store.set("installNudge", "done"); renderInstall(); $("#settingsBtn").focus();
+});
+$("#installHow").addEventListener("click", function () {
+  if (installEvt) { installNow(); return; }
+  openSheet();
+  $("#installSec").scrollIntoView({ block: "start" });
+});
+renderInstall();
+
 /* ---------- start ---------- */
 $("#pic").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0.85); });
 $("#hearBtn").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0.75); });
