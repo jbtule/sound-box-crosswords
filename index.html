@@ -124,9 +124,10 @@
   </div>
 </section>
 
-<!-- Keep this version in sync with package.json; scripts/check.mjs verifies it. -->
+<!-- Keep this version in sync with package.json; scripts/check.mjs verifies it. +esm is
+     jsDelivr's one-file bundle: one request instead of nine, any of which could fail. -->
 <script type="importmap">
-{ "imports": { "smol-toml": "https://cdn.jsdelivr.net/npm/smol-toml@1.9.1/dist/index.js" } }
+{ "imports": { "smol-toml": "https://cdn.jsdelivr.net/npm/smol-toml@1.9.1/+esm" } }
 </script>
 <script type="module" src="js/app.js"></script>
 </body>
