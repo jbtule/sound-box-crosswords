@@ -21,7 +21,10 @@
 <div class="wrap">
   <div class="top">
     <h1>Sound Box <span>Crosswords</span></h1>
-    <button class="ghost" id="settingsBtn" type="button">Settings</button>
+    <div class="top-buttons">
+      <button class="ghost" id="trophyBtn" type="button" aria-label="Achievements">🏆</button>
+      <button class="ghost" id="settingsBtn" type="button">Settings</button>
+    </div>
   </div>
   <div class="packs" id="packs" role="group" aria-label="Word packs"></div>
   <p class="note" id="packNote"></p>
@@ -41,10 +44,12 @@
 
   <section class="board-card" aria-label="Crossword">
     <div class="board" id="board"></div>
+    <div class="toast" id="toast" role="status" hidden></div>
     <div class="done" id="done" hidden>
       <div class="big">⭐</div>
       <h2>Solved it!</h2>
       <p id="doneStats"></p>
+      <ul class="done-new" id="doneNew" aria-label="New achievements" hidden></ul>
       <button class="primary" id="nextBtn" type="button">Next puzzle</button>
     </div>
   </section>
@@ -68,6 +73,30 @@
     <a class="badge" href="https://claude.com/claude-code" target="_blank" rel="noopener">Made with Claude</a>
   </div>
 </div>
+
+<section class="award" id="award" hidden>
+  <div class="award-card" role="dialog" aria-modal="true" aria-labelledby="awardTitle" aria-describedby="awardDetail">
+    <p class="kicker">New achievement!</p>
+    <div class="award-icon" id="awardIcon" aria-hidden="true"></div>
+    <h2 id="awardTitle"></h2>
+    <p id="awardDetail"></p>
+    <div class="award-dots" id="awardDots" aria-hidden="true"></div>
+    <p class="award-count" id="awardCount"></p>
+    <div class="award-nav">
+      <button class="ghost" id="awardPrev" type="button" aria-label="Previous achievement">‹</button>
+      <button class="primary" id="awardNext" type="button">Nice!</button>
+    </div>
+    <button class="award-close" id="awardClose" type="button" aria-label="Close">✕</button>
+  </div>
+</section>
+
+<section class="sheet" id="achSheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="achTitle">
+    <div class="row" style="justify-content:space-between"><h2 id="achTitle">Achievements</h2><button class="ghost" id="achClose" type="button">Done</button></div>
+    <p class="help" id="achDays"></p>
+    <ul class="ach-list" id="achList"></ul>
+  </div>
+</section>
 
 <section class="sheet" id="sheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">

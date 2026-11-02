@@ -1,6 +1,7 @@
 // Game state, play logic, rendering, and the settings sheet.
 import { confetti } from "./confetti.js";
 import { chime } from "./chime.js";
+import { catalog, award, dayKey, daysThisWeek } from "./achievements.js";
 import { parseList, makePuzzle, blankSentence } from "./crossword.js";
 import { speak, say, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
@@ -55,6 +56,12 @@ var progress = store.get("progress", {});
 // Finished puzzles, newest first: { t: ms, pack, n: words, m: try-agains }. Counts only,
 // never the words: Settings isn't locked and would show the spellings.
 var log = store.get("log", []);
+// Achievement inputs and what's been earned ({ id: timestamp }); see achievements.js.
+// The first time, practice days and clean solves are filled in from the puzzle log.
+var counts = store.get("counts", null), days = store.get("days", null);
+if (!counts) counts = { clean: log.filter(function (e) { return e.m === 0; }).length, comeback: 0 };
+if (!days) days = log.map(function (e) { return dayKey(e.t); }).filter(function (d, i, a) { return a.indexOf(d) === i; });
+var earned = store.get("achievements", {});
 var LOG_MAX = 200;
 function packProgress(id) {
   var pp = progress[id] = progress[id] || {};
@@ -272,6 +279,11 @@ function complete(i, typed) {
   pp.done[W.w] = true;
   if (typed) {
     var st = wordStats(W.w);
+    // Comeback: right on the first try now (no miss this puzzle), after a miss before.
+    if (!missedW[i] && st.miss > 0 && !st.cb) {
+      st.cb = true; counts.comeback++; store.set("counts", counts);
+      toast("🏀 You got it this time!");
+    }
     st.n++;
     if (!missedW[i]) st.ok++;
   }
@@ -293,16 +305,29 @@ function finish() {
   log.unshift({ t: Date.now(), pack: packId, n: P.words.length, m: misses });
   log = log.slice(0, LOG_MAX);
   store.set("log", log);
+  if (misses === 0) counts.clean++;
+  store.set("counts", counts);
+  var today = dayKey(Date.now());
+  if (days.indexOf(today) < 0) { days.push(today); store.set("days", days); }
+  var fresh = checkAchievements();
   renderPacks();
   update();
   var parts = [P.words.length + " words"];
   parts.push(misses === 0 ? "no slips" : misses === 1 ? "1 try again" : misses + " try-agains");
   $("#doneStats").textContent = parts.join(" · ");
+  var newList = $("#doneNew"); newList.innerHTML = "";
+  fresh.forEach(function (a) {
+    var li = document.createElement("li");
+    li.textContent = a.icon + " " + a.title;
+    newList.appendChild(li);
+  });
+  newList.hidden = !fresh.length;
   $("#done").hidden = false;
   confetti($(".board-card"));
   if (settings.chime) chime();
   say("p", "You solved it!", 0.95);
   $("#nextBtn").focus();
+  if (fresh.length) setTimeout(function () { showAwards(fresh); }, 1100); // after the solve celebration
 }
 function back() {
   if (!P || finished) return;
@@ -360,6 +385,14 @@ function renderKeyboard() {
 }
 document.addEventListener("keydown", function (e) {
   if (!$("#sheet").hidden) { if (e.key === "Escape") closeSheet(); return; }
+  if (!$("#achSheet").hidden) { if (e.key === "Escape") closeAchievements(); return; }
+  if (!$("#award").hidden) {
+    if (e.key === "Escape") closeAwards();
+    else if (e.key === "Enter" || e.key === "ArrowRight") nextAward();
+    else if (e.key === "ArrowLeft") prevAward();
+    e.preventDefault();
+    return;
+  }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (/^[a-z]$/i.test(e.key)) { input(e.key.toLowerCase()); e.preventDefault(); }
   else if (e.key === "'" || e.key === "\u2019") { input("'"); e.preventDefault(); } // iPad keyboards type ’
@@ -463,9 +496,111 @@ function renderVoices() {
   $("#voiceTry").disabled = !hasSpeech;
   if (!hasSpeech) $("#voiceHelp").textContent = "Sound isn't available in this browser.";
 }
+/* ---------- achievements ---------- */
+function achState() {
+  return {
+    packs: Object.keys(PACKS).map(function (id) { var c = coverage(id); return { id: id, name: PACKS[id].name, done: c.done, total: c.total }; }),
+    clean: counts.clean, comeback: counts.comeback, days: days
+  };
+}
+// Awards anything newly met and returns it (for the solved card). Never lets a problem
+// here (e.g. odd saved data) stop the game.
+function checkAchievements() {
+  try {
+    var fresh = award(achState(), earned, Date.now());
+    if (fresh.length) store.set("achievements", earned);
+    return fresh;
+  } catch (e) { return []; }
+}
+// A short note over the board that doesn't interrupt play.
+var toastTimer = null;
+function toast(text) {
+  var el = $("#toast");
+  el.textContent = text; el.hidden = false;
+  el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { el.hidden = true; }, 1800);
+}
+// One card that cycles through the newly earned achievements: dots, back/next (buttons,
+// swipe, arrow keys), "Nice!" on the last, and ✕ to close any time.
+var awardQueue = [], awardIndex = 0, awardSeen = 0;
+function showAwards(list) {
+  awardQueue = list; awardIndex = 0; awardSeen = -1;
+  $("#award").hidden = false;
+  showAward();
+}
+function showAward() {
+  var a = awardQueue[awardIndex], n = awardQueue.length, last = awardIndex === n - 1;
+  $("#awardIcon").textContent = a.icon;
+  $("#awardTitle").textContent = a.title;
+  $("#awardDetail").textContent = a.detail;
+  $("#awardCount").textContent = n > 1 ? (awardIndex + 1) + " of " + n : "";
+  var dots = $("#awardDots"); dots.innerHTML = "";
+  if (n > 1) awardQueue.forEach(function (_, i) { var d = document.createElement("span"); if (i === awardIndex) d.className = "on"; dots.appendChild(d); });
+  $("#awardPrev").hidden = awardIndex === 0;
+  $("#awardNext").textContent = last ? "Nice!" : "Next";
+  var card = $("#award .award-card");
+  card.classList.remove("pop"); void card.offsetWidth; card.classList.add("pop");
+  if (awardIndex > awardSeen) { // celebrate each one the first time it's shown
+    awardSeen = awardIndex;
+    confetti(card);
+    if (settings.chime) chime();
+  }
+  $("#awardNext").focus();
+}
+function nextAward() {
+  if (awardIndex < awardQueue.length - 1) { awardIndex++; showAward(); } else closeAwards();
+}
+function prevAward() {
+  if (awardIndex > 0) { awardIndex--; showAward(); }
+}
+function closeAwards() {
+  $("#award").hidden = true;
+  $("#nextBtn").focus();
+}
+function openAchievements() {
+  var now = Date.now(), all = catalog(achState());
+  $("#achDays").textContent = "Practiced " + daysThisWeek(days, now) + " of the last 7 days · " +
+    days.length + (days.length === 1 ? " day" : " days") + " in all";
+  var list = $("#achList"); list.innerHTML = "";
+  // Earned first (newest first), then what's next.
+  // Packs not started yet aren't listed (less clutter); everything else is.
+  all = all.filter(function (a) { return earned[a.id] || a.have > 0 || a.id.indexOf("pack:") !== 0; });
+  all.sort(function (a, b) { return (earned[b.id] || 0) - (earned[a.id] || 0); });
+  all.forEach(function (a) {
+    var got = !!earned[a.id], li = document.createElement("li");
+    li.className = "ach" + (got ? " got" : "");
+    var icon = document.createElement("span"), text = document.createElement("span"), sub = document.createElement("small");
+    icon.className = "icon"; icon.textContent = a.icon;
+    text.className = "text"; text.textContent = a.title;
+    sub.textContent = got ? a.detail + " · " + new Date(earned[a.id]).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+      : a.detail + " · " + Math.min(a.have, a.goal) + " of " + a.goal;
+    text.appendChild(sub);
+    li.append(icon, text);
+    list.appendChild(li);
+  });
+  $("#achSheet").hidden = false;
+  $("#achClose").focus();
+}
+function closeAchievements() { $("#achSheet").hidden = true; $("#trophyBtn").focus(); }
 function closeSheet() { $("#sheet").hidden = true; $("#settingsBtn").focus(); }
 function saveSettings() { store.set("settings", settings); }
 $("#settingsBtn").addEventListener("click", openSheet);
+$("#trophyBtn").addEventListener("click", openAchievements);
+$("#awardNext").addEventListener("click", nextAward);
+$("#awardPrev").addEventListener("click", prevAward);
+$("#awardClose").addEventListener("click", closeAwards);
+$("#award").addEventListener("click", function (e) { if (e.target === $("#award")) closeAwards(); });
+// Swipe left/right on the card to cycle.
+var swipeX = null;
+$("#award").addEventListener("pointerdown", function (e) { swipeX = e.clientX; });
+$("#award").addEventListener("pointerup", function (e) {
+  if (swipeX === null) return;
+  var dx = e.clientX - swipeX; swipeX = null;
+  if (dx < -40) nextAward(); else if (dx > 40) prevAward();
+});
+$("#achClose").addEventListener("click", closeAchievements);
+$("#achSheet").addEventListener("click", function (e) { if (e.target === $("#achSheet")) closeAchievements(); });
 $("#closeBtn").addEventListener("click", closeSheet);
 $("#sheet").addEventListener("click", function (e) { if (e.target === $("#sheet")) closeSheet(); });
 $("#optSyl").addEventListener("change", function (e) { settings.syl = e.target.checked; saveSettings(); update(); });
@@ -509,6 +644,7 @@ if (window.IntersectionObserver) new IntersectionObserver(function (es) {
 }).observe($("#kbEnd"));
 if (!hasSpeech) { ["hearBtn", "clapBtn"].forEach(function (id) { $("#" + id).title = "Sound isn't available in this browser"; }); }
 
+checkAchievements(); // quietly award anything already met (e.g. from before this update)
 renderPacks();
 renderKeyboard();
 newPuzzle();
