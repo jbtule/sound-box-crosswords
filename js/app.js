@@ -3,6 +3,7 @@ import { confetti } from "./confetti.js";
 import { chime } from "./chime.js";
 import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
+import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
 import { catalog, award, dayKey, daysThisWeek } from "./achievements.js";
 import { parseList, makePuzzle, blankSentence, shuffle } from "./crossword.js";
 import { speak, say, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
@@ -64,6 +65,18 @@ var counts = store.get("counts", null), days = store.get("days", null);
 if (!counts) counts = { clean: log.filter(function (e) { return e.m === 0; }).length, comeback: 0 };
 if (!days) days = log.map(function (e) { return dayKey(e.t); }).filter(function (d, i, a) { return a.indexOf(d) === i; });
 var earned = store.get("achievements", {});
+// Color schemes (palettes.js): Classic, plus one more per pack finished. Cosmetic only.
+// Earned achievements are never taken away, so neither are unlocked colors.
+var paletteStyle = document.createElement("style");
+paletteStyle.textContent = paletteCSS();
+document.head.appendChild(paletteStyle);
+function packsFinished() { return Object.keys(earned).filter(function (id) { return id.indexOf("pack:") === 0; }).length; }
+function applyPalette() {
+  var i = PALETTES.findIndex(function (p) { return p.id === settings.palette; });
+  if (i < 0 || i >= unlockedCount(packsFinished())) i = 0;
+  document.documentElement.dataset.palette = PALETTES[i].id;
+}
+applyPalette();
 var LOG_MAX = 200;
 function packProgress(id) {
   var pp = progress[id] = progress[id] || {};
@@ -563,6 +576,8 @@ function showAward() {
   $("#awardIcon").textContent = a.icon;
   $("#awardTitle").textContent = a.title;
   $("#awardDetail").textContent = a.detail;
+  // A pack finished while there are still colors to unlock: say where to find them.
+  $("#awardExtra").hidden = !!awardFrom || a.id.indexOf("pack:") !== 0 || packsFinished() >= PALETTES.length;
   $("#awardCount").textContent = n > 1 ? (awardIndex + 1) + " of " + n : "";
   var dots = $("#awardDots"); dots.innerHTML = "";
   if (n > 1) awardQueue.forEach(function (_, i) { var d = document.createElement("span"); if (i === awardIndex) d.className = "on"; dots.appendChild(d); });
@@ -619,11 +634,36 @@ function renderCollection() {
     wrap.appendChild(sec);
   });
 }
-function showTab(col) {
-  $("#tabAch").setAttribute("aria-selected", String(!col));
-  $("#tabCol").setAttribute("aria-selected", String(col));
-  $("#achPanel").hidden = col; $("#colPanel").hidden = !col;
-  if (col) renderCollection();
+// Color picker: every scheme as a little row of syllable boxes in its own colors (the
+// swatch carries data-palette, so it gets that scheme's tokens). Locked ones show dimmed.
+function renderColors() {
+  var open = unlockedCount(packsFinished()), wrap = $("#palList"), cur = document.documentElement.dataset.palette;
+  $("#palHelp").textContent = open < PALETTES.length
+    ? "Finish every word in a pack to unlock new colors. " + open + " of " + PALETTES.length + " unlocked."
+    : "All " + PALETTES.length + " unlocked!";
+  wrap.innerHTML = "";
+  PALETTES.forEach(function (pal, i) {
+    var locked = i >= open, b = document.createElement("button");
+    b.type = "button"; b.className = "pal"; b.dataset.palette = pal.id; b.disabled = locked;
+    b.setAttribute("aria-pressed", String(pal.id === cur));
+    b.innerHTML = '<span class="pal-boxes" aria-hidden="true"><i class="a cur"></i><i class="a"></i><i class="b"></i><i class="b"></i></span><span class="pal-name"></span>';
+    b.querySelector(".pal-name").textContent = locked ? "🔒 Locked" : pal.name;
+    b.addEventListener("click", function () {
+      settings.palette = pal.id; saveSettings(); applyPalette();
+      renderColors();
+      $('#palList [data-palette="' + pal.id + '"]').focus();
+    });
+    wrap.appendChild(b);
+  });
+}
+var TABS = { ach: ["#tabAch", "#achPanel"], col: ["#tabCol", "#colPanel"], pal: ["#tabPal", "#palPanel"] };
+function showTab(name) {
+  Object.keys(TABS).forEach(function (k) {
+    $(TABS[k][0]).setAttribute("aria-selected", String(k === name));
+    $(TABS[k][1]).hidden = k !== name;
+  });
+  if (name === "col") renderCollection();
+  if (name === "pal") renderColors();
 }
 function openAchievements() {
   var now = Date.now(), all = catalog(achState());
@@ -651,7 +691,7 @@ function openAchievements() {
     }
     list.appendChild(li);
   });
-  showTab(false);
+  showTab("ach");
   $("#achSheet").hidden = false;
   $("#achClose").focus();
 }
@@ -661,8 +701,7 @@ function saveSettings() { store.set("settings", settings); }
 $("#settingsBtn").addEventListener("click", openSheet);
 $("#trophyBtn").addEventListener("click", openAchievements);
 $("#awardNext").addEventListener("click", nextAward);
-$("#tabAch").addEventListener("click", function () { showTab(false); });
-$("#tabCol").addEventListener("click", function () { showTab(true); });
+Object.keys(TABS).forEach(function (k) { $(TABS[k][0]).addEventListener("click", function () { showTab(k); }); });
 $("#awardPrev").addEventListener("click", prevAward);
 $("#awardClose").addEventListener("click", closeAwards);
 $("#awardShare").addEventListener("click", function () {

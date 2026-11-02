@@ -153,6 +153,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   (`js/stickers.js`: abstract SVG badge + gradient + sound motif, different ones in pack
   order) instead of the in-game sound wave. Never emoji or objects, so they can't be
   mistaken for a pack picture, now or in future packs. The solved card shows "+N pictures".
+- `js/palettes.js`: no DOM. `PALETTES`, the grid color schemes (syllable bands, accent,
+  selection; light and dark). Classic is everyone's and must match `styles.css`; finishing
+  a pack (a `pack:` achievement) unlocks the next (`unlockedCount`). `paletteCSS` makes the
+  rules for `:root[data-palette]` and the picker swatches. Picked in the 🏆 sheet's Colors
+  tab (`renderColors` in `app.js`), saved as `settings.palette`. Cosmetic only. The check
+  holds every scheme to Classic's contrast and keeps the two syllable bands clearly apart.
 - `js/sharecard.js`: `renderCard` draws an achievement as a 1080×1350 PNG in the current
   theme (app name, emoji, title, detail, date, up to 6 collected pictures, site address;
   never spelling words or a name); `shareCard` opens the share sheet, or downloads where
