@@ -15,7 +15,10 @@ export function readPacks(text) {
 }
 
 export async function loadPacks() {
-  var res = await fetch(new URL("../packs.toml", import.meta.url));
+  // Carry this module's ?v= cache-busting stamp (added at deploy) over to packs.toml.
+  var url = new URL("../packs.toml", import.meta.url);
+  url.search = new URL(import.meta.url).search;
+  var res = await fetch(url);
   if (!res.ok) throw new Error("packs.toml: HTTP " + res.status);
   return readPacks(await res.text());
 }

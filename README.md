@@ -33,7 +33,8 @@ settings are saved in the browser's localStorage.
 - Upgrading smol-toml: change the version in both `package.json` and the import map in
   `index.html`. The check fails if they differ.
 - Workflows are kept clean under [zizmor](https://docs.zizmor.sh/): `zizmor .`
-- Pushing to `main` publishes to GitHub Pages (Settings → Pages → Deploy from a branch →
-  `main`, `/ (root)`).
+- Pushing to `main` deploys to GitHub Pages through `.github/workflows/ci.yml`, but only if
+  the check passes. `scripts/stamp.mjs` copies the site files to `_site/` and stamps the
+  commit into them: `?v=<sha>` on every local file for cache busting, and the footer badge.
 
 See `CLAUDE.md` for the goals behind the design and a map of the code.

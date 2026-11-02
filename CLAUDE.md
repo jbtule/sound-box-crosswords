@@ -1,8 +1,8 @@
 # Sound Box Crosswords
 
 Picture crosswords for targeted spelling practice. Live at
-https://tools.tuley.name/sound-box-crosswords/ (GitHub Pages from `main`, root folder).
-Pushing to `main` redeploys.
+https://tools.tuley.name/sound-box-crosswords/ (GitHub Pages, deployed by
+`.github/workflows/ci.yml`). Pushing to `main` redeploys once the check passes.
 
 ## Who it's for
 
@@ -50,7 +50,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 ## Technical constraints
 
 - **Plain static files, no build step.** No framework, no bundler. Browser ES modules
-  loaded straight from `index.html`; GitHub Pages serves the repo as-is.
+  loaded straight from `index.html`; the source runs as-is with any static server. The
+  deploy only runs `scripts/stamp.mjs`, which copies `index.html`, `styles.css`,
+  `packs.toml` and `js/` to `_site/` and stamps the commit: `?v=<sha>` cache busting (JS
+  modules via the import map, `packs.toml` via `words.js`) and the footer GitHub badge.
+  New top-level site files must be added to `SITE` in `stamp.mjs`.
 - **Dependencies are fine** when they earn their place. Browser deps load from a CDN via
   the import map in `index.html`, pinned to an exact version that matches `package.json`
   (the check enforces this), so the same bare import works in the browser and Node.
