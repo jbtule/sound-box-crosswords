@@ -13,5 +13,6 @@
   "devDependencies": {
     "playwright": "1.63.0",
     "qrcode": "1.5.4"
-  }
+  },
+  "license": "PolyForm-Noncommercial-1.0.0"
 }

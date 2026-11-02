@@ -42,3 +42,24 @@ settings are saved in the browser's localStorage.
   Setup and details are in the comment at the top of `ci.yml`.
 
 See `CLAUDE.md` for the goals behind the design and a map of the code.
+
+## License
+
+Copyright © 2026 James Tuley. Licensed under the
+[PolyForm Noncommercial License 1.0.0](LICENSE.md): free to use, change and share for
+any noncommercial purpose, including personal use, families, schools and other
+educational or charitable organizations. Commercial use needs separate permission.
+
+This covers the code, the word packs and the recordings. Third-party parts keep their
+own licenses:
+
+- [smol-toml](https://github.com/squirrelchat/smol-toml) (BSD-3-Clause), the TOML parser, loaded
+  from jsDelivr.
+- [Fredoka](https://fonts.google.com/specimen/Fredoka) and
+  [Lexend](https://fonts.google.com/specimen/Lexend) (SIL Open Font License 1.1), from
+  Google Fonts.
+- The recorded voice is generated with [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M)
+  (Apache 2.0), voice `af_heart`, run with [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx).
+- Pictures are emoji drawn by each device's own font; none are bundled.
+- Build-time tools (`qrcode`, Playwright, the speech runtime) are under their own
+  licenses and aren't part of the site.
