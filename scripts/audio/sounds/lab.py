@@ -57,19 +57,27 @@ FINAL = {"b": ("cab", "kˈæ[b]"), "d": ("bed", "bˈɛ[d]"), "g": ("dog", "dˈɔ
          "p": ("cap", "kˈæ[p]"), "t": ("cat", "kˈæ[t]"), "ch": ("much", "mˈʌ[ʧ]"), "j": ("badge", "bˈæ[ʤ]")}
 # More tries for sounds the first round didn't get right (g and j: voiced stops are barely
 # released at the end of a word). Each: (label, word with the target in [brackets],
-# "final", "mid" (between vowels) or "burst", speed, burst length in ms).
+# "final", "mid" (between vowels), "onset" (plus ms of the next vowel) or "burst", speed,
+# and ms (burst length, or how much vowel for onset).
 EXTRA = {
     "g": [(f"final-{w}{'-slow' if sp < SPEED else ''}", ps, "final", sp, 0)
           for w, ps in [("bag", "bˈæ[ɡ]"), ("big", "bˈɪ[ɡ]"), ("leg", "lˈɛ[ɡ]"), ("egg", "ˈɛ[ɡ]")] for sp in (SPEED, SLOW)]
          + [(f"burst{ms}-{w}", ps, "burst", SPEED, ms) for w, ps in [("go", "[ɡ]ˈO"), ("get", "[ɡ]ˈɛt"), ("gum", "[ɡ]ˈʌm")] for ms in (40, 50)],
     # At the end of a word j loses its voicing and sounds like "ch"; between vowels it keeps it.
     "j": [(f"mid-{w}{'-slow' if sp < SPEED else ''}", ps, "mid", sp, 0)
-          for w, ps in [("magic", "mˈæ[ʤ]ɪk"), ("agent", "ˈA[ʤ]ənt"), ("budget", "bˈʌ[ʤ]ɪt")] for sp in (SPEED, SLOW)],
+          for w, ps in [("magic", "mˈæ[ʤ]ɪk"), ("agent", "ˈA[ʤ]ənt"), ("budget", "bˈʌ[ʤ]ɪt")] for sp in (SPEED, SLOW)]
+         + [("jam+20", "[ʤ]ˈæm", "onset", SPEED, 20), ("jet+20", "[ʤ]ˈɛt", "onset", SPEED, 20)],
 }
-# Sounds made of two picked sounds in a row: (first, its method, second, its method, gap ms).
+# Sounds made of two picked sounds in a row: label -> (first, its method, second, its
+# method, second's length in ms (0 = as is), and gap ms, or a crossfade when negative).
 COMBOS = {
-    "kw": [("k", "final", "w", "held", 0), ("k", "final", "w", "held", 60), ("k", "final", "w", "held-short", 0)],
-    "j": [("d", "final", "zh", "held", 0), ("d", "final", "zh", "held-short", 0)],
+    "kw": {"k+w": ("k", "final", "w", "held", 0, 0), "k+w-gap60": ("k", "final", "w", "held", 0, 60),
+           "k+w-short": ("k", "final", "w", "held", 180, 0),
+           "k+w-short-xf20": ("k", "final", "w", "held", 180, -20), "k+w-short-xf40": ("k", "final", "w", "held", 180, -40),
+           "k+w-fast-xf20": ("k", "final", "w", "held", 120, -20), "k+w-fast-xf40": ("k", "final", "w", "held", 120, -40)},
+    "j": {"d+zh": ("d", "final", "zh", "held", 0, 0), "d+zh-short": ("d", "final", "zh", "held", 180, 0),
+          "d+zh100-xf20": ("d", "final", "zh", "held", 100, -20), "d+zh140-xf20": ("d", "final", "zh", "held", 140, -20),
+          "dburst+zh100-xf20": ("d", "burst", "zh", "held", 100, -20), "dburst+zh140-xf20": ("d", "burst", "zh", "held", 140, -20)},
 }
 PEAK = 0.3  # every candidate is scaled to this peak, about the vowels' natural level
 HOLD_MS = 350
@@ -105,28 +113,36 @@ def candidates(name, word_ps, kind, combos=True):
             out[label] = g.cut_phonemes(plain, VOICE, sp, xa, xb, 0, 150)
         elif mode == "mid":  # between vowels: stop where the next vowel starts
             out[label] = g.cut_phonemes(plain, VOICE, sp, xa, xb, 0, 0)
+        elif mode == "onset":  # the sound and the first ms of the vowel after it
+            out[label] = g.cut_phonemes(plain, VOICE, sp, xa, xb, 10, ms)
         else:
             out[label] = g.cut_phonemes(plain, VOICE, sp, xa, xb, 0, 30)[-int(ms / 1000 * g.SR):]
-    for first, m1, second, m2, gap in (COMBOS.get(name, []) if combos else []):
-        a1 = part(first, m1)
-        a2 = part(second, m2)
-        out[f"{first}+{second}" + (f"-gap{gap}" if gap else "") + ("-short" if m2.endswith("short") else "")] = np.concatenate([a1, np.zeros(gap * g.SR // 1000, np.float32), a2])
+    for label, (first, m1, second, m2, length, gap) in (COMBOS.get(name, {}).items() if combos else []):
+        out[label] = join(part(first, m1), part(second, m2, length), gap)
     if kind == "hold":
         out["held"] = g.cut_phonemes(target * 3, VOICE, SLOW)
         out["stretch"] = stretch(out["word"], HOLD_MS)
     return out
 
 
-def part(name, method):
-    """One picked sound, trimmed and at the common peak, for building a two-sound combo."""
+def part(name, method, length_ms=0):
+    """One sound's candidate, trimmed, cut to length_ms (with a fade) and at the common peak."""
     row = next(r for r in SOUNDS if r[0] == name)
-    base = method.replace("-short", "")
-    a = g.trim(candidates(row[0], row[2], row[3], combos=False)[base], g.SR, threshold=0.004, pad=0.0)
-    if method.endswith("-short"):
-        a = a[: int(0.18 * g.SR)]
-        f = int(0.03 * g.SR)
-        a = a.copy(); a[-f:] *= np.linspace(1, 0, f)
+    a = g.trim(candidates(row[0], row[2], row[3], combos=False)[method], g.SR, threshold=0.004, pad=0.0).copy()
+    if length_ms:
+        a = a[: length_ms * g.SR // 1000]
+        f = min(len(a) // 3, 30 * g.SR // 1000)
+        a[-f:] *= np.linspace(1, 0, f)
     return a * (PEAK / max(np.abs(a).max(), 1e-6))
+
+
+def join(a, b, gap_ms):
+    """a then b: with a silent gap, or overlapping (crossfaded) when gap_ms is negative."""
+    if gap_ms >= 0:
+        return np.concatenate([a, np.zeros(gap_ms * g.SR // 1000, np.float32), b])
+    x = min(-gap_ms * g.SR // 1000, len(a), len(b))
+    mid = a[-x:] * np.linspace(1, 0, x) + b[:x] * np.linspace(0, 1, x)
+    return np.concatenate([a[:-x], mid, b[x:]])
 
 
 def stretch(audio, ms):
