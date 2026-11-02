@@ -11,7 +11,8 @@ import { parseList, clipsFor } from "../js/crossword.js";
 var $ = function (s) { return document.querySelector(s); };
 var REPO = "https://github.com/jbtule/sound-box-crosswords";
 var LIVE = "https://tools.tuley.name/sound-box-crosswords/";
-var KIND = { w: "Word", s: "Syllable", t: "Sentence", p: "Phrase", f: "Sound" };
+var KIND = { w: "Word", s: "Syllable", t: "Sentence", p: "Phrase", f: "Sound", sio: "Sound it out" };
+var SIO_GAP = 300; // ms between sounds, as in the app's soundOut()
 var STORE = "sbx:listen";
 
 var marks = {};
@@ -38,9 +39,18 @@ function pages(ed, multi, data, audio, withPhrases) {
   function withKeys(clips) {
     return clips.map(function (c) { return Object.assign({}, c, { key: audio.clips[c.kind + ":" + c.text] || null }); });
   }
+  // Sound it out, in editions that have it: the word's sounds then the word, played like the
+  // app does. One mark for the whole run, keyed by every clip in it, so a changed sound or
+  // word brings it back as not heard.
+  function soundItOut(e) {
+    if (!ed.soundItOut || !e.sounds) return [];
+    var parts = e.sounds.map(function (s) { return audio.clips["f:" + s.sound] || null; }).concat(audio.clips["w:" + e.w] || null);
+    var ok = parts.every(Boolean);
+    return [{ kind: "sio", text: e.sounds.map(function (s) { return s.sound; }).join(" · "), parts: parts, key: ok ? "sio:" + parts.join("+") : null }];
+  }
   function fromList(id, name, list) {
     out.push({ id: id, edition: ed, short: name, name: (multi ? ed.name + " · " : "") + name,
-      words: parseList(list).map(function (e) { return { w: e.w, syll: e.syll, pic: e.pic, clips: withKeys(clipsFor(e)) }; }) });
+      words: parseList(list).map(function (e) { return { w: e.w, syll: e.syll, pic: e.pic, clips: withKeys(clipsFor(e)).concat(soundItOut(e)) }; }) });
   }
   Object.keys(data.packs).forEach(function (id) { if (id !== "mine") fromList(id, data.packs[id].name, data.packs[id].list); });
   if (data.starter) fromList("custom", "Custom starter", data.starter);
@@ -91,11 +101,22 @@ function next() {
   if (!item) { playingBtn = null; return; }
   playingBtn = item.btn;
   if (playingBtn) playingBtn.classList.add("playing");
+  if (item.gap) { setTimeout(next, item.gap); return; } // a pause in a run (Sound it out)
   player.src = item.url;
   // AbortError just means a newer tap replaced this clip; anything else skips it.
   player.play().catch(function (e) { if (e.name !== "AbortError") next(); });
 }
 function play(items) { player.pause(); queue = items.slice(); next(); }
+
+// Sound it out as the app plays it: each sound, a pause after it, then the word.
+function sioItems(c, base, btn) {
+  var items = [];
+  c.parts.forEach(function (k, i) {
+    items.push({ url: base + k + ".mp3", btn: btn });
+    if (i < c.parts.length - 1) items.push({ gap: SIO_GAP, btn: btn });
+  });
+  return items;
+}
 
 /* ---------- index ---------- */
 function href(page) { return "?edition=" + encodeURIComponent(page.edition.id) + "&pack=" + encodeURIComponent(page.id); }
@@ -211,8 +232,9 @@ function renderPack(page, base) {
       var li = el("li", "clip is-" + state(c.key));
       var btn = el("button", "play", "▶");
       btn.type = "button"; btn.setAttribute("aria-label", "Play " + KIND[c.kind] + ": " + c.text);
-      btn.addEventListener("click", function () { play([{ url: base + c.key + ".mp3", btn: btn }]); });
-      buttons.push({ url: base + c.key + ".mp3", btn: btn });
+      var items = c.kind === "sio" ? sioItems(c, base, btn) : [{ url: base + c.key + ".mp3", btn: btn }];
+      btn.addEventListener("click", function () { play(items); });
+      buttons.push.apply(buttons, items);
       var what = el("div", "what");
       what.appendChild(el("span", "kind", KIND[c.kind] + (c.part && c.part !== c.text ? " · " + c.part : "")));
       what.appendChild(el("span", "text", c.text));
@@ -265,7 +287,10 @@ function badLines(pagesToReport) {
         seen[page.id + c.key] = 1;
         var note = marks[c.key].note ? " — " + marks[c.key].note.trim() : "";
         var what = c.kind === "s" ? 'syllable "' + c.part + '" (hint "' + c.text + '")' : KIND[c.kind].toLowerCase() + ' "' + c.text + '"';
-        lines.push("- " + page.name + ", " + w.syll + ": " + what + note + " [" + c.kind + ":" + c.text + " → " + c.key + "]");
+        var ref = c.kind === "sio"
+          ? c.text.split(" · ").map(function (n) { return "f:" + n; }).join(" ") + " then w:" + w.w + "; a bad sound is fixed in scripts/audio/sounds/picks.json, a bad split in the word's {…}"
+          : c.kind + ":" + c.text + " → " + c.key;
+        lines.push("- " + page.name + ", " + w.syll + ": " + what + note + " [" + ref + "]");
       });
     });
   });
