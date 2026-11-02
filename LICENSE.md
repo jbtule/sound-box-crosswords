@@ -1,4 +1,4 @@
-Required Notice: Copyright © 2026 Jay Tuley (https://tools.tuley.name/sound-box-crosswords/)
+Required Notice: Copyright © 2026 James Tuley (https://tools.tuley.name/sound-box-crosswords/)
 
 # PolyForm Noncommercial License 1.0.0
 

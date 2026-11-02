@@ -45,7 +45,7 @@ See `CLAUDE.md` for the goals behind the design and a map of the code.
 
 ## License
 
-Copyright © 2026 Jay Tuley. Licensed under the
+Copyright © 2026 James Tuley. Licensed under the
 [PolyForm Noncommercial License 1.0.0](LICENSE.md): free to use, change and share for
 any noncommercial purpose, including personal use, families, schools and other
 educational or charitable organizations. Commercial use needs separate permission.
