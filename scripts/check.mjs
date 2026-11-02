@@ -19,10 +19,12 @@ for (const f of readdirSync(join(root, "js")).filter((f) => f.endsWith(".js"))) 
     errors.push(`js/${f} syntax error:\n` + e.stderr.toString());
   }
 }
-try {
-  execFileSync(process.execPath, ["--check", join(root, "sw.js")], { stdio: "pipe" });
-} catch (e) {
-  errors.push(`sw.js syntax error:\n` + e.stderr.toString());
+for (const f of ["sw.js", "listen/listen.js"]) {
+  try {
+    execFileSync(process.execPath, ["--check", join(root, f)], { stdio: "pipe" });
+  } catch (e) {
+    errors.push(`${f} syntax error:\n` + e.stderr.toString());
+  }
 }
 try {
   const manifest = JSON.parse(readFileSync(join(root, "manifest.webmanifest"), "utf8"));
@@ -35,10 +37,21 @@ for (const [, ref] of html.matchAll(/(?:src|href)="(?!https?:|data:)([^"]+)"/g))
   if (!existsSync(join(root, ref))) errors.push(`index.html links to missing file ${ref}`);
 }
 
-// The browser gets smol-toml from the CDN URL in index.html; Node uses node_modules.
-const cdn = html.match(/"smol-toml": "[^"]*smol-toml@([^/"]+)\//);
+// The listen check (listen/): a grown-up tool that spells every pack word, so it must stay
+// unlinked from the app and out of search engines.
+const listenHtml = readFileSync(join(root, "listen", "index.html"), "utf8");
+for (const [, ref] of listenHtml.matchAll(/(?:src|href)="(?!https?:|data:|\?|\.\/")([^"]+)"/g)) {
+  if (!existsSync(join(root, "listen", ref))) errors.push(`listen/index.html links to missing file ${ref}`);
+}
+if (!listenHtml.includes('<meta name="robots" content="noindex, nofollow">')) errors.push("listen/index.html must keep its noindex robots tag");
+if (/href="[^"]*listen/.test(html)) errors.push("index.html must not link to the listen check");
+
+// The browser gets smol-toml from the CDN URL in index.html (and listen/); Node uses node_modules.
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).dependencies["smol-toml"];
-if (!cdn || cdn[1] !== pkg) errors.push(`index.html import map uses smol-toml ${cdn?.[1]}, package.json has ${pkg}`);
+for (const [name, page] of [["index.html", html], ["listen/index.html", listenHtml]]) {
+  const cdn = page.match(/"smol-toml": "[^"]*smol-toml@([^/"]+)\//);
+  if (!cdn || cdn[1] !== pkg) errors.push(`${name} import map uses smol-toml ${cdn?.[1]}, package.json has ${pkg}`);
+}
 
 // qr.svg (the share sheet's QR code) is generated; keep it current with its address.
 const { SHARE_URL: SHARE_ADDR } = await import("./qr.mjs");

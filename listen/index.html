@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Grown-up tool for checking the recorded audio. It spells every pack word, so nothing in
+     the app links here, and search engines are asked to skip it. -->
+<meta name="robots" content="noindex, nofollow">
+<title>Listen check · Sound Box</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" crossorigin href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lexend:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .wrap { padding: 16px; }
+  .crumb { color: var(--muted); font-size: 0.9rem; text-decoration: none; }
+  .crumb:hover { text-decoration: underline; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .filters { display: flex; gap: 4px; background: var(--key); border-radius: 999px; padding: 4px; }
+  .filters button { border: none; background: transparent; border-radius: 999px; padding: 6px 12px; min-height: 36px; font-weight: 600; font-size: 0.88rem; color: var(--muted); }
+  .filters button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+  .card { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); padding: 14px; }
+  .packs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .packs a { display: flex; justify-content: space-between; gap: 12px; align-items: center; color: inherit; text-decoration: none; }
+  .packs .name { font-family: var(--display); font-weight: 600; font-size: 1.15rem; }
+  .counts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; font-size: 0.8rem; font-weight: 600; }
+  .pill { border-radius: 999px; padding: 2px 9px; background: var(--key); color: var(--muted); white-space: nowrap; }
+  .pill.new { background: var(--accent-soft); color: var(--ink); }
+  .pill.bad { background: color-mix(in srgb, var(--bad) 18%, var(--card)); color: var(--bad); }
+  .pill.ok { color: var(--ok); }
+  .word h2 { font-family: var(--display); font-size: 1.3rem; margin: 0 0 8px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .word h2 .emoji { font-size: 1.4rem; }
+  .word h2 .tool { font-size: 0.85rem; }
+  .clips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .clip { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 12px; background: var(--key); }
+  .clip.is-ok { background: color-mix(in srgb, var(--ok) 10%, var(--key)); }
+  .clip.is-bad { background: color-mix(in srgb, var(--bad) 12%, var(--key)); }
+  .clip .play { width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid var(--key-edge); background: var(--card); font-size: 1rem; }
+  .clip .play.playing { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .clip .what { min-width: 0; }
+  .clip .kind { display: block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .clip .text { overflow-wrap: anywhere; }
+  .marks { display: flex; gap: 6px; }
+  .marks button { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid var(--key-edge); background: var(--card); font-size: 1.1rem; }
+  .marks .yes[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .marks .no[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .note { grid-column: 2 / -1; width: 100%; box-sizing: border-box; font: inherit; font-size: 0.9rem; padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--key-edge); background: var(--card); color: var(--ink); }
+  .empty { color: var(--muted); text-align: center; padding: 24px 8px; }
+  #status { min-height: 1.2em; }
+  #list { display: flex; flex-direction: column; gap: 10px; }
+  @media (prefers-reduced-motion: reduce) { .clip .play.playing { box-shadow: none; } }
+</style>
+</head>
+<body>
+<main class="wrap" id="main">
+  <a class="crumb" id="crumb" href="./" hidden>‹ All packs</a>
+  <h1 id="title">Listen check</h1>
+  <p class="help" id="intro">Play each recording and mark it ✓ if it sounds right or ✗ if not. Marks stay on this device and reset only when a recording changes. Report sends the ✗ list to fix.</p>
+  <div class="bar" id="bar" hidden>
+    <div class="filters" role="group" aria-label="Show">
+      <button type="button" data-filter="new" aria-pressed="true">Not heard</button>
+      <button type="button" data-filter="bad" aria-pressed="false">Marked ✗</button>
+      <button type="button" data-filter="all" aria-pressed="false">All</button>
+    </div>
+  </div>
+  <div id="list"></div>
+  <div class="bar" id="report" hidden>
+    <button class="tool" id="copyBtn" type="button">Copy ✗ list</button>
+    <a class="tool" id="issueBtn" target="_blank" rel="noopener" style="text-decoration:none">Open a GitHub issue</a>
+    <span class="help" id="status" role="status"></span>
+  </div>
+</main>
+<!-- Same as index.html; scripts/check.mjs keeps both in sync with package.json. -->
+<script type="importmap">
+{ "imports": { "smol-toml": "https://cdn.jsdelivr.net/npm/smol-toml@1.9.1/+esm" } }
+</script>
+<script type="module" src="listen.js"></script>
+</body>
+</html>

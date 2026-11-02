@@ -33,6 +33,17 @@ export function parseList(text) {
   return out;
 }
 
+// The recordings one word needs, in play order: the word, each Break it down syllable
+// (its how-it-sounds hint when there is one), and the context sentence. Used by
+// scripts/audio/build.mjs to make them and by listen/ to check them.
+export function clipsFor(e) {
+  var out = [{ kind: "w", text: e.w }];
+  var syll = e.syll.split("-");
+  if (syll.length > 1) (e.say || syll).forEach(function (s, i) { out.push({ kind: "s", text: s, part: syll[i] }); });
+  if (e.sentence) out.push({ kind: "t", text: e.sentence });
+  return out;
+}
+
 export function shuffle(a) {
   for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
   return a;
