@@ -1,5 +1,6 @@
 // Game state, play logic, rendering, and the settings sheet.
 import { loadPacks } from "./words.js";
+import { confetti } from "./confetti.js";
 import { parseList, makePuzzle } from "./crossword.js";
 import { speak, say, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
@@ -27,7 +28,9 @@ var packId = store.get("pack", "");
 if (!PACKS[packId]) packId = Object.keys(PACKS)[0];
 var recent = []; // words from recent puzzles, avoided in the next one
 // Per pack: `done` = words completed at least once (the % shown); `round` = words completed
-// since the pack was last fully covered, so new puzzles bring in the rest first.
+// since the pack was last fully covered, so new puzzles bring in the rest first;
+// `stats[word]` = { n: times spelled (typed, not finished by a crossing word),
+// ok: times right on the first try, miss: wrong tries }.
 var progress = store.get("progress", {});
 // Finished puzzles, newest first: { t: ms, pack, n: words, m: try-agains }. Counts only,
 // never the words: Settings isn't locked and would show the spellings.
@@ -35,7 +38,7 @@ var log = store.get("log", []);
 var LOG_MAX = 200;
 function packProgress(id) {
   var pp = progress[id] = progress[id] || {};
-  pp.done = pp.done || {}; pp.round = pp.round || [];
+  pp.done = pp.done || {}; pp.round = pp.round || []; pp.stats = pp.stats || {};
   return pp;
 }
 
@@ -46,10 +49,11 @@ var P = null; // current puzzle, from makePuzzle()
 // fill: letter typed per cell; locked: confirmed-correct cells; doneW: finished word indexes;
 // cur: selected word; pos: cursor letter index within it.
 var fill = {}, locked = {}, doneW = {}, cur = 0, pos = 0, misses = 0, finished = false;
+var missedW = {}; // word indexes with a wrong try in this puzzle
 
 function newPuzzle() {
   $("#done").hidden = true;
-  finished = false; fill = {}; locked = {}; doneW = {}; misses = 0;
+  finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {};
   var pool = entries(packId);
   if (pool.length < 3) { P = null; renderEmpty(); return; }
   var pp = packProgress(packId), words = pool.map(function (e) { return e.w; });
@@ -171,7 +175,7 @@ function settleCrossings(kk) {
     var W = P.words[i];
     if (W.cells.every(function (c, j) { return fill[c] === W.w[j]; })) newly.push(i);
   });
-  newly.forEach(complete);
+  newly.forEach(function (i) { complete(i, false); });
   return newly.length > 0;
 }
 function flash(kk, cls, ms) {
@@ -195,8 +199,12 @@ function input(ch) {
 // Complete the word if right; otherwise flash wrong boxes, then clear them.
 function checkWord(i) {
   var W = P.words[i];
-  if (W.cells.every(function (c, j) { return fill[c] === W.w[j]; })) { complete(i); update(); return; }
+  if (W.cells.every(function (c, j) { return fill[c] === W.w[j]; })) { complete(i, true); update(); return; }
   misses++;
+  missedW[i] = true;
+  var st = wordStats(W.w);
+  st.miss++;
+  store.set("progress", progress);
   var firstWrong = -1;
   W.cells.forEach(function (c, j) {
     if (fill[c] !== W.w[j]) {
@@ -216,7 +224,12 @@ function nextUnfinished() {
   for (var s = 1; s <= o.length; s++) { var i = o[(k + s) % o.length]; if (!doneW[i]) return i; }
   return -1;
 }
-function complete(i) {
+function wordStats(w) {
+  var stats = packProgress(packId).stats;
+  return stats[w] = stats[w] || { n: 0, ok: 0, miss: 0 };
+}
+// `typed`: the player spelled it (checkWord), rather than a crossing word filling it in.
+function complete(i, typed) {
   if (doneW[i]) return;
   doneW[i] = true;
   var W = P.words[i];
@@ -224,6 +237,11 @@ function complete(i) {
   say("w", W.w, 0.9);
   var pp = packProgress(packId);
   pp.done[W.w] = true;
+  if (typed) {
+    var st = wordStats(W.w);
+    st.n++;
+    if (!missedW[i]) st.ok++;
+  }
   if (pp.round.indexOf(W.w) < 0) pp.round.push(W.w);
   store.set("progress", progress);
   renderProgress();
@@ -248,6 +266,7 @@ function finish() {
   parts.push(misses === 0 ? "no slips" : misses === 1 ? "1 try again" : misses + " try-agains");
   $("#doneStats").textContent = parts.join(" · ");
   $("#done").hidden = false;
+  confetti($(".board-card"));
   say("p", "You solved it!", 0.95);
   $("#nextBtn").focus();
 }

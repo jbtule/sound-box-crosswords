@@ -122,12 +122,17 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   keeps the layout with the most words and smallest area, max 11 columns × 12 rows so it
   fits a phone, avoids `recent` words. Returns `P` (`words`, `cells`, `rows`, `cols`); each
   word has `cells`, `chunks` (syllables) and `sylOf` (syllable index per letter).
+- `js/confetti.js`: `confetti(host)`, the solve celebration (skipped with reduced motion).
 - `js/speech.js`: `say(kind, text, rate, cancel)` (recorded clip or device voice, one
   queue; kinds `w` word, `s` syllable, `t` sentence, `p` phrase), `stopSpeech`,
   `speechEpoch`, `speak` (device voice only), `hasSpeech`; voice ranking (`score`), `listVoices`,
   `setVoice` (a `voiceURI`, or "" for Automatic), `onVoicesChanged` (Safari loads voices late).
 - `js/app.js`: everything on screen.
-  - Play state: `fill`, `locked`, `doneW`, `cur` (word), `pos` (letter index), `misses`.
+  - Play state: `fill`, `locked`, `doneW`, `cur` (word), `pos` (letter index), `misses`,
+    `missedW` (words with a wrong try this puzzle).
+  - Saved progress (`sbx:progress`, per pack): `done`, `round` (coverage), and
+    `stats[word]` = `{ n, ok, miss }` (typed completions, first-try right, wrong tries);
+    words finished by a crossing word don't count as typed. `sbx:log`: finished puzzles.
   - `input` / `checkWord` / `complete` / `settleCrossings`: whole-word checking only. Letters
     are accepted until the word is full; then wrong letters flash and clear. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
