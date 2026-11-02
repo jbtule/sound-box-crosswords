@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- The link-preview image (social-card.png, 1200×630). `npm run card` renders this page with
      the app's own stylesheet, so the boxes and colors match. The words here (sound, box,
-     dolphin, fish) aren't pack words: the card must never spell an answer. -->
+     dolphin, fish, and the sentence) aren't pack words: the card must never spell an answer. -->
 <html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
@@ -11,13 +11,15 @@
   html, body { width: 1200px; height: 630px; overflow: hidden; }
   body { background-size: 30px 30px; }
   .card { display: flex; align-items: center; gap: 56px; height: 100%; padding: 0 72px; box-sizing: border-box; }
-  .words { flex: 1; display: flex; flex-direction: column; gap: 22px; }
-  h1 { font-size: 5.2rem; line-height: 0.98; }
+  .words { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+  h1 { font-size: 4.6rem; line-height: 0.98; }
   .tag { margin: 0; font-size: 1.85rem; line-height: 1.35; color: var(--muted); max-width: 15em; }
   .tag b { color: var(--ink); font-weight: 600; }
-  .clues { display: flex; gap: 14px; }
-  .clue { width: 76px; height: 76px; display: grid; place-items: center; font-size: 2.6rem; background: var(--card); border-radius: 18px; box-shadow: var(--shadow); }
-  .url { margin: 0; font-size: 1.35rem; font-weight: 600; color: var(--muted); }
+  .clue { display: grid; grid-template-columns: auto 1fr; gap: 14px 18px; align-items: center; background: var(--card); border-radius: 22px; box-shadow: var(--shadow); padding: 18px 22px; max-width: 540px; }
+  .clue .pic { width: 84px; height: 84px; font-size: 3rem; }
+  .clue .tools { display: flex; gap: 12px; }
+  .clue .tool { font-size: 1.35rem; padding: 10px 18px; border-radius: 14px; }
+  .clue .sent { grid-column: 1 / -1; min-height: 0; font-size: 1.45rem; }
   .grid-card { background: var(--card); border-radius: 28px; box-shadow: var(--shadow); padding: 28px; }
   .board { --cell-size: 58px; gap: 6px; grid-template-columns: repeat(5, var(--cell-size)); }
   .cell { font-size: 2rem; }
@@ -28,9 +30,14 @@
 <div class="card">
   <div class="words">
     <h1>Sound Box <span>Crosswords</span></h1>
-    <p class="tag">Picture crosswords for spelling. <b>One box per letter</b>, so a missing sound is easy to spot.</p>
-    <div class="clues" aria-hidden="true"><div class="clue">🔊</div><div class="clue">📦</div><div class="clue">🐬</div><div class="clue">🐟</div></div>
-    <p class="url">tools.tuley.name/sound-box-crosswords</p>
+    <p class="tag">Hear the word, then spell it. <b>One box per letter</b>, so a missing sound is easy to spot.</p>
+    <!-- Like the app's clue bar for a listen-only word: the sound wave, Hear it / Clap it,
+         and the spoken sentence with the word left blank. -->
+    <div class="clue" aria-hidden="true">
+      <div class="pic"><svg class="wave" viewBox="0 0 24 24"><path d="M3 10v4M7 6.5v11M11 3v18M15 7.5v9M19 10v4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></div>
+      <div class="tools"><span class="tool">Hear it</span><span class="tool">Clap it</span></div>
+      <p class="sent">The ____ jumped out of the waves.</p>
+    </div>
   </div>
   <div class="grid-card">
     <!-- box down, sound across (one box left empty), dolphin down, fish across -->
