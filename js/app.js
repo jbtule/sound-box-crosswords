@@ -97,7 +97,6 @@ var newPics = 0;  // pictures added to the collection in this puzzle
 function newPuzzle() {
   if (updateReady) { location.reload(); return; }
   $("#done").hidden = true;
-  $("#installNudge").hidden = true;
   finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {}; newPics = 0;
   var pool = entries(packId);
   if (pool.length < 3) { P = null; renderEmpty(); return; }
@@ -346,10 +345,7 @@ function finish() {
   if (settings.chime) chime();
   say("p", "You solved it!", 0.95);
   $("#nextBtn").focus();
-  // A one-time tip for the grown-up to add the app to the Home Screen, after a win.
-  var nudge = canInstall() && !store.get("installNudge", "");
-  $("#installNudge").hidden = !nudge;
-  if (nudge) store.set("installNudge", "shown");
+  renderInstall(); // the Home Screen tip appears after the first finished puzzle
   if (fresh.length) setTimeout(function () { showAwards(fresh); }, 1100); // after the solve celebration
 }
 function back() {
@@ -759,7 +755,8 @@ function renderInstall() {
   $("#installSec").hidden = !canInstall();
   $("#installIOS").hidden = !isIOS;
   $("#installBtn").hidden = isIOS || !installEvt;
-  if (!canInstall()) $("#installNudge").hidden = true;
+  // The tip at the top: from the first finished puzzle until ✕, How? or installing.
+  $("#installNudge").hidden = !canInstall() || !log.length || !!store.get("installNudge", "");
 }
 function installNow() {
   if (!installEvt) return;
@@ -771,8 +768,10 @@ function installNow() {
 window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); installEvt = e; renderInstall(); });
 window.addEventListener("appinstalled", function () { installed = true; renderInstall(); });
 $("#installBtn").addEventListener("click", installNow);
-$("#installNo").addEventListener("click", function () { $("#installNudge").hidden = true; $("#nextBtn").focus(); });
+function dropNudge() { store.set("installNudge", "done"); renderInstall(); }
+$("#installNo").addEventListener("click", function () { dropNudge(); $("#settingsBtn").focus(); });
 $("#installHow").addEventListener("click", function () {
+  dropNudge();
   if (installEvt) { installNow(); return; }
   openSheet();
   $("#installSec").scrollIntoView({ block: "start" });

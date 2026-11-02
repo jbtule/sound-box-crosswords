@@ -26,6 +26,11 @@
       <button class="ghost" id="settingsBtn" type="button">Settings</button>
     </div>
   </div>
+  <div class="install-nudge" id="installNudge" hidden>
+    <span>Add Sound Box to your Home Screen to play full screen, even offline.</span>
+    <button class="tool" id="installHow" type="button">How?</button>
+    <button class="nudge-x" id="installNo" type="button" aria-label="Hide this tip">✕</button>
+  </div>
   <div class="packs" id="packs" role="group" aria-label="Word packs"></div>
   <p class="note" id="packNote"></p>
   <div class="progress" id="packProg" hidden><div class="track"><div class="fill"></div></div><span class="txt"></span></div>
@@ -42,11 +47,6 @@
     <p class="sent" id="clueSent" hidden></p>
   </section>
 
-  <div class="install-nudge" id="installNudge" hidden>
-    <span>Grown-ups: add Sound Box to the Home Screen to play full screen, even offline.</span>
-    <button class="tool" id="installHow" type="button">How?</button>
-    <button class="nudge-x" id="installNo" type="button" aria-label="Hide this tip">✕</button>
-  </div>
   <section class="board-card" aria-label="Crossword">
     <div class="board" id="board"></div>
     <div class="toast" id="toast" role="status" hidden></div>
