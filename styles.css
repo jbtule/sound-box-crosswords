@@ -99,6 +99,9 @@ h1 span { color: var(--accent); }
 .cell.pop { animation: pop 0.45s; }
 @keyframes wiggle { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(3px)} }
 @keyframes pop { 0%{transform:scale(1)} 45%{transform:scale(1.18)} 100%{transform:scale(1)} }
+/* Fast taps on the pad (the "ll" in spell) or the boxes shouldn't zoom, and a long press
+   shouldn't select text or pop up the copy menu. */
+.board, .keyboard, .cluebar, button { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .empty-msg { color: var(--muted); text-align: center; max-width: 34ch; align-self: center; }
 
 .done { position: absolute; inset: 0; border-radius: 18px; background: color-mix(in srgb, var(--card) 92%, transparent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 16px; }

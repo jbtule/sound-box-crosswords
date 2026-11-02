@@ -1,5 +1,6 @@
 // Sanity checks: `npm run check` (after `npm install`).
-// 1. Every js/*.js file parses, and index.html points at files that exist.
+// 1. Every js/*.js file and sw.js parse, index.html points at files that exist, and the
+//    manifest's icons exist.
 // 2. packs.toml parses, and every word list follows the `syl-la-bles emoji` format.
 // 3. The generator builds valid puzzles from every pack.
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -16,6 +17,17 @@ for (const f of readdirSync(join(root, "js")).filter((f) => f.endsWith(".js"))) 
   } catch (e) {
     errors.push(`js/${f} syntax error:\n` + e.stderr.toString());
   }
+}
+try {
+  execFileSync(process.execPath, ["--check", join(root, "sw.js")], { stdio: "pipe" });
+} catch (e) {
+  errors.push(`sw.js syntax error:\n` + e.stderr.toString());
+}
+try {
+  const manifest = JSON.parse(readFileSync(join(root, "manifest.webmanifest"), "utf8"));
+  for (const i of manifest.icons) if (!existsSync(join(root, i.src))) errors.push(`manifest.webmanifest: missing icon ${i.src}`);
+} catch (e) {
+  errors.push(`manifest.webmanifest: ${e.message}`);
 }
 const html = readFileSync(join(root, "index.html"), "utf8");
 for (const [, ref] of html.matchAll(/(?:src|href)="(?!https?:|data:)([^"]+)"/g)) {

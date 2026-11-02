@@ -13,11 +13,28 @@ var store = {
   set: function (k, v) { try { localStorage.setItem("sbx:" + k, JSON.stringify(v)); } catch (e) {} }
 };
 
+// Offline copy (sw.js), so a home-screen launch works without a connection. Skipped on
+// localhost so local edits always show. On the first visit everything loads before the
+// worker runs, so hand it the list of what loaded to save now.
+if ("serviceWorker" in navigator && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+  navigator.serviceWorker.register(new URL("../sw.js", import.meta.url))
+    .then(function () { return navigator.serviceWorker.ready; })
+    .then(function (reg) {
+      var urls = performance.getEntriesByType("resource").map(function (r) { return r.name; });
+      urls.push(location.href);
+      reg.active.postMessage({ warm: urls });
+    })
+    .catch(function () {});
+}
+
 var PACKS, DEFAULT_CUSTOM;
 try {
   ({ packs: PACKS, starter: DEFAULT_CUSTOM } = await loadPacks());
 } catch (e) {
-  $("#board").innerHTML = '<p class="empty-msg">Couldn’t load the word packs. Check the connection and reload.</p>';
+  // A home-screen app has no reload button, so offer one.
+  $("#board").innerHTML = '<p class="empty-msg">Couldn’t load the word packs. Check the connection, then try again.</p>' +
+    '<button class="primary" id="retryBtn" type="button">Try again</button>';
+  $("#retryBtn").onclick = function () { location.reload(); };
   throw e;
 }
 
