@@ -101,6 +101,13 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `favicon.svg` (hand-drawn, simple enough for 16px) and `apple-touch-icon.png` (180px
   home-screen icon, from an Image Playground render): the same idea, a crossing of sound
   boxes with the empty orange box and sound waves.
+- `manifest.webmanifest`, `icon-192.png`, `icon-512.png`: the home-screen / install
+  manifest (short name "Sound Box"). Icons are the same render as `apple-touch-icon.png`.
+- `sw.js`: service worker, so a home-screen launch works offline. The page and unstamped
+  files are network first (4 s, then the saved copy); `?v=` files, the CDN parser, fonts
+  and audio clips are saved copy first. Clips are answered by byte range (Safari's
+  `<audio>` asks for ranges). Registered by `app.js`, but not on localhost, so local
+  edits always show.
 - `styles.css`: all styles. Color tokens on `:root` with dark overrides at the top.
   `--cell` is the box color token; `--cell-size` is the box size set by `sizeBoard`.
 - `packs.toml`: the word packs, in display order. Each `[[pack]]` has `id` (saved progress
