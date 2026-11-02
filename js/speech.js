@@ -83,14 +83,16 @@ var clips = {}, clipBase = "", player = null, finishClip = null;
 var queue = Promise.resolve(), epoch = 0;
 // The device-voice rate each kind's recording corresponds to. A slower requested rate
 // (Hear it) plays the clip slightly slower; never faster than recorded.
-var NORMAL = { w: 0.85, s: 0.7, t: 0.9, p: 0.95 };
+var NORMAL = { w: 0.85, s: 0.7, t: 0.9, p: 0.95, f: 1 };
+var clipsReady = [];
 
 (function loadClips() {
   var url = new URL("../audio.json", import.meta.url);
   url.search = new URL(import.meta.url).search; // same ?v= cache-busting stamp
   fetch(url).then(function (r) { return r.ok ? r.json() : null; })
     .then(function (m) { if (m && m.clips) { clips = m.clips; clipBase = m.base; } })
-    .catch(function () {});
+    .catch(function () {})
+    .then(function () { clipsReady.forEach(function (f) { f(); }); clipsReady = null; });
 })();
 
 // One shared <audio> element. iOS only lets audio start inside a tap, and later clips
@@ -131,7 +133,7 @@ function playClip(url, rate) {
 }
 
 // Plays (or speaks) one item after anything already queued. kind: "w" word, "s" Break it down
-// syllable, "t" context sentence, "p" phrase. `cancel` clears the queue first.
+// syllable, "t" context sentence, "p" phrase ("f", a single sound, uses sayRecorded). `cancel` clears the queue first.
 // Returns a promise for when this item is done.
 export function say(kind, text, rate, cancel) {
   if (cancel) stopSpeech();
@@ -144,6 +146,22 @@ export function say(kind, text, rate, cancel) {
     return playClip(clipBase + key + ".mp3", r).then(function (ok) {
       if (!ok && my === epoch) return speak(text, rate, false);
     });
+  });
+  return queue;
+}
+
+// Whether there's a recording (not just the device voice) for this item.
+export function hasClip(kind, text) { return !!clips[kind + ":" + text]; }
+// Runs once audio.json has loaded (or failed), so recorded-only features can show then.
+export function onClips(f) { if (clipsReady) clipsReady.push(f); else f(); }
+// Plays a recording only, never the device voice, which can't say a single sound ("k");
+// with no recording it just resolves. Same queue as say().
+export function sayRecorded(kind, text) {
+  var my = epoch;
+  queue = queue.then(function () {
+    var key = clips[kind + ":" + text];
+    if (my !== epoch || !key) return;
+    return playClip(clipBase + key + ".mp3", 1);
   });
   return queue;
 }

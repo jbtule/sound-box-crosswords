@@ -4,6 +4,8 @@
 #
 # Methods:
 #   text  kokoro.create(text): sentences and phrases.
+#   sound a single sound for Sound it out (text = its name, e.g. "sh"), made the way
+#         sounds/picks.json says by sounds/lab.py, where the methods were tried by ear.
 #   cut   words and Break it down syllables. Said alone, a short word gains sounds ("pub" ->
 #         "pubby", "stomp" -> "istampy"), so the target is said at the end of a phrase
 #         ("and next, pub.") and cut out using the model's own per-phoneme durations.
@@ -22,10 +24,16 @@ import phonemizer
 from kokoro_onnx import Kokoro
 from onnx import TensorProto, helper
 
-model_dir, plan_path, out_dir = sys.argv[1:4]
-model_path = os.path.join(model_dir, "kokoro-v1.0.onnx")
-kokoro = Kokoro(model_path, os.path.join(model_dir, "voices-v1.0.bin"))
 SR = 24000
+kokoro = None
+model_path = None
+
+
+def load(model_dir):
+    """Loads Kokoro from the model directory (kokoro.sh downloads and checks the files)."""
+    global kokoro, model_path
+    model_path = os.path.join(model_dir, "kokoro-v1.0.onnx")
+    kokoro = Kokoro(model_path, os.path.join(model_dir, "voices-v1.0.bin"))
 
 
 def trim(audio, sr, threshold=0.01, pad=0.05):
@@ -91,18 +99,23 @@ FADE_MS = (10, 40)
 
 
 def cut(text, voice, speed):
+    return cut_phonemes(phonemes(text), voice, speed)
+
+
+def cut_phonemes(ps, voice, speed, start=0, end=None, lead_ms=LEAD_MS, tail_ms=TAIL_MS):
+    """Says misaki phonemes `ps` in the carrier and cuts them out, or just tokens
+    ps[start:end] of them (one sound out of a word)."""
     tok = kokoro.tokenizer.tokenize
     pre, post = CARRIER
-    ps = phonemes(text)
     toks = tok(pre + ps + post)
     style = kokoro.voices[voice][len(toks)]
     audio, dur = session().run(None, {"tokens": [[0, *toks, 0]], "style": style, "speed": np.array([speed], np.float32)})
     dur = dur.reshape(-1)
     spf = len(audio) / dur.sum()  # samples per duration frame
-    i0 = 1 + len(tok(pre))  # +1 for the start token
-    i1 = i0 + len(tok(ps))
-    s0 = max(0, int(dur[:i0].sum() * spf) - LEAD_MS * SR // 1000)
-    s1 = int(dur[:i1].sum() * spf) + TAIL_MS * SR // 1000
+    i0 = 1 + len(tok(pre)) + len(tok(ps[:start]))  # +1 for the start token
+    i1 = 1 + len(tok(pre)) + len(tok(ps if end is None else ps[:end]))
+    s0 = max(0, int(dur[:i0].sum() * spf) - lead_ms * SR // 1000)
+    s1 = int(dur[:i1].sum() * spf) + tail_ms * SR // 1000
     a = audio[s0:s1].copy()
     n, o = FADE_MS[0] * SR // 1000, FADE_MS[1] * SR // 1000
     a[:n] *= 0.5 - 0.5 * np.cos(np.linspace(0, np.pi, n))
@@ -110,13 +123,37 @@ def cut(text, voice, speed):
     return a
 
 
-items = json.load(open(plan_path))
-for i, item in enumerate(items, 1):
-    if item.get("method") == "cut":
-        audio, sr = cut(item["text"], item["voice"], item["speed"]), SR
-    else:
-        audio, sr = kokoro.create(item["text"], voice=item["voice"], speed=item["speed"], lang="en-us")
-    with open(os.path.join(out_dir, item["key"] + ".mp3"), "wb") as f:
-        f.write(mp3(trim(audio, sr), sr))
-    if i % 25 == 0 or i == len(items):
-        print(f"generated {i}/{len(items)}", flush=True)
+_lab = None
+
+
+def sound(name):
+    """One Sound it out sound, already trimmed and leveled (sounds/lab.py)."""
+    global _lab
+    if _lab is None:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds"))
+        import lab
+        lab.g = sys.modules[__name__]  # this module, with the model already loaded
+        _lab = lab
+    return _lab.render(name)
+
+
+def main():
+    model_dir, plan_path, out_dir = sys.argv[1:4]
+    load(model_dir)
+    items = json.load(open(plan_path))
+    for i, item in enumerate(items, 1):
+        if item.get("method") == "sound":
+            audio, sr = sound(item["text"]), SR  # trimmed and leveled already
+        elif item.get("method") == "cut":
+            audio, sr = trim(cut(item["text"], item["voice"], item["speed"]), SR), SR
+        else:
+            audio, sr = kokoro.create(item["text"], voice=item["voice"], speed=item["speed"], lang="en-us")
+            audio = trim(audio, sr)
+        with open(os.path.join(out_dir, item["key"] + ".mp3"), "wb") as f:
+            f.write(mp3(audio, sr))
+        if i % 25 == 0 or i == len(items):
+            print(f"generated {i}/{len(items)}", flush=True)
+
+
+if __name__ == "__main__":
+    main()

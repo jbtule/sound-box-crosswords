@@ -21,6 +21,10 @@ rules below add to them; they don't replace them.
   (`packs.toml` for 3rd grade, `editions/kindergarten.toml` for Kindergarten). If it's not
   clear which child or grade the list is for, ask. A grade that isn't there yet needs a
   new `[[edition]]` and file; ask before adding one.
+- **Sound it out (Kindergarten):** words a child can sound out (cat, ship, frog) get their
+  sounds at the end of the line, `{c a t}` (see the `packs.toml` header and `js/phonics.js`).
+  Sight words and high-frequency words don't. Flag any unusual sound (`{c=s i t y=ee}`) in
+  the review table.
 - **Kindergarten high-frequency lists** go into the growing `k-hfw` pack rather than a
   new Unit pack. That pack sets `words_in_text = true`, so its sentences may use the
   other words naturally. One-letter words ("I", "a") can't be added: say so in the PR.

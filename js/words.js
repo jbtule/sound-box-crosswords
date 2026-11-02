@@ -14,10 +14,10 @@ export function readPacks(text) {
   return { packs: packs, starter: data.custom ? data.custom.words.trim() : "" };
 }
 
-// TOML text → [{ id, name, file, keyboard }] in offer order.
+// TOML text → [{ id, name, file, keyboard, soundItOut }] in offer order.
 export function readEditions(text) {
   return (parse(text).edition || []).map(function (e) {
-    return { id: e.id, name: e.name, file: e.file, keyboard: e.keyboard || "qwerty" };
+    return { id: e.id, name: e.name, file: e.file, keyboard: e.keyboard || "qwerty", soundItOut: e.sound_it_out === true, raw: e };
   });
 }
 

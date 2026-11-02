@@ -1,0 +1,61 @@
+// Sound it out: the single sounds the app has recordings for, and how a word list writes a
+// word's sounds. No DOM; runs in Node (scripts/check.mjs, the audio build).
+//
+// In a word list, a word's sounds go in braces at the end of its line, letters grouped by
+// sound with spaces between: `cat 🐈 {c a t}`, `ship 🚢 {sh i p}`. Each group says its usual
+// sound (USUAL below: c → k, sh → sh, ee → ee); say another with "=": `{c=s i t y}`.
+// Words without braces (sight words) don't get Sound it out.
+
+// Every sound with a recording (scripts/audio/sounds/picks.json says how each is made; the
+// check keeps the two lists the same). Short vowels are a e i o u; uu is the vowel in
+// "book", uh the one in "about", dh the "th" in "this", zh the sound in "vision".
+export var SOUNDS = [
+  "a", "e", "i", "o", "u", "ay", "ee", "igh", "oh", "oo", "uu", "ow", "oy", "aw", "uh",
+  "ar", "or", "er", "air", "ear",
+  "b", "d", "g", "k", "p", "t", "ch", "j", "f", "v", "s", "z", "sh", "zh", "th", "dh", "h",
+  "m", "n", "ng", "l", "r", "w", "y", "ks", "kw"
+];
+
+// A word with each sound, for labels (the listen check): "sh, as in ship".
+export var EXAMPLE = {
+  a: "cat", e: "bed", i: "pig", o: "hot", u: "sun", ay: "cake", ee: "see", igh: "kite", oh: "boat",
+  oo: "moon", uu: "book", ow: "cow", oy: "boy", aw: "saw", uh: "about", ar: "car", or: "for",
+  er: "her", air: "hair", ear: "ear", b: "bat", d: "dog", g: "go", k: "kit", p: "pig", t: "top",
+  ch: "chip", j: "jam", f: "fan", v: "van", s: "sun", z: "zip", sh: "ship", zh: "vision",
+  th: "thin", dh: "this", h: "hat", m: "map", n: "nut", ng: "sing", l: "leg", r: "red", w: "web",
+  y: "yes", ks: "box", kw: "queen"
+};
+
+// The sound a letter group usually makes. Groups that are often more than one sound (ow:
+// cow or snow) aren't here, so the list must say which: `{s n ow=oh}`.
+export var USUAL = {
+  a: "a", e: "e", i: "i", o: "o", u: "u",
+  b: "b", c: "k", d: "d", f: "f", g: "g", h: "h", j: "j", k: "k", l: "l", m: "m", n: "n",
+  p: "p", r: "r", s: "s", t: "t", v: "v", w: "w", x: "ks", y: "y", z: "z", qu: "kw",
+  ck: "k", sh: "sh", ch: "ch", th: "th", ng: "ng", ph: "f", wh: "w", kn: "n", wr: "r",
+  tch: "ch", dge: "j", bb: "b", dd: "d", ff: "f", gg: "g", ll: "l", mm: "m", nn: "n",
+  pp: "p", rr: "r", ss: "s", tt: "t", zz: "z",
+  ee: "ee", ea: "ee", ai: "ay", ay: "ay", oa: "oh", igh: "igh", oo: "oo", ar: "ar", or: "or",
+  er: "er", ir: "er", ur: "er", oi: "oy", oy: "oy", ou: "ow", aw: "aw", au: "aw", ew: "oo"
+};
+
+// "c a t" for the word "cat" → { segs: [{ at: 0, len: 1, sound: "k" }, ...] }, or
+// { error: "..." }. `at` and `len` count letters of the word, skipping apostrophes (they
+// have a box but no sound).
+export function parseSounds(spec, word) {
+  var letters = String(word).replace(/['’]/g, ""), segs = [], at = 0;
+  var groups = String(spec).trim().split(/\s+/).filter(Boolean);
+  if (!groups.length) return { error: "no sounds between the braces" };
+  for (var i = 0; i < groups.length; i++) {
+    var m = groups[i].toLowerCase().match(/^([a-z]+)(?:=([a-z]+))?$/);
+    if (!m) return { error: '"' + groups[i] + '" should be letters, or letters=sound' };
+    var sound = m[2] || USUAL[m[1]];
+    if (!sound) return { error: 'say which sound "' + m[1] + '" makes here: ' + m[1] + "=<sound>" };
+    if (SOUNDS.indexOf(sound) < 0) return { error: '"' + sound + '" isn\'t a sound with a recording (' + SOUNDS.join(" ") + ")" };
+    segs.push({ at: at, len: m[1].length, sound: sound });
+    at += m[1].length;
+  }
+  var joined = groups.map(function (g) { return g.split("=")[0].toLowerCase(); }).join("");
+  if (joined !== letters) return { error: 'the groups spell "' + joined + '", not "' + letters + '"' };
+  return { segs: segs };
+}

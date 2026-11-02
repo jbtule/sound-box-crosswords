@@ -24,8 +24,9 @@ import { parseList, clipsFor } from "../../js/crossword.js";
 export const MODEL = "kokoro-v1.0";
 export const VOICE = "af_heart";
 // Kokoro speed per kind of clip: w = word, s = Break it down syllable, t = context sentence,
-// p = fixed phrase. js/speech.js uses the same kind letters.
-export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95 };
+// p = fixed phrase, f = a single sound for Sound it out (its recipe sets its own speed).
+// js/speech.js uses the same kind letters.
+export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95, f: 0.8 };
 export const PHRASES = ["You solved it!"];
 // Clips that sound wrong at their kind's speed, picked by ear. At 0.9 the cut "shore"
 // sounds like "sure".
@@ -33,14 +34,21 @@ const SPEED_FOR = { "w:shore": 0.8 };
 const ENCODING = "mp3-64k-mono-trim-v1"; // bump to regenerate every clip
 // How generate.py renders each kind: "cut" says the word inside a phrase and cuts it out
 // (single words and syllables mispronounce alone); "text" says the text as is.
-export const METHOD = { w: "cut", s: "cut", t: "text", p: "text" };
+export const METHOD = { w: "cut", s: "cut", t: "text", p: "text", f: "sound" };
 const CUT = "cut-next-v1"; // bump when the cut method changes
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
 const speedOf = (kind, text) => SPEED_FOR[kind + ":" + text] ?? SPEED[kind];
 
+// Single sounds are made by scripts/audio/sounds/lab.py the way picks.json says; their keys
+// hash those files (and generate.py), so a new pick or recipe makes new clips.
+const SOUND_RECIPE = createHash("sha256")
+  .update(["sounds/picks.json", "sounds/lab.py", "generate.py"].map((f) => readFileSync(join(root, "scripts/audio", f), "utf8")).join("\0"))
+  .digest("hex").slice(0, 12);
+
 export function keyFor(kind, text) {
+  if (kind === "f") return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "sound", SOUND_RECIPE, text])).digest("hex").slice(0, 20);
   const parts = [MODEL, VOICE, speedOf(kind, text), ENCODING];
   if (METHOD[kind] === "cut") parts.push(CUT); // "text" clips keep their original keys
   const id = JSON.stringify([...parts, text]);
@@ -64,6 +72,8 @@ export function planClips() {
     for (const e of parseList(list)) for (const c of clipsFor(e)) add(c.kind, c.text);
   }
   PHRASES.forEach((p) => add("p", p));
+  // Every Sound it out sound, whether or not a word uses it yet (the listen check plays them all).
+  Object.keys(JSON.parse(readFileSync(join(root, "scripts/audio/sounds/picks.json"), "utf8"))).forEach((name) => add("f", name));
   return [...clips.values()];
 }
 

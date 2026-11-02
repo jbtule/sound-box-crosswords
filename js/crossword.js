@@ -1,6 +1,8 @@
 // Crossword generation: parse word lists, place words, number the grid.
 // No DOM access, so scripts/check.mjs can run it in Node.
 
+import { parseSounds } from "./phonics.js";
+
 export const MAX_COLS = 11, MAX_ROWS = 12; // keeps the grid small enough for a phone
 
 // "ba-nan-a 🍌 (buh-nan-uh)" lines →
@@ -8,6 +10,8 @@ export const MAX_COLS = 11, MAX_ROWS = 12; // keeps the grid small enough for a 
 // The optional (…) says how Break it down should pronounce each syllable; it's ignored
 // (say: null) unless it has one part per syllable. An optional "quoted sentence" at the
 // end is spoken for context: their "The kids hung their coats."
+// An optional {c a t} lists the word's sounds for Sound it out (see phonics.js):
+//   sounds: [{ at, len, sound }], or null.
 // Skips blank or malformed lines, duplicates, and words outside 2–12 letters.
 export function parseList(text) {
   var out = [], seen = {};
@@ -19,7 +23,14 @@ export function parseList(text) {
     var w = syll.replace(/-/g, "");
     if (w.length < 2 || w.length > 12 || seen[w]) return;
     seen[w] = 1;
-    var rest = m[2].replace(/[\u201C\u201D]/g, '"'), sentence = "", say = null;
+    var rest = m[2].replace(/[\u201C\u201D]/g, '"'), sentence = "", say = null, sounds = null;
+    // {c a t}: the word's sounds for Sound it out (phonics.js); dropped if they don't parse.
+    var braces = rest.match(/\{([^}]*)\}/);
+    if (braces) {
+      rest = rest.replace(braces[0], " ");
+      var ps = parseSounds(braces[1], w);
+      if (ps.segs) sounds = ps.segs;
+    }
     var quote = rest.match(/"([^"]*)"/);
     if (quote) { sentence = quote[1].trim(); rest = rest.replace(quote[0], " "); }
     var hint = rest.match(/\(([^)]*)\)/);
@@ -28,7 +39,7 @@ export function parseList(text) {
       say = hint[1].split("-").map(function (s) { return s.trim(); });
       if (say.length !== syll.split("-").length || say.some(function (s) { return !s; })) say = null;
     }
-    out.push({ syll: syll, w: w, pic: rest.trim().split(/\s+/)[0] || "", say: say, sentence: sentence });
+    out.push({ syll: syll, w: w, pic: rest.trim().split(/\s+/)[0] || "", say: say, sentence: sentence, sounds: sounds });
   });
   return out;
 }
@@ -82,7 +93,7 @@ function tryBuild(first, rest, target) {
       grid[kk] = e.w[k];
       dirUse[kk] = dirUse[kk] || {}; dirUse[kk][dir] = 1;
     }
-    placed.push({ w: e.w, syll: e.syll, pic: e.pic, say: e.say, sentence: e.sentence, r: r, c: c, dir: dir });
+    placed.push({ w: e.w, syll: e.syll, pic: e.pic, say: e.say, sentence: e.sentence, sounds: e.sounds, r: r, c: c, dir: dir });
   }
   var order = shuffle(first.slice()).concat(shuffle(rest.slice()));
   put(order[0], 0, 0, Math.random() < 0.5 ? "A" : "D");

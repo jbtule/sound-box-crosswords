@@ -1,5 +1,6 @@
 # Kindergarten edition: word packs in the same format as packs.toml (see the notes at the
-# top of that file). Starter packs until the school's own lists are added; school units
+# top of that file). Words that can be sounded out list their sounds in braces, {c a t}
+# (js/phonics.js), for the Sound it out button; sight words don't. Starter packs until the school's own lists are added; school units
 # go first, newest at the top.
 #
 # Run `npm run check` after editing.
@@ -9,22 +10,22 @@ id = "k-short-vowels"
 name = "Short vowels"
 note = "Three letters with a short vowel sound in the middle. Say each sound."
 words = """
-cat 🐈
-dog 🐕
-pig 🐖
-sun ☀️
-bus 🚌
-bed 🛏️
-map 🗺️
-fox 🦊
-bug 🐛
-web 🕸️
-ant 🐜
-bat 🦇
-box 📦
-ten 🔟
-can 🥫
-hat 🎩
+cat 🐈 {c a t}
+dog 🐕 {d o g}
+pig 🐖 {p i g}
+sun ☀️ {s u n}
+bus 🚌 {b u s}
+bed 🛏️ {b e d}
+map 🗺️ {m a p}
+fox 🦊 {f o x}
+bug 🐛 {b u g}
+web 🕸️ {w e b}
+ant 🐜 {a n t}
+bat 🦇 {b a t}
+box 📦 {b o x}
+ten 🔟 {t e n}
+can 🥫 {c a n}
+hat 🎩 {h a t}
 """
 
 # The class's high-frequency words; add each new list here as it comes home (one
@@ -53,14 +54,14 @@ is "The sky is blue."
 # The starter Custom list for this grade (Settings → Custom words). Swap in this week's words.
 [custom]
 words = """
-hop "Bunnies hop in the grass."
-sit "Please sit on the rug."
-run "I like to run fast."
-red "The apple is red."
-big "An elephant is big."
-top "The cat sat on top of the box."
-hot "The soup is too hot."
-sad "The puppy looks sad."
-bad "The milk went bad."
-dad "My dad reads me a story."
+hop "Bunnies hop in the grass." {h o p}
+sit "Please sit on the rug." {s i t}
+run "I like to run fast." {r u n}
+red "The apple is red." {r e d}
+big "An elephant is big." {b i g}
+top "The cat sat on top of the box." {t o p}
+hot "The soup is too hot." {h o t}
+sad "The puppy looks sad." {s a d}
+bad "The milk went bad." {b a d}
+dad "My dad reads me a story." {d a d}
 """

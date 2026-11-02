@@ -40,7 +40,10 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    what they do). These model the strategies practiced
    offline: clap syllables, tap sounds, say the word slowly while writing. Scaffolds help
    the player *hear* the word; they never reveal letters. (A "Show a letter" hint was
-   removed for that reason.)
+   removed for that reason.) *Sound it out* (editions with `sound_it_out`, e.g. Kindergarten;
+   only words that list their sounds, `{c a t}`, not sight words) says each single sound while
+   the letters that make it light up, then the word. Lighting a two-letter sound (sh, ee)
+   together shows that it takes two boxes; that's accepted as part of the skill.
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
 7. **A grown-up can tune it** without code, in Settings: syllable colors on/off, auto-speak,
@@ -74,7 +77,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   spelling (goal 3), and it covers half the screen. Physical keyboards are handled directly.
 - **Target: iPad Safari**, also phones and desktop. Touch first; physical keyboards work too.
   Must fit ~380px wide; the grid sizes cells to fit (`sizeBoard`, 24–50px).
-- **Recorded audio** for pack words, Break it down syllables, sentences, and "You solved it!":
+- **Recorded audio** for pack words, Break it down syllables, sentences, "You solved it!",
+  and the 46 single sounds for Sound it out (kind `f`; each made the way
+  `scripts/audio/sounds/picks.json` says, picked by ear from the candidates
+  `scripts/audio/sounds/run.sh` makes with `lab.py`; their clip names hash those files, so a
+  new pick re-records just the sounds; never the device voice, which can't say "k"):
   Kokoro (open-source neural TTS, voice `af_heart`), pre-generated at deploy by
   `scripts/audio/build.mjs` and served from Cloudflare Pages
   (`sound-box-crosswords.asset-data.stream`, project `sound-box-crosswords-audio`). Words
@@ -147,7 +154,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   grade?" (`pickEdition` in `app.js`), unless there's progress from before editions (then
   `packs.toml`'s) or a `?edition=<id>` link; Settings → Grade switches. Each edition keeps
   its own progress, achievements, collection, colors, Custom list and settings; an edition
-  can set the letter pad default (`keyboard = "abc"`). The check, the audio build and the
+  can set the letter pad default (`keyboard = "abc"`) and turn on Sound it out
+  (`sound_it_out = true`). The check, the audio build and the
   listen check cover every edition. Never change an edition's `id` once in use.
 - `packs.toml`: the word packs, in display order (the 3rd grade edition; other editions'
   files use the same format). Each `[[pack]]` has `id` (saved progress
@@ -168,6 +176,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   teacher would clap the word.
 - `js/words.js`: `loadPacks` fetches and parses `packs.toml`; `readPacks` turns TOML text
   into `{ packs, starter }` and appends the built-in `mine` pack.
+- `js/phonics.js`: no DOM. Sound it out's sounds (`SOUNDS`, kept equal to `picks.json` by the
+  check), each letter group's usual sound (`USUAL`: c → k, sh, ee, x → ks, qu → kw), and
+  `parseSounds` for a word list's `{c a t}` / `{c=s i t y=ee}` (letters grouped by sound; `=`
+  names an unusual sound; groups with no usual sound, like ow, must say which).
 - `js/crossword.js`: no DOM, runs in Node. `parseList` reads word lists. `makePuzzle(pool,
   recent)` builds a crossword: greedy placement with crossing checks, many random attempts,
   keeps the layout with the most words and smallest area, max 11 columns × 12 rows so it

@@ -6,7 +6,7 @@ import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
 import { catalog, award, dayKey, daysThisWeek } from "./achievements.js";
 import { parseList, makePuzzle, blankSentence, shuffle } from "./crossword.js";
-import { speak, say, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
+import { speak, say, sayRecorded, hasClip, onClips, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
 var $ = function (s) { return document.querySelector(s); };
 
@@ -235,6 +235,7 @@ function update() {
   // Only this word is blanked; pack sentences avoid the pack's other words (the check enforces it).
   showSentence(W.sentence ? blankSentence(W.sentence, [W.w]) : "");
   $("#clapBtn").hidden = n < 2; // nothing to break down in a one-beat word
+  $("#soundBtn").hidden = !canSoundOut(W);
   document.querySelectorAll(".ctile").forEach(function (t) {
     var i = +t.dataset.i;
     t.classList.toggle("cur", i === cur && !finished);
@@ -430,6 +431,35 @@ async function clap() {
     ks.forEach(function (c) { var el = cellEl(c); el && el.classList.add("beat"); });
     await say("s", W.say[ci], 0.7);
     await new Promise(function (r) { setTimeout(r, 250); });
+    ks.forEach(function (c) { var el = cellEl(c); el && el.classList.remove("beat"); });
+  }
+  if (speechEpoch() === my) await say("w", W.w, 0.8);
+  clapping = false;
+}
+
+/* ---------- scaffold: Sound it out ---------- */
+// Says each sound of the word (phonics.js) while the letters that make it light up, then the
+// whole word: c-a-t, sh-i-p. Only in editions that turn it on, for words whose sounds are
+// listed (not sight words), and only with the recordings: a device voice can't say "k".
+function canSoundOut(W) {
+  return !!(EDITION.soundItOut && W.sounds && W.sounds.every(function (s) { return hasClip("f", s.sound); }));
+}
+onClips(function () { if (P) update(); });
+async function soundOut() {
+  if (!P || clapping) return;
+  var W = P.words[cur];
+  if (!canSoundOut(W)) return;
+  clapping = true;
+  stopSpeech();
+  var my = speechEpoch();
+  // Box index for each letter that makes a sound (an apostrophe has a box but no sound).
+  var letterBox = [];
+  for (var i = 0; i < W.w.length; i++) if (W.w[i] !== "'") letterBox.push(W.cells[i]);
+  for (var si = 0; si < W.sounds.length && speechEpoch() === my; si++) {
+    var seg = W.sounds[si], ks = letterBox.slice(seg.at, seg.at + seg.len);
+    ks.forEach(function (c) { var el = cellEl(c); el && el.classList.add("beat"); });
+    await sayRecorded("f", seg.sound);
+    await new Promise(function (r) { setTimeout(r, 300); });
     ks.forEach(function (c) { var el = cellEl(c); el && el.classList.remove("beat"); });
   }
   if (speechEpoch() === my) await say("w", W.w, 0.8);
@@ -913,6 +943,7 @@ $("#shareCopy").addEventListener("click", function () {
 $("#pic").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0.85); });
 $("#hearBtn").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0.75); });
 $("#clapBtn").addEventListener("click", clap);
+$("#soundBtn").addEventListener("click", soundOut);
 $("#newBtn").addEventListener("click", newPuzzle);
 $("#nextBtn").addEventListener("click", newPuzzle);
 window.addEventListener("resize", sizeBoard);
@@ -927,7 +958,7 @@ if (window.IntersectionObserver) new IntersectionObserver(function (es) {
   var e = es[es.length - 1];
   kbEl.classList.toggle("floating", !e.isIntersecting && e.boundingClientRect.top > 0);
 }).observe($("#kbEnd"));
-if (!hasSpeech) { ["hearBtn", "clapBtn"].forEach(function (id) { $("#" + id).title = "Sound isn't available in this browser"; }); }
+if (!hasSpeech) { ["hearBtn", "clapBtn", "soundBtn"].forEach(function (id) { $("#" + id).title = "Sound isn't available in this browser"; }); }
 
 // A home-screen app usually resumes instead of relaunching, so it would keep running an
 // old deploy. Each time it comes back on screen, compare this build's ?v= stamp with the
