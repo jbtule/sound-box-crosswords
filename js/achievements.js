@@ -2,7 +2,8 @@
 // taken away, so there are no streaks to lose). No DOM here; app.js shows them.
 //
 // state = {
-//   packs:    [{ id, name, done, total }]  coverage per pack (words spelled at least once)
+//   packs:    [{ id, name, done, total, firsts }]  per pack: words spelled at least once
+//             (done) and words ever spelled right on the first try (firsts)
 //   clean:    puzzles finished with no try-agains
 //   comeback: words spelled right on the first try after an earlier miss
 //   days:     ["YYYY-MM-DD", ...] local days with a finished puzzle
@@ -41,6 +42,12 @@ export function catalog(state) {
   state.packs.forEach(function (p) {
     if (p.total < 3) return;
     out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "Every word in " + p.name, goal: p.total, have: p.done });
+    // Then a Legend: every word right on the first try (at some point, not all at once).
+    // Shown once Champion is reached, as the next goal; not for the Custom list ("mine"). It
+    // doesn't unlock colors (palettes count pack: achievements only).
+    if (p.done >= p.total && p.id !== "mine") {
+      out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "Every word in " + p.name + " right on the first try", goal: p.total, have: p.firsts || 0 });
+    }
   });
   var have = { clean: state.clean, comeback: state.comeback, days: state.days.length };
   Object.keys(TIERS).forEach(function (track) {

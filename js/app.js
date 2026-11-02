@@ -630,7 +630,11 @@ function renderVoices() {
 /* ---------- achievements ---------- */
 function achState() {
   return {
-    packs: Object.keys(PACKS).map(function (id) { var c = coverage(id); return { id: id, name: PACKS[id].name, done: c.done, total: c.total }; }),
+    packs: Object.keys(PACKS).map(function (id) {
+      var c = coverage(id), stats = packProgress(id).stats;
+      var firsts = entries(id).filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
+      return { id: id, name: PACKS[id].name, done: c.done, total: c.total, firsts: firsts };
+    }),
     clean: counts.clean, comeback: counts.comeback, days: days
   };
 }
