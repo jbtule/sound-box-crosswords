@@ -3,3 +3,4 @@ _site/
 _audio/
 audio.json
 .claude/worktrees/
+__pycache__/
