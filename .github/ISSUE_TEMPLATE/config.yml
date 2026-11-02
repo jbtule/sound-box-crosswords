@@ -1,0 +1,7 @@
+# The "New issue" page. Blank issues stay allowed; the link points to the listen check,
+# whose Report button files a recording problem with everything needed to fix it.
+blank_issues_enabled: true
+contact_links:
+  - name: A recording sounds wrong
+    url: https://tools.tuley.name/sound-box-crosswords/listen/
+    about: Play it in the listen check, mark it ✗, then use Report there to open an issue with the details.
