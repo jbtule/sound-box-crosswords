@@ -11,7 +11,8 @@ export const MAX_COLS = 11, MAX_ROWS = 12; // keeps the grid small enough for a 
 export function parseList(text) {
   var out = [], seen = {};
   String(text || "").split(/\r?\n/).forEach(function (line) {
-    var m = line.trim().match(/^([A-Za-z][A-Za-z\-]*[A-Za-z])\s*(.*)$/);
+    // Letters, dashes between syllables, and apostrophes (don't); curly ’ counts as '.
+    var m = line.trim().replace(/[\u2018\u2019]/g, "'").match(/^([A-Za-z][A-Za-z'\-]*[A-Za-z])\s*(.*)$/);
     if (!m) return;
     var syll = m[1].toLowerCase().replace(/-+/g, "-");
     var w = syll.replace(/-/g, "");

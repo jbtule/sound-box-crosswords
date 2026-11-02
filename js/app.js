@@ -42,6 +42,8 @@ function newPuzzle() {
   if (pool.length < 3) { P = null; renderEmpty(); return; }
   P = makePuzzle(pool, recent);
   recent = P.words.map(function (p) { return p.w; }).concat(recent).slice(0, 8);
+  // Apostrophes (don't) are given: filled and locked, so typing skips over them.
+  Object.keys(P.cells).forEach(function (kk) { if (P.cells[kk].letter === "'") { fill[kk] = "'"; locked[kk] = true; } });
   renderBoard();
   renderClues();
   select(order()[0], null, false);
@@ -360,7 +362,7 @@ onVoicesChanged(function () { if (!$("#sheet").hidden) renderVoices(); });
 ["kbAbc", "kbQwerty"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.kb = e.target.value; saveSettings(); renderKeyboard(); }); });
 $("#saveBtn").addEventListener("click", function () {
   var txt = $("#customText").value, n = parseList(txt).length;
-  if (n < 3) { $("#saveMsg").style.color = "var(--bad)"; $("#saveMsg").textContent = "Add at least 3 words (letters only, one per line)."; return; }
+  if (n < 3) { $("#saveMsg").style.color = "var(--bad)"; $("#saveMsg").textContent = "Add at least 3 words (one per line)."; return; }
   customText = txt; store.set("custom", txt);
   $("#saveMsg").style.color = ""; $("#saveMsg").textContent = "Saved " + n + " words.";
   packId = "mine"; store.set("pack", "mine"); recent = [];

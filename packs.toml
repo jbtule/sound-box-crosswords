@@ -6,7 +6,7 @@
 #   note   one short line shown under the buttons
 #   words  one word per line: the word with dashes between syllables, a space, then an
 #          emoji for the picture. Dashes drive the syllable colors and "Clap it", so split
-#          words the way a teacher would clap them. Letters only, 2–12 letters.
+#          words the way a teacher would clap them. Letters only (apostrophes OK: don't), 2–12 letters.
 #          Words with 2+ syllables also need (how-it-sounds) at the end, one part per
 #          syllable: ba-nan-a 🍌 (buh-nan-uh). "Clap it" says these, because a syllable
 #          spoken alone is often misread ("vol" → "volume", "ap" → "A P"). Use real words or
@@ -132,6 +132,60 @@ straw-ber-ry 🍓 (straw-bear-ree)
 croc-o-dile 🐊 (crock-uh-dial)
 fla-min-go 🦩 (fluh-ming-go)
 pi-an-o 🎹 (pea-ann-oh)
+"""
+
+[[pack]]
+id = "g3-2026-unit2"
+name = "3rd Grade 2026 Unit 2"
+note = "This week's school words. 👂 means listen, then spell."
+words = """
+wheel 🛞
+beach 🏖️
+sweep 🧹
+mis-read 👂 (miss-reed)
+com-pete 👂 (kum-peet)
+light 💡
+pies 🥧
+shy 🫣
+ex-cit-ed 🤩 (ex-site-ted)
+sun-shine ☀️ (sun-shine)
+cow-boy 🤠 (cow-boy)
+in-side 👂 (in-side)
+sea-food 🦐 (sea-food)
+su-per-mar-ket 🛒 (soo-purr-mahr-kit)
+some-bod-y 👂 (sum-bah-dee)
+their 👂
+a-round 👂 (uh-round)
+they 👂
+would 👂
+al-ways 👂 (all-ways)
+"""
+
+[[pack]]
+id = "g3-2026-unit3"
+name = "3rd Grade 2026 Unit 3"
+note = "This week's school words. 👂 means listen, then spell."
+words = """
+yard 🏡
+storm ⛈️
+more ➕
+ex-plore 🧭 (ex-plore)
+u-ni-form 👂 (you-nuh-form)
+third 🥉
+germs 🦠
+burn-ing 🔥 (burn-ing)
+un-hurt 👂 (uhn-hurt)
+ob-serve 👂 (uhb-zurv)
+ex-it 👂 (eggs-it)
+stomp 👂
+chick-en 🐔 (chick-in)
+pub-lish 👂 (pub-lish)
+pan-ic 😱 (pan-ick)
+these 👂
+don't 👂
+on-ly 👂 (own-lee)
+those 👂
+done 👂
 """
 
 # Starter list for "My words" (the grown-up's own list) until they save their own.

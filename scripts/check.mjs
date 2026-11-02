@@ -61,7 +61,7 @@ const ABBREV = new Set(["vol", "tel", "min", "max", "ap", "co", "fla", "mon", "t
   "jan", "feb", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec", "st", "dr", "mr", "mrs", "ms",
   "ft", "pt", "gal", "oz", "lb", "km", "cm", "mm", "sec", "hr", "est", "etc", "vs", "inc", "ltd", "corp", "dept", "ave",
   "blvd", "rd", "ref", "pg", "pp", "ch", "fig", "govt", "approx", "misc", "gen", "lt", "sgt", "capt", "col", "jr", "sr"]);
-const LINE = /^([a-z]+(?:-[a-z]+)*) (\S+)(?: \(([^)]*)\))?$/;
+const LINE = /^([a-z][a-z']*(?:-[a-z']+)*) (\S+)(?: \(([^)]*)\))?$/;
 for (const { id, text } of lists) {
   if (!text) continue; // "mine" is filled in by the user
   const seen = new Set();
