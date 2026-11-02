@@ -26,6 +26,60 @@
 # Run `npm run check` after editing; it catches typos and builds test puzzles.
 
 [[pack]]
+id = "g3-2026-unit2"
+name = "Unit 2"
+note = "3rd grade 2026 school words. A sound wave means listen, then spell."
+words = """
+wheel 🛞
+beach 🏖️
+sweep 🧹
+mis-read (miss-reed) "I misread the sign and went the wrong way."
+com-pete (kum-peet) "Our teams will compete in the big race."
+light 💡
+pies 🥧
+shy 🫣
+ex-cit-ed 🤩 (ex-site-ted)
+sun-shine ☀️ (sun-shine)
+cow-boy 🤠 (cow-boy)
+in-side (in-side) "It is raining, so we will play inside."
+sea-food 🦐 (sea-food)
+su-per-mar-ket 🛒 (soo-purr-mahr-kit)
+some-bod-y (sum-bah-dee) "Somebody left a jacket on the bus."
+their "The kids hung their coats on the hooks."
+a-round (uh-round) "We walked all the way around the lake."
+they "They are coming over after school."
+would "Would you like to play a game?"
+al-ways (all-ways) "I always brush my teeth before bed."
+"""
+
+[[pack]]
+id = "g3-2026-unit3"
+name = "Unit 3"
+note = "3rd grade 2026 school words. A sound wave means listen, then spell."
+words = """
+yard 🏡
+storm ⛈️
+more ➕
+ex-plore 🧭 (ex-plore)
+u-ni-form (you-nuh-form) "She wears her uniform to soccer practice."
+third 🥉
+germs 🦠
+burn-ing 🔥 (burn-ing)
+un-hurt (uhn-hurt) "He fell off his bike but was unhurt."
+ob-serve (uhb-zurv) "We observe the ants with a magnifying glass."
+ex-it (eggs-it) "Walk to the exit by the front door."
+stomp "The elephants stomp through the mud."
+chick-en 🐔 (chick-in)
+pub-lish (pub-lish) "Our class will publish a book of poems."
+pan-ic 😱 (pan-ick)
+these "These shoes are too small for me."
+don't "Please don't forget your lunch."
+on-ly (own-lee) "I could find only one sock."
+those "Those birds are flying south for the winter."
+done "I am done with my homework."
+"""
+
+[[pack]]
 id = "blends"
 name = "Blends"
 note = "Two consonants side by side. Say both sounds: fr-og, ne-st."
@@ -142,60 +196,6 @@ straw-ber-ry 🍓 (straw-bear-ree)
 croc-o-dile 🐊 (crock-uh-dial)
 fla-min-go 🦩 (fluh-ming-go)
 pi-an-o 🎹 (pea-ann-oh)
-"""
-
-[[pack]]
-id = "g3-2026-unit2"
-name = "Unit 2"
-note = "3rd grade 2026 school words. A sound wave means listen, then spell."
-words = """
-wheel 🛞
-beach 🏖️
-sweep 🧹
-mis-read (miss-reed) "I misread the sign and went the wrong way."
-com-pete (kum-peet) "Our teams will compete in the big race."
-light 💡
-pies 🥧
-shy 🫣
-ex-cit-ed 🤩 (ex-site-ted)
-sun-shine ☀️ (sun-shine)
-cow-boy 🤠 (cow-boy)
-in-side (in-side) "It is raining, so we will play inside."
-sea-food 🦐 (sea-food)
-su-per-mar-ket 🛒 (soo-purr-mahr-kit)
-some-bod-y (sum-bah-dee) "Somebody left a jacket on the bus."
-their "The kids hung their coats on the hooks."
-a-round (uh-round) "We walked all the way around the lake."
-they "They are coming over after school."
-would "Would you like to play a game?"
-al-ways (all-ways) "I always brush my teeth before bed."
-"""
-
-[[pack]]
-id = "g3-2026-unit3"
-name = "Unit 3"
-note = "3rd grade 2026 school words. A sound wave means listen, then spell."
-words = """
-yard 🏡
-storm ⛈️
-more ➕
-ex-plore 🧭 (ex-plore)
-u-ni-form (you-nuh-form) "She wears her uniform to soccer practice."
-third 🥉
-germs 🦠
-burn-ing 🔥 (burn-ing)
-un-hurt (uhn-hurt) "He fell off his bike but was unhurt."
-ob-serve (uhb-zurv) "We observe the ants with a magnifying glass."
-ex-it (eggs-it) "Walk to the exit by the front door."
-stomp "The elephants stomp through the mud."
-chick-en 🐔 (chick-in)
-pub-lish (pub-lish) "Our class will publish a book of poems."
-pan-ic 😱 (pan-ick)
-these "These shoes are too small for me."
-don't "Please don't forget your lunch."
-on-ly (own-lee) "I could find only one sock."
-those "Those birds are flying south for the winter."
-done "I am done with my homework."
 """
 
 # Starter list for the "Custom" pack (edited in Settings) until they save their own.
