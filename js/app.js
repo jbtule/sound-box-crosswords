@@ -78,7 +78,11 @@ function sizeBoard() {
   if (!P) return;
   var avail = board.parentElement.clientWidth - 24;
   var cell = Math.floor((avail - (P.cols - 1) * 4) / P.cols);
-  cell = Math.max(24, Math.min(50, cell));
+  // On short screens also fit the height, so the clue, grid and pad can be on screen
+  // together; never below 30px for that (past it, the pad floats over the page instead).
+  var availH = window.innerHeight - $("#keyboard").offsetHeight - $("#cluebar").offsetHeight - 3 * 14 - 32 - 8;
+  var byH = Math.floor((availH - (P.rows - 1) * 4) / P.rows);
+  cell = Math.max(24, Math.min(50, cell, Math.max(30, byH)));
   board.style.setProperty("--cell-size", cell + "px");
 }
 function renderEmpty() {
@@ -117,6 +121,9 @@ function update() {
     el.classList.toggle("syl-b", idx >= 0 && settings.syl && W.sylOf[idx] % 2 === 1);
     el.classList.toggle("cursor", idx === pos && !finished);
   });
+  // Keep the box being typed into on screen (and out from behind the floating pad).
+  var cursorEl = board.querySelector(".cell.cursor");
+  if (cursorEl) cursorEl.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
   setPic($("#pic"), W.pic);
   $("#clueLabel").textContent = W.num + (W.dir === "A" ? " Across" : " Down");
   var n = W.chunks.length;
@@ -442,7 +449,7 @@ $("#voiceSel").addEventListener("change", function (e) {
 $("#voiceTry").addEventListener("click", function () { speak("butterfly", 0.85, true); });
 setVoice(settings.voice);
 onVoicesChanged(function () { if (!$("#sheet").hidden) renderVoices(); });
-["kbAbc", "kbQwerty"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.kb = e.target.value; saveSettings(); renderKeyboard(); }); });
+["kbAbc", "kbQwerty"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.kb = e.target.value; saveSettings(); renderKeyboard(); sizeBoard(); }); });
 $("#saveBtn").addEventListener("click", function () {
   var txt = $("#customText").value, n = parseList(txt).length;
   if (n < 3) { $("#saveMsg").style.color = "var(--bad)"; $("#saveMsg").textContent = "Add at least 3 words (one per line)."; return; }
@@ -460,6 +467,17 @@ $("#clapBtn").addEventListener("click", clap);
 $("#newBtn").addEventListener("click", newPuzzle);
 $("#nextBtn").addEventListener("click", newPuzzle);
 window.addEventListener("resize", sizeBoard);
+function reducedMotion() { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+// Floating pad: --kb-h for the cells' scroll margin, and .floating while it's stuck to the
+// bottom (its end marker is below the screen).
+var kbEl = $("#keyboard");
+if (window.ResizeObserver) new ResizeObserver(function () {
+  document.documentElement.style.setProperty("--kb-h", kbEl.offsetHeight + "px");
+}).observe(kbEl);
+if (window.IntersectionObserver) new IntersectionObserver(function (es) {
+  var e = es[es.length - 1];
+  kbEl.classList.toggle("floating", !e.isIntersecting && e.boundingClientRect.top > 0);
+}).observe($("#kbEnd"));
 if (!hasSpeech) { ["hearBtn", "clapBtn"].forEach(function (id) { $("#" + id).title = "Sound isn't available in this browser"; }); }
 
 renderPacks();
