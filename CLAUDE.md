@@ -142,6 +142,13 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   Shown on the solved card, as a big card per new achievement (`showAwards`, after the
   solve celebration; achievements awarded quietly at startup never pop up), in the 🏆
   sheet, and as a "You got it this time!" toast.
+- Picture collection (🏆 sheet, Collection tab; `renderCollection` in `app.js`): a word's
+  picture is collected the first time it's spelled right on the first try (`stats.ok > 0`).
+  Pictures only, never words (slots are labeled "collected" / "not yet"); tapping a
+  collected picture says the word. Picture-less words get "sound stickers" there
+  (`js/stickers.js`: abstract SVG badge + gradient + sound motif, different ones in pack
+  order) instead of the in-game sound wave. Never emoji or objects, so they can't be
+  mistaken for a pack picture, now or in future packs. The solved card shows "+N pictures".
 - `js/chime.js`: `chime()`, a soft two-note Web Audio chime on solve (Settings toggle). The
   audio context is unlocked on the first tap for iOS. It doesn't follow the mute switch:
   iOS can only do that for the whole page, which would silence the recorded words too.

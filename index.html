@@ -93,8 +93,18 @@
 <section class="sheet" id="achSheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="achTitle">
     <div class="row" style="justify-content:space-between"><h2 id="achTitle">Achievements</h2><button class="ghost" id="achClose" type="button">Done</button></div>
-    <p class="help" id="achDays"></p>
-    <ul class="ach-list" id="achList"></ul>
+    <div class="tabs" role="tablist" aria-label="Achievements and collection">
+      <button type="button" role="tab" id="tabAch" aria-selected="true" aria-controls="achPanel">Achievements</button>
+      <button type="button" role="tab" id="tabCol" aria-selected="false" aria-controls="colPanel">Collection</button>
+    </div>
+    <div id="achPanel" role="tabpanel" aria-labelledby="tabAch">
+      <p class="help" id="achDays"></p>
+      <ul class="ach-list" id="achList"></ul>
+    </div>
+    <div id="colPanel" role="tabpanel" aria-labelledby="tabCol" hidden>
+      <p class="help">Spell a word right on the first try to add its picture. Tap a picture to hear its word.</p>
+      <div id="colList"></div>
+    </div>
   </div>
 </section>
 
