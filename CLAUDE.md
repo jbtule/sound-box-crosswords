@@ -30,9 +30,11 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    through (e.g. offering only the letters in the word).
 4. **Attention-friendly.** Short puzzles (5–6 words), immediate feedback, quick wins, low
    friction, no timers, no penalties or lost progress, minimal reading of instructions.
-5. **Scaffolds the player can use on their own:** *Hear it* (whole word), *Clap it* (syllable by
-   syllable with the boxes lighting up), *Show a letter*. These model the strategies
-   practiced offline: clap syllables, tap sounds, say the word slowly while writing.
+5. **Scaffolds the player can use on their own:** *Hear it* (whole word) and *Clap it*
+   (syllable by syllable with the boxes lighting up). These model the strategies practiced
+   offline: clap syllables, tap sounds, say the word slowly while writing. Scaffolds help
+   the player *hear* the word; they never reveal letters. (A "Show a letter" hint was
+   removed for that reason.)
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
 7. **A grown-up can tune it** without code: check-each-letter vs whole-word mode, syllable
@@ -94,11 +96,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   word has `cells`, `chunks` (syllables) and `sylOf` (syllable index per letter).
 - `js/speech.js`: `speak`, `stopSpeech`, `hasSpeech`.
 - `js/app.js`: everything on screen.
-  - Play state: `fill`, `locked`, `doneW`, `cur` (word), `pos` (letter index), `misses`, `hints`.
+  - Play state: `fill`, `locked`, `doneW`, `cur` (word), `pos` (letter index), `misses`.
   - `input` / `checkWord` / `complete` / `settleCrossings`: letter vs whole-word checking.
     In letter mode, wrong letters wiggle and are rejected; in word mode, wrong letters flash
     and clear once all boxes are full. Finishing one word can finish a crossing word.
-  - `clap`, `hint`, `back`: scaffolds.
+  - `clap`: the Clap it scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
   - Grown-ups sheet: `openSheet` / `closeSheet` and the change handlers below them.
 

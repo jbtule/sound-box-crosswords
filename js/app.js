@@ -33,11 +33,11 @@ function entries(id) { return parseList(id === "mine" ? customText : PACKS[id].l
 var P = null; // current puzzle, from makePuzzle()
 // fill: letter typed per cell; locked: confirmed-correct cells; doneW: finished word indexes;
 // cur: selected word; pos: cursor letter index within it.
-var fill = {}, locked = {}, doneW = {}, cur = 0, pos = 0, misses = 0, hints = 0, finished = false;
+var fill = {}, locked = {}, doneW = {}, cur = 0, pos = 0, misses = 0, finished = false;
 
 function newPuzzle() {
   $("#done").hidden = true;
-  finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; hints = 0;
+  finished = false; fill = {}; locked = {}; doneW = {}; misses = 0;
   var pool = entries(packId);
   if (pool.length < 3) { P = null; renderEmpty(); return; }
   P = makePuzzle(pool, recent);
@@ -217,7 +217,6 @@ function finish() {
   renderPacks();
   update();
   var parts = [P.words.length + " words"];
-  parts.push(hints === 1 ? "1 letter shown" : hints + " letters shown");
   parts.push(misses === 0 ? "no slips" : misses === 1 ? "1 try again" : misses + " try-agains");
   $("#doneStats").textContent = parts.join(" · ");
   $("#done").hidden = false;
@@ -234,19 +233,7 @@ function back() {
   update();
 }
 
-/* ---------- scaffolds: Show a letter, Clap it ---------- */
-function hint() {
-  if (!P || finished) return;
-  var W = P.words[cur];
-  if (doneW[cur]) return;
-  var j = locked[W.cells[pos]] || fill[W.cells[pos]] === W.w[pos] ? firstEmpty(cur, pos) : pos;
-  if (j < 0) { j = W.cells.findIndex(function (c, x) { return fill[c] !== W.w[x]; }); if (j < 0) return; }
-  var kk = W.cells[j];
-  fill[kk] = W.w[j]; locked[kk] = true; hints++;
-  flash(kk, "pop");
-  if (!settleCrossings(kk)) { var nxt = firstEmpty(cur, j + 1); pos = nxt >= 0 ? nxt : j; }
-  update();
-}
+/* ---------- scaffold: Clap it ---------- */
 // Speaks each syllable slowly while its boxes light up, then the whole word.
 var clapping = false;
 async function clap() {
@@ -362,7 +349,6 @@ $("#saveBtn").addEventListener("click", function () {
 $("#pic").addEventListener("click", function () { if (P) speak(P.words[cur].w, 0.85, true); });
 $("#hearBtn").addEventListener("click", function () { if (P) speak(P.words[cur].w, 0.75, true); });
 $("#clapBtn").addEventListener("click", clap);
-$("#hintBtn").addEventListener("click", hint);
 $("#newBtn").addEventListener("click", newPuzzle);
 $("#nextBtn").addEventListener("click", newPuzzle);
 window.addEventListener("resize", sizeBoard);
