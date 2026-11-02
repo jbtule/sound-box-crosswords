@@ -98,6 +98,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 ## Code map
 
 - `index.html`: markup only (board, clue bar, letter pad, settings sheet).
+- `favicon.svg` (hand-drawn, simple enough for 16px) and `apple-touch-icon.png` (180px
+  home-screen icon, from an Image Playground render): the same idea, a crossing of sound
+  boxes with the empty orange box and sound waves.
 - `styles.css`: all styles. Color tokens on `:root` with dark overrides at the top.
   `--cell` is the box color token; `--cell-size` is the box size set by `sizeBoard`.
 - `packs.toml`: the word packs, in display order. Each `[[pack]]` has `id` (saved progress
