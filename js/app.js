@@ -1,6 +1,7 @@
 // Game state, play logic, rendering, and the settings sheet.
 import { confetti } from "./confetti.js";
 import { chime } from "./chime.js";
+import { listenStickers } from "./stickers.js";
 import { catalog, award, dayKey, daysThisWeek } from "./achievements.js";
 import { parseList, makePuzzle, blankSentence } from "./crossword.js";
 import { speak, say, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
@@ -566,7 +567,7 @@ function closeAwards() {
 function renderCollection() {
   var wrap = $("#colList"); wrap.innerHTML = "";
   Object.keys(PACKS).forEach(function (id) {
-    var words = entries(id), stats = packProgress(id).stats;
+    var words = entries(id), stats = packProgress(id).stats, stickers = listenStickers(words);
     var got = words.filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
     if (!words.length || (!got && id !== packId)) return;
     var sec = document.createElement("section"); sec.className = "col-pack";
@@ -579,7 +580,7 @@ function renderCollection() {
       if (have) {
         slot.type = "button";
         slot.setAttribute("aria-label", "Collected picture, hear the word");
-        setPic(slot, e.pic);
+        slot.textContent = e.pic || stickers[e.w]; // the game shows a sound wave; the collection, an instrument
         slot.addEventListener("click", function () { say("w", e.w, 0.85, true); });
       } else {
         slot.setAttribute("aria-label", "Not collected yet");

@@ -42,6 +42,7 @@ if (!cdn || cdn[1] !== pkg) errors.push(`index.html import map uses smol-toml ${
 const { parse } = await import("smol-toml");
 const { readPacks } = await import("../js/words.js");
 const { parseList, makePuzzle, blankSentence, MAX_COLS, MAX_ROWS } = await import("../js/crossword.js");
+const { LISTEN_STICKERS } = await import("../js/stickers.js");
 
 const tomlText = readFileSync(join(root, "packs.toml"), "utf8");
 let raw = { pack: [] }, packs = {}, starter = "";
@@ -52,6 +53,12 @@ try {
   errors.push(`packs.toml: ${e.message}`);
 }
 const ids = new Set();
+// Collection stickers for picture-less words must not double as a pack word's picture.
+for (const p of raw.pack || []) {
+  for (const e of parseList(typeof p.words === "string" ? p.words : "")) {
+    if (LISTEN_STICKERS.includes(e.pic)) errors.push(`packs.toml (${p.id}): "${e.w}" uses ${e.pic}, which is a collection sticker for picture-less words; pick another picture`);
+  }
+}
 for (const [i, p] of (raw.pack || []).entries()) {
   const label = `packs.toml pack #${i + 1}${p.id ? ` (${p.id})` : ""}`;
   for (const f of ["id", "name", "note", "words"]) {
