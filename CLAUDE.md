@@ -59,6 +59,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   the import map in `index.html`, pinned to an exact version that matches `package.json`
   (the check enforces this), so the same bare import works in the browser and Node.
   Currently just `smol-toml`. Fonts from Google Fonts (Fredoka for display, Lexend for body).
+- **Keep the custom letter pad; don't use the system keyboard** (no focused text input for
+  play). The iPad keyboard's predictive text, autocorrect and dictation would hand over the
+  spelling (goal 3), and it covers half the screen. Physical keyboards are handled directly.
 - **Target: iPad Safari**, also phones and desktop. Touch first; physical keyboards work too.
   Must fit ~380px wide; the grid sizes cells to fit (`sizeBoard`, 24–50px).
 - **Speech** uses the Web Speech API (`speechSynthesis`), en-US voice, slowed rates. It only
