@@ -31,7 +31,7 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
 4. **Attention-friendly.** Short puzzles (5–6 words), immediate feedback, quick wins, low
    friction, no timers, no penalties or lost progress, minimal reading of instructions.
 5. **Scaffolds the player can use on their own:** *Hear it* (whole word) and *Clap it*
-   (syllable by syllable with the boxes lighting up). These model the strategies practiced
+   (syllable by syllable with the boxes lighting up; shown only for multi-syllable words). These model the strategies practiced
    offline: clap syllables, tap sounds, say the word slowly while writing. Scaffolds help
    the player *hear* the word; they never reveal letters. (A "Show a letter" hint was
    removed for that reason.)

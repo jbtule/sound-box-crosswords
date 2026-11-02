@@ -99,6 +99,7 @@ function update() {
   $("#clueLabel").textContent = W.num + (W.dir === "A" ? " Across" : " Down");
   var n = W.chunks.length;
   $("#clueSub").textContent = W.w.length + " boxes · " + n + (n === 1 ? " beat" : " beats");
+  $("#clapBtn").hidden = n < 2; // nothing to clap in a one-beat word
   document.querySelectorAll(".ctile").forEach(function (t) {
     var i = +t.dataset.i;
     t.classList.toggle("cur", i === cur && !finished);
@@ -235,27 +236,23 @@ function back() {
 
 /* ---------- scaffold: Clap it ---------- */
 // Speaks each syllable slowly while its boxes light up, then the whole word.
+// Multi-syllable words only; the button is hidden for one-beat words.
 var clapping = false;
 async function clap() {
   if (!P || clapping) return;
   clapping = true;
   var W = P.words[cur], idx = 0;
+  if (W.chunks.length < 2) { clapping = false; return; }
   stopSpeech();
-  if (W.chunks.length === 1) {
-    W.cells.forEach(function (c) { var el = cellEl(c); el && el.classList.add("beat"); });
-    await speak(W.w, 0.6, false);
-    W.cells.forEach(function (c) { var el = cellEl(c); el && el.classList.remove("beat"); });
-  } else {
-    for (var ci = 0; ci < W.chunks.length; ci++) {
-      var ks = W.cells.slice(idx, idx + W.chunks[ci].length);
-      idx += W.chunks[ci].length;
-      ks.forEach(function (c) { var el = cellEl(c); el && el.classList.add("beat"); });
-      await speak(W.say[ci], 0.7, false);
-      await new Promise(function (r) { setTimeout(r, 250); });
-      ks.forEach(function (c) { var el = cellEl(c); el && el.classList.remove("beat"); });
-    }
-    await speak(W.w, 0.8, false);
+  for (var ci = 0; ci < W.chunks.length; ci++) {
+    var ks = W.cells.slice(idx, idx + W.chunks[ci].length);
+    idx += W.chunks[ci].length;
+    ks.forEach(function (c) { var el = cellEl(c); el && el.classList.add("beat"); });
+    await speak(W.say[ci], 0.7, false);
+    await new Promise(function (r) { setTimeout(r, 250); });
+    ks.forEach(function (c) { var el = cellEl(c); el && el.classList.remove("beat"); });
   }
+  await speak(W.w, 0.8, false);
   clapping = false;
 }
 
