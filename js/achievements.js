@@ -14,19 +14,24 @@ var TIERS = {
   days: [1, 3, 7, 14, 30, 60, 100]
 };
 
-// A fun name for each tier (same order as TIERS); the detail line says plainly what it took.
+// Each track is a little picture story that gets bigger tier by tier (same order as
+// TIERS), so the emoji shows the progress even before the name is read. The detail line
+// says plainly what it took, for grown-ups.
 var LABELS = {
-  clean: { icon: "✨", names: ["Spotless", "Squeaky Clean", "Sharp Speller", "Steady Hand", "Precision Pro", "Flawless Hundred"],
+  // Practice days: a plant that grows a little each day you show up, and never shrinks.
+  days: { tiers: [["🌱", "Seed"], ["🌿", "Sprout"], ["🪴", "Sapling"], ["🌳", "Tree"], ["🌲", "Forest"], ["🏞️", "Big Woods"], ["🌍", "Whole World"]],
+    detail: function (n) { return n + (n === 1 ? " day" : " days") + " of practice"; } },
+  // Clean solves (no try-agains): a trip through space.
+  clean: { tiers: [["🚀", "Liftoff"], ["🛰️", "In Orbit"], ["🌙", "Moon Landing"], ["🪐", "Ringed Planet"], ["☄️", "Comet Rider"], ["🌌", "Galaxy"]],
     detail: function (n) { return n + (n === 1 ? " puzzle" : " puzzles") + " with no try-agains"; } },
-  comeback: { icon: "🔁", names: ["Bounce Back", "Comeback Kid", "Second Wind", "Unstoppable", "Comeback Legend"],
-    detail: function (n) { return n + (n === 1 ? " word" : " words") + " right after a miss"; } },
-  days: { icon: "📅", names: ["Day One", "Warming Up", "Full Week", "Two-Week Trek", "Marathon Month", "Sixty-Day Summit", "Century Club"],
-    detail: function (n) { return n + (n === 1 ? " day" : " days") + " of practice"; } }
+  // Comebacks (right after an earlier miss): not giving up.
+  comeback: { tiers: [["🏀", "Bounce Back"], ["🐢", "Keep Going"], ["🧗", "Climber"], ["🦸", "Spelling Hero"], ["🐉", "Dragon Heart"]],
+    detail: function (n) { return n + (n === 1 ? " word" : " words") + " right after a miss"; } }
 };
 
 function tierItem(track, i, have) {
   var l = LABELS[track], n = TIERS[track][i];
-  return { id: track + ":" + n, icon: l.icon, title: l.names[i], detail: l.detail(n), goal: n, have: have };
+  return { id: track + ":" + n, icon: l.tiers[i][0], title: l.tiers[i][1], detail: l.detail(n), goal: n, have: have };
 }
 
 // Every achievement that could be shown: [{ id, icon, title, detail, goal, have, met }].
@@ -35,7 +40,7 @@ export function catalog(state) {
   var out = [];
   state.packs.forEach(function (p) {
     if (p.total < 3) return;
-    out.push({ id: "pack:" + p.id, icon: "🏁", title: "Full House: " + p.name, detail: "Every word in " + p.name, goal: p.total, have: p.done });
+    out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "Every word in " + p.name, goal: p.total, have: p.done });
   });
   var have = { clean: state.clean, comeback: state.comeback, days: state.days.length };
   Object.keys(TIERS).forEach(function (track) {

@@ -274,7 +274,7 @@ function complete(i, typed) {
     // Comeback: right on the first try now (no miss this puzzle), after a miss before.
     if (!missedW[i] && st.miss > 0 && !st.cb) {
       st.cb = true; counts.comeback++; store.set("counts", counts);
-      toast("🔁 Comeback!");
+      toast("🏀 You got it this time!");
     }
     st.n++;
     if (!missedW[i]) st.ok++;

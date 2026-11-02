@@ -133,12 +133,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   fits a phone, avoids `recent` words. Returns `P` (`words`, `cells`, `rows`, `cols`); each
   word has `cells`, `chunks` (syllables) and `sylOf` (syllable index per letter).
 - `js/confetti.js`: `confetti(host)`, the solve celebration (skipped with reduced motion).
-- `js/achievements.js`: no DOM. `catalog(state)` lists achievements (pack complete; tiered
+- `js/achievements.js`: no DOM. `catalog(state)` lists achievements (pack champion; tiered
   clean solves, comeback words, practice days, showing only the next unmet tier), `award`
   records newly met ones in `sbx:achievements` ({ id: time }); earned ones are never taken
   away (no streaks). Inputs saved by `app.js`: `sbx:counts` { clean, comeback } and
   `sbx:days` (local "YYYY-MM-DD" with a finished puzzle), backfilled from `sbx:log` once.
-  Shown on the solved card, in the 🏆 sheet, and as a "Comeback!" toast.
+  Shown on the solved card, in the 🏆 sheet, and as a "You got it this time!" toast.
 - `js/chime.js`: `chime()`, a soft two-note Web Audio chime on solve (Settings toggle). The
   audio context is unlocked on the first tap for iOS. It doesn't follow the mute switch:
   iOS can only do that for the whole page, which would silence the recorded words too.
