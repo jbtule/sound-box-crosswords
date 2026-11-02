@@ -4,6 +4,8 @@
 #
 # Methods:
 #   text  kokoro.create(text): sentences and phrases.
+#   sound a single sound for Sound it out (text = its name, e.g. "sh"), made the way
+#         sounds/picks.json says by sounds/lab.py, where the methods were tried by ear.
 #   cut   words and Break it down syllables. Said alone, a short word gains sounds ("pub" ->
 #         "pubby", "stomp" -> "istampy"), so the target is said at the end of a phrase
 #         ("and next, pub.") and cut out using the model's own per-phoneme durations.
@@ -121,17 +123,34 @@ def cut_phonemes(ps, voice, speed, start=0, end=None, lead_ms=LEAD_MS, tail_ms=T
     return a
 
 
+_lab = None
+
+
+def sound(name):
+    """One Sound it out sound, already trimmed and leveled (sounds/lab.py)."""
+    global _lab
+    if _lab is None:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds"))
+        import lab
+        lab.g = sys.modules[__name__]  # this module, with the model already loaded
+        _lab = lab
+    return _lab.render(name)
+
+
 def main():
     model_dir, plan_path, out_dir = sys.argv[1:4]
     load(model_dir)
     items = json.load(open(plan_path))
     for i, item in enumerate(items, 1):
-        if item.get("method") == "cut":
-            audio, sr = cut(item["text"], item["voice"], item["speed"]), SR
+        if item.get("method") == "sound":
+            audio, sr = sound(item["text"]), SR  # trimmed and leveled already
+        elif item.get("method") == "cut":
+            audio, sr = trim(cut(item["text"], item["voice"], item["speed"]), SR), SR
         else:
             audio, sr = kokoro.create(item["text"], voice=item["voice"], speed=item["speed"], lang="en-us")
+            audio = trim(audio, sr)
         with open(os.path.join(out_dir, item["key"] + ".mp3"), "wb") as f:
-            f.write(mp3(trim(audio, sr), sr))
+            f.write(mp3(audio, sr))
         if i % 25 == 0 or i == len(items):
             print(f"generated {i}/{len(items)}", flush=True)
 

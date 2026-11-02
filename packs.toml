@@ -24,6 +24,9 @@
 #               apart: their "The kids hung their coats on the hooks."
 #               Also shown with the word as a blank, so don't use other words from the pack.
 #
+#   {sounds}  optional, last on the line: the word's sounds for Sound it out (editions with
+#               sound_it_out), letters grouped by sound: cat 🐈 {c a t}, ship 🚢 {sh i p},
+#               city {c=s i t y=ee}. See js/phonics.js. Leave it off sight words.
 #   words_in_text = true   optional: lets this pack's words appear in its note and in each
 #               other's sentences. Only for packs where spotting a printed word helps
 #               (kindergarten high-frequency words); normally the check forbids it.

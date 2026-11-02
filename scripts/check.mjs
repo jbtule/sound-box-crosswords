@@ -102,6 +102,7 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
     if (edIds.has(ed.id)) errors.push(`${at}: id is used twice`);
     if (ed.file && !existsSync(join(root, ed.file))) errors.push(`${at}: missing file ${ed.file}`);
     if (!["qwerty", "abc"].includes(ed.keyboard)) errors.push(`${at}: keyboard should be "qwerty" or "abc"`);
+    if (ed.raw && ed.raw.sound_it_out !== undefined && typeof ed.raw.sound_it_out !== "boolean") errors.push(`${at}: sound_it_out should be true or false`);
     if (ed.id && ed.file) {
       const pre = storagePrefix(ed);
       if (prefixes.has(pre)) errors.push(`${at}: shares saved data (${pre}) with another edition`);
@@ -120,6 +121,14 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
       if (!svg.startsWith("<svg")) throw new Error("not an SVG");
     } catch (e) { errors.push(`qrcode can't draw ${url}: ${e.message}`); }
   }
+}
+
+// Sound it out: every sound phonics.js knows has a recipe in picks.json, and the reverse.
+{
+  const { SOUNDS: names } = await import("../js/phonics.js");
+  const picks = Object.keys(JSON.parse(readFileSync(join(root, "scripts/audio/sounds/picks.json"), "utf8")));
+  for (const n of names) if (!picks.includes(n)) errors.push(`scripts/audio/sounds/picks.json: no pick for the sound "${n}" (js/phonics.js)`);
+  for (const n of picks) if (!names.includes(n)) errors.push(`js/phonics.js: SOUNDS is missing "${n}" (scripts/audio/sounds/picks.json)`);
 }
 
 // Every word list in every edition: { id (for messages), text, custom }.
@@ -177,8 +186,10 @@ const ABBREV = new Set(["mit", "bih", "uhn", "uhb", "ca", "tle", "ril", "ple", "
   "jan", "feb", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec", "st", "dr", "mr", "mrs", "ms",
   "ft", "pt", "gal", "oz", "lb", "km", "cm", "mm", "sec", "hr", "est", "etc", "vs", "inc", "ltd", "corp", "dept", "ave",
   "blvd", "rd", "ref", "pg", "pp", "ch", "fig", "govt", "approx", "misc", "gen", "lt", "sgt", "capt", "col", "jr", "sr"]);
-// word, then optional emoji (none = listen-only), (sounds) hint, and "context sentence".
-const LINE = /^([a-z][a-z']*(?:-[a-z']+)*)(?: +([^\s("]\S*))?(?: +\(([^)]*)\))?(?: +"([^"]+)")?$/;
+// word, then optional emoji (none = listen-only), (sounds) hint, "context sentence", and
+// {its sounds} for Sound it out.
+const LINE = /^([a-z][a-z']*(?:-[a-z']+)*)(?: +([^\s("{]\S*))?(?: +\(([^)]*)\))?(?: +"([^"]+)")?(?: +\{([^}]*)\})?$/;
+const { parseSounds } = await import("../js/phonics.js");
 for (const { id, text, custom } of lists) {
   if (!text) continue; // "mine" is filled in by the user
   const seen = new Set();
@@ -193,6 +204,10 @@ for (const { id, text, custom } of lists) {
     // A word with no picture needs a spoken sentence for context (their vs there).
     if (m[2] == null && m[4] == null && !custom) errors.push(`${id}: "${w}" has no picture, so it needs a "sentence that uses it"`);
     if (m[4] != null && !new RegExp(`\\b${w}\\b`, "i").test(m[4])) errors.push(`${id}: "${w}" sentence doesn't use the word: "${m[4]}"`);
+    if (m[5] != null) {
+      const ps = parseSounds(m[5], w);
+      if (ps.error) errors.push(`${id}: "${w}" sounds {${m[5]}}: ${ps.error}`);
+    }
     const beats = m[1].split("-").length;
     // Spoken alone, syllables get misread as abbreviations ("vol" → "volume", "ap" → "A P"),
     // so every multi-syllable word spells out how each syllable sounds.

@@ -1,7 +1,8 @@
 # Sound it out, step 1: candidate recordings of each single sound, to pick by ear.
 #   python lab.py <model-dir> <out-dir>      (run.sh runs it in a Linux container)
 # Writes <out-dir>/<sound>-<method>.mp3 and <out-dir>/index.html, a page to play them side by
-# side. Nothing here is used by the build yet; the chosen method per sound comes later.
+# side. picks.json records the method chosen for each sound by ear; render() makes that one,
+# and ../generate.py uses it for the build's "sound" clips (Sound it out).
 #
 # Sounds are clipped, the way teachers say them: "k" not "kuh", "mmm" held briefly.
 # Methods (misaki phonemes, what Kokoro was trained on; see ../generate.py):
@@ -14,6 +15,7 @@
 #   final  (stops) the stop at the end of a word (FINAL), released into silence
 # Every candidate is scaled to the same peak so they compare fairly.
 import html
+import json
 import os
 import sys
 
@@ -86,27 +88,34 @@ HOLD_MS = 350
 EDGES = {"stop": (15, 45), "hold": (10, 20), "vowel": (10, 20)}
 
 
-def candidates(name, word_ps, kind, combos=True):
+def candidates(name, word_ps, kind, combos=True, only=None):
+    """Every candidate for a sound, or just `only` (one method name)."""
+    def want(label):
+        return only is None or only == label
     a = word_ps.index("[")
     b = word_ps.index("]") - 1
     ps = word_ps.replace("[", "").replace("]", "")
     target = ps[a:b]
     lead, tail = EDGES[kind]
-    out = {
-        "alone": g.cut_phonemes(target if kind != "vowel" or "ˈ" in target else "ˈ" + target, VOICE, SPEED),
-        "word": g.cut_phonemes(ps, VOICE, SPEED, a, b, lead, tail),
-    }
-    if kind != "stop":
+    out = {}
+    if want("alone"):
+        out["alone"] = g.cut_phonemes(target if kind != "vowel" or "ˈ" in target else "ˈ" + target, VOICE, SPEED)
+    if want("word") or (kind == "hold" and want("stretch")):
+        out["word"] = g.cut_phonemes(ps, VOICE, SPEED, a, b, lead, tail)
+    if kind != "stop" and want("slow"):
         out["slow"] = g.cut_phonemes(ps, VOICE, SLOW, a, b, lead, tail)
     if name in FINAL:
         # burst: the end of the stop at the start of a word (its release), stopping before
         # the vowel; final: the stop at the end of a word, released into silence.
-        w = g.cut_phonemes(ps, VOICE, SPEED, a, b, 0, 30)
-        out["burst"] = w[-int(0.07 * g.SR):]
-        fw, fps = FINAL[name]
-        fa, fb = fps.index("["), fps.index("]") - 1
-        out["final"] = g.cut_phonemes(fps.replace("[", "").replace("]", ""), VOICE, SPEED, fa, fb, 0, 150)
+        if want("burst"):
+            out["burst"] = g.cut_phonemes(ps, VOICE, SPEED, a, b, 0, 30)[-int(0.07 * g.SR):]
+        if want("final"):
+            fw, fps = FINAL[name]
+            fa, fb = fps.index("["), fps.index("]") - 1
+            out["final"] = g.cut_phonemes(fps.replace("[", "").replace("]", ""), VOICE, SPEED, fa, fb, 0, 150)
     for label, xps, mode, sp, ms in EXTRA.get(name, []):
+        if not want(label):
+            continue
         xa, xb = xps.index("["), xps.index("]") - 1
         plain = xps.replace("[", "").replace("]", "")
         if mode == "final":
@@ -118,17 +127,42 @@ def candidates(name, word_ps, kind, combos=True):
         else:
             out[label] = g.cut_phonemes(plain, VOICE, sp, xa, xb, 0, 30)[-int(ms / 1000 * g.SR):]
     for label, (first, m1, second, m2, length, gap) in (COMBOS.get(name, {}).items() if combos else []):
-        out[label] = join(part(first, m1), part(second, m2, length), gap)
+        if want(label):
+            out[label] = join(part(first, m1), part(second, m2, length), gap)
     if kind == "hold":
-        out["held"] = g.cut_phonemes(target * 3, VOICE, SLOW)
-        out["stretch"] = stretch(out["word"], HOLD_MS)
+        if want("held"):
+            out["held"] = g.cut_phonemes(target * 3, VOICE, SLOW)
+        if want("stretch"):
+            out["stretch"] = stretch(out["word"], HOLD_MS)
+    if only is not None:
+        if only not in out:
+            raise KeyError(f"{name} has no method {only}")
+        return {only: out[only]}
     return out
+
+
+PICKS = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "picks.json")))
+
+
+def finish(audio):
+    """Trimmed and at the common peak: how every candidate and every final sound is saved."""
+    audio = g.trim(audio, g.SR, threshold=0.004, pad=0.02)
+    if np.abs(audio).max() > 0.001:
+        audio = audio * (PEAK / np.abs(audio).max())
+    return audio
+
+
+def render(name):
+    """The recording for one sound, made the way picks.json says (used by ../generate.py)."""
+    row = next(r for r in SOUNDS if r[0] == name)
+    method = PICKS[name]
+    return finish(candidates(row[0], row[2], row[3], only=method)[method])
 
 
 def part(name, method, length_ms=0):
     """One sound's candidate, trimmed, cut to length_ms (with a fade) and at the common peak."""
     row = next(r for r in SOUNDS if r[0] == name)
-    a = g.trim(candidates(row[0], row[2], row[3], combos=False)[method], g.SR, threshold=0.004, pad=0.0).copy()
+    a = g.trim(candidates(row[0], row[2], row[3], combos=False, only=method)[method], g.SR, threshold=0.004, pad=0.0).copy()
     if length_ms:
         a = a[: length_ms * g.SR // 1000]
         f = min(len(a) // 3, 30 * g.SR // 1000)
@@ -170,9 +204,7 @@ def main():
     for name, word, word_ps, kind in SOUNDS:
         cells = []
         for method, audio in candidates(name, word_ps, kind).items():
-            audio = g.trim(audio, g.SR, threshold=0.004, pad=0.02)
-            if np.abs(audio).max() > 0.001:
-                audio = audio * (PEAK / np.abs(audio).max())
+            audio = finish(audio)
             fname = f"{name}-{method}.mp3"
             with open(os.path.join(out_dir, fname), "wb") as f:
                 f.write(g.mp3(audio, g.SR))

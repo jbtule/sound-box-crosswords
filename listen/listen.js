@@ -5,12 +5,13 @@
 // Marks live in localStorage ("sbx:listen"), keyed by clip: a clip's key hashes its text
 // and voice settings, so a changed hint is a new clip and shows up as not heard.
 import { readPacks, readEditions } from "../js/words.js";
+import { SOUNDS, EXAMPLE } from "../js/phonics.js";
 import { parseList, clipsFor } from "../js/crossword.js";
 
 var $ = function (s) { return document.querySelector(s); };
 var REPO = "https://github.com/jbtule/sound-box-crosswords";
 var LIVE = "https://tools.tuley.name/sound-box-crosswords/";
-var KIND = { w: "Word", s: "Syllable", t: "Sentence", p: "Phrase" };
+var KIND = { w: "Word", s: "Syllable", t: "Sentence", p: "Phrase", f: "Sound" };
 var STORE = "sbx:listen";
 
 var marks = {};
@@ -99,6 +100,24 @@ function play(items) { player.pause(); queue = items.slice(); next(); }
 /* ---------- index ---------- */
 function href(page) { return "?edition=" + encodeURIComponent(page.edition.id) + "&pack=" + encodeURIComponent(page.id); }
 // /listen/: one card per grade (edition) with its counts; with a single edition, its packs.
+// The Sound it out sounds (shared by every grade): one card each, on their own page.
+var SOUNDS_ED = { id: "", name: "Sounds" };
+function soundsPage(audio) {
+  return {
+    id: "sounds", edition: SOUNDS_ED, short: "Sounds", name: "Sounds",
+    words: SOUNDS.map(function (n) {
+      return { w: n, syll: n + " · as in " + EXAMPLE[n], pic: "", clips: [{ kind: "f", text: n, key: audio.clips["f:" + n] || null }] };
+    })
+  };
+}
+function soundsCard(page) {
+  var li = el("li", "card"), a = el("a");
+  a.href = "?sounds";
+  a.appendChild(el("span", "name", "Sounds"));
+  a.appendChild(pills(counts(page)));
+  li.append(a, el("p", "sub", "Sound it out: each single sound, used by every grade"));
+  return li;
+}
 function renderIndex(all, eds) {
   if (eds.length === 1) { renderEdition(all, eds[0], false); return; }
   var list = $("#list"); list.innerHTML = "";
@@ -113,6 +132,8 @@ function renderIndex(all, eds) {
     li.append(a, sub);
     ul.appendChild(li);
   });
+  var snd = all.find(function (p) { return p.id === "sounds"; });
+  if (snd) ul.appendChild(soundsCard(snd));
   list.appendChild(ul);
   setupReport(all, "all grades");
 }
@@ -125,7 +146,10 @@ function renderEdition(all, ed, multi) {
     $("#crumb").textContent = "‹ All grades"; $("#crumb").href = "./"; $("#crumb").hidden = false;
   }
   var list = $("#list"); list.innerHTML = "";
-  list.appendChild(indexList(mine));
+  var ul = indexList(mine);
+  var snd = !multi && all.find(function (p) { return p.id === "sounds"; });
+  if (snd) ul.appendChild(soundsCard(snd));
+  list.appendChild(ul);
   setupReport(mine, multi ? ed.name : "all packs");
 }
 // A word's status for the nested index: ✗ if any clip is marked wrong, then not heard,
@@ -252,7 +276,7 @@ function setupReport(pagesToReport, label) {
   $("#report").hidden = !lines.length;
   if (!lines.length) return;
   var body = "Marked wrong on the listen check (" + label + "):\n\n" + lines.join("\n") +
-    "\n\nFix by changing the word's (how-it-sounds) hint or sentence in its packs file (see editions.toml); a new hint gets a new recording.";
+    "\n\nFix a word by changing its (how-it-sounds) hint or sentence in its packs file (see editions.toml); a new hint gets a new recording. Fix a single Sound by changing its pick in scripts/audio/sounds/picks.json (candidates: scripts/audio/sounds/run.sh).";
   $("#copyBtn").onclick = function () {
     navigator.clipboard.writeText(body).then(function () { $("#status").textContent = "Copied."; }, function () { $("#status").textContent = "Couldn't copy."; });
   };
@@ -271,6 +295,7 @@ async function start() {
         var data = readPacks(await getText("../" + ed.file));
         all = all.concat(pages(ed, eds.length > 1, data, audio, ed.file === "packs.toml"));
       }
+      all.push(soundsPage(audio));
     }
   } catch (e) {
     $("#list").appendChild(el("p", "empty", "Couldn't load the word packs. Check the connection and reload."));
@@ -281,6 +306,7 @@ async function start() {
     return;
   }
   var multi = eds.length > 1, edParam = params.get("edition");
+  if (params.has("sounds")) { showPage(all.find(function (p) { return p.id === "sounds"; }), audio, "‹ All grades", "./"); return; }
   if (!id && !edParam) { renderIndex(all, eds); return; }
   // No ?edition= means the original one (packs.toml), so older links still work.
   var ed = eds.find(function (e) { return e.id === edParam; }) || (!edParam && (eds.find(function (e) { return e.file === "packs.toml"; }) || eds[0]));
@@ -288,9 +314,13 @@ async function start() {
   if (!id) { renderEdition(all, ed, multi); return; }
   var page = all.find(function (p) { return p.id === id && p.edition === ed; });
   if (!page) { location.replace(multi ? "?edition=" + encodeURIComponent(ed.id) : "./"); return; }
+  showPage(page, audio, multi ? "‹ " + ed.name : "‹ All packs", multi ? "?edition=" + encodeURIComponent(ed.id) : "./");
+}
+// One pack's (or the Sounds) page, with a back link.
+function showPage(page, audio, back, backHref) {
   document.title = page.name + " · Listen check";
   $("#title").textContent = page.short;
-  if (multi) { $("#crumb").textContent = "‹ " + ed.name; $("#crumb").href = "?edition=" + encodeURIComponent(ed.id); }
+  $("#crumb").textContent = back; $("#crumb").href = backHref;
   $("#crumb").hidden = false;
   $("#bar").hidden = false;
   document.querySelectorAll("[data-filter]").forEach(function (b) {
