@@ -2,8 +2,9 @@
 import { confetti } from "./confetti.js";
 import { chime } from "./chime.js";
 import { listenStickers } from "./stickers.js";
+import { renderCard, shareCard } from "./sharecard.js";
 import { catalog, award, dayKey, daysThisWeek } from "./achievements.js";
-import { parseList, makePuzzle, blankSentence } from "./crossword.js";
+import { parseList, makePuzzle, blankSentence, shuffle } from "./crossword.js";
 import { speak, say, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
 var $ = function (s) { return document.querySelector(s); };
@@ -389,14 +390,15 @@ function renderKeyboard() {
 }
 document.addEventListener("keydown", function (e) {
   if (!$("#sheet").hidden) { if (e.key === "Escape") closeSheet(); return; }
-  if (!$("#achSheet").hidden) { if (e.key === "Escape") closeAchievements(); return; }
-  if (!$("#award").hidden) {
+  if (!$("#award").hidden) { // first: it can sit on top of the 🏆 sheet
+    if (e.key === "Enter" && (e.target === $("#awardShare") || e.target === $("#awardPrev") || e.target === $("#awardClose"))) return;
     if (e.key === "Escape") closeAwards();
     else if (e.key === "Enter" || e.key === "ArrowRight") nextAward();
     else if (e.key === "ArrowLeft") prevAward();
     e.preventDefault();
     return;
   }
+  if (!$("#achSheet").hidden) { if (e.key === "Escape") closeAchievements(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (/^[a-z]$/i.test(e.key)) { input(e.key.toLowerCase()); e.preventDefault(); }
   else if (e.key === "'" || e.key === "\u2019") { input("'"); e.preventDefault(); } // iPad keyboards type ’
@@ -526,15 +528,38 @@ function toast(text) {
   toastTimer = setTimeout(function () { el.hidden = true; }, 1800);
 }
 // One card that cycles through the newly earned achievements: dots, back/next (buttons,
-// swipe, arrow keys), "Nice!" on the last, and ✕ to close any time.
-var awardQueue = [], awardIndex = 0, awardSeen = 0;
-function showAwards(list) {
-  awardQueue = list; awardIndex = 0; awardSeen = -1;
+// swipe, arrow keys), "Nice!" on the last, and ✕ to close any time. `from` is set when an
+// earned one is reopened from the 🏆 sheet: no celebration, and focus goes back there.
+var awardQueue = [], awardIndex = 0, awardSeen = 0, awardFrom = null;
+function showAwards(list, from) {
+  awardQueue = list; awardIndex = 0; awardSeen = from ? Infinity : -1; awardFrom = from || null;
+  $("#awardKicker").textContent = from ? "Achievement" : "New achievement!";
   $("#award").hidden = false;
   showAward();
 }
+// Share: the PNG is made as soon as a card shows, because iPad Safari only opens the share
+// sheet straight from a tap (no waiting on drawing in between).
+var shareFor = null, shareBlob = null;
+function sharePics() { // a few collected pictures for the card (pictures only, never words)
+  var pics = [];
+  Object.keys(PACKS).forEach(function (id) {
+    var stats = packProgress(id).stats;
+    entries(id).forEach(function (e) { if (e.pic && stats[e.w] && stats[e.w].ok > 0 && pics.indexOf(e.pic) < 0) pics.push(e.pic); });
+  });
+  return shuffle(pics).slice(0, 6);
+}
+function prepareShare(a) {
+  shareFor = a.id; shareBlob = null;
+  $("#awardShare").hidden = true;
+  renderCard(a, earned[a.id] || Date.now(), sharePics()).then(function (b) {
+    if (shareFor !== a.id) return; // moved on to another card meanwhile
+    shareBlob = b;
+    $("#awardShare").hidden = false;
+  }).catch(function () {}); // no canvas: just no Share button
+}
 function showAward() {
   var a = awardQueue[awardIndex], n = awardQueue.length, last = awardIndex === n - 1;
+  prepareShare(a);
   $("#awardIcon").textContent = a.icon;
   $("#awardTitle").textContent = a.title;
   $("#awardDetail").textContent = a.detail;
@@ -560,7 +585,8 @@ function prevAward() {
 }
 function closeAwards() {
   $("#award").hidden = true;
-  $("#nextBtn").focus();
+  shareFor = shareBlob = null;
+  (awardFrom || $("#nextBtn")).focus();
 }
 // Picture collection (sticker book), per pack: a word's picture is collected the first
 // time it's spelled right on the first try (stats ok > 0). Pictures only, never words;
@@ -618,6 +644,11 @@ function openAchievements() {
       : a.detail + " · " + Math.min(a.have, a.goal) + " of " + a.goal;
     text.appendChild(sub);
     li.append(icon, text);
+    if (got) { // reopen it in the big card, where it can be shared
+      li.tabIndex = 0; li.setAttribute("role", "button");
+      li.addEventListener("click", function () { showAwards([a], li); });
+      li.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); showAwards([a], li); } });
+    }
     list.appendChild(li);
   });
   showTab(false);
@@ -634,6 +665,9 @@ $("#tabAch").addEventListener("click", function () { showTab(false); });
 $("#tabCol").addEventListener("click", function () { showTab(true); });
 $("#awardPrev").addEventListener("click", prevAward);
 $("#awardClose").addEventListener("click", closeAwards);
+$("#awardShare").addEventListener("click", function () {
+  if (shareBlob) shareCard(shareBlob, awardQueue[awardIndex].title);
+});
 $("#award").addEventListener("click", function (e) { if (e.target === $("#award")) closeAwards(); });
 // Swipe left/right on the card to cycle.
 var swipeX = null;
