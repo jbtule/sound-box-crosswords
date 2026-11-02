@@ -105,7 +105,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `[custom] words` is the starter "Custom" list. **Word list format** (packs and the custom list share it): one entry per
   line, `syl-la-bles emoji`, e.g. `but-ter-fly 🦋`. Dashes mark syllables and drive the
   coloring and *Clap it*. Letters (plus apostrophes, e.g. `don't`; the
-  apostrophe box is pre-filled), 2–12 characters. `(how-it-sounds)` at the end, one part
+  player types the apostrophe into its own box with the pad's `'` key), 2–12 characters. `(how-it-sounds)` at the end, one part
   per syllable, e.g. `ba-nan-a 🍌 (buh-nan-uh)`: *Clap it* speaks those instead of the
   spelled syllables, which TTS misreads alone (`vol` → "volume", `ap` → "A P", `to` →
   "too", `ger` → "jer"). **Required for every multi-syllable pack word** (optional in a

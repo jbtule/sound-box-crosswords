@@ -57,8 +57,6 @@ function newPuzzle() {
   if (!fresh.length) { pp.round = []; fresh = words; store.set("progress", progress); } // new round
   P = makePuzzle(pool, recent, fresh);
   recent = P.words.map(function (p) { return p.w; }).concat(recent).slice(0, 8);
-  // Apostrophes (don't) are given: filled and locked, so typing skips over them.
-  Object.keys(P.cells).forEach(function (kk) { if (P.cells[kk].letter === "'") { fill[kk] = "'"; locked[kk] = true; } });
   renderBoard();
   renderClues();
   select(order()[0], null, false);
@@ -288,14 +286,20 @@ async function clap() {
 
 /* ---------- letter pad and physical keyboard ---------- */
 function renderKeyboard() {
-  var rows = settings.kb === "qwerty" ? ["qwertyuiop", "asdfghjkl", "zxcvbnm⌫"] : ["abcdefg", "hijklmn", "opqrstu", "vwxyz⌫"];
+  // The apostrophe is typed like a letter (where it goes is part of spelling don't). It's
+  // always shown, so its presence doesn't hint that a puzzle has a contraction.
+  var rows = settings.kb === "qwerty" ? ["qwertyuiop", "asdfghjkl", "zxcvbnm'⌫"] : ["abcdefg", "hijklmn", "opqrstu", "vwxyz'⌫"];
   var kb = $("#keyboard"); kb.innerHTML = "";
   rows.forEach(function (row) {
     var r = document.createElement("div"); r.className = "krow";
     Array.from(row).forEach(function (k) {
       var b = document.createElement("button"); b.type = "button"; b.className = "key";
       if (k === "⌫") { b.classList.add("wide"); b.textContent = "⌫"; b.setAttribute("aria-label", "Erase"); b.addEventListener("click", back); }
-      else { b.textContent = k; b.addEventListener("click", function () { input(k); }); }
+      else {
+        b.textContent = k;
+        if (k === "'") b.setAttribute("aria-label", "Apostrophe");
+        b.addEventListener("click", function () { input(k); });
+      }
       r.appendChild(b);
     });
     kb.appendChild(r);
@@ -305,6 +309,7 @@ document.addEventListener("keydown", function (e) {
   if (!$("#sheet").hidden) { if (e.key === "Escape") closeSheet(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (/^[a-z]$/i.test(e.key)) { input(e.key.toLowerCase()); e.preventDefault(); }
+  else if (e.key === "'" || e.key === "\u2019") { input("'"); e.preventDefault(); } // iPad keyboards type ’
   else if (e.key === "Backspace") { back(); e.preventDefault(); }
 });
 
