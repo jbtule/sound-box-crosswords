@@ -100,7 +100,7 @@ def main():
             with open(os.path.join(out_dir, fname), "wb") as f:
                 f.write(g.mp3(audio, g.SR))
             ms = int(1000 * len(audio) / g.SR)
-            cells.append(f'<td><button onclick="new Audio(\'{fname}\').play()">▶ {method}</button><small>{ms} ms</small>'
+            cells.append(f'<td><button data-src="{fname}">▶ {method}</button><small>{ms} ms</small>'
                          f'<label><input type="radio" name="{name}" value="{method}"> pick</label></td>')
         cells.append(f'<td><label><input type="radio" name="{name}" value="none"> none good</label></td>')
         rows.append(f"<tr><th>{html.escape(name)}</th><td>{html.escape(word)}</td><td>{kind}</td>{''.join(cells)}</tr>")
@@ -115,6 +115,13 @@ button{font:inherit;padding:8px 12px;margin-right:6px;border-radius:8px;border:1
 """ + "\n".join(rows) + """</table>
 <p><button id="copy">Copy picks</button> <span id="msg"></span></p>
 <script>
+// iPad Safari won't play media from a server without byte ranges (python -m http.server),
+// so every clip is fetched once into memory and played from there, straight from the tap.
+const player = new Audio(), clips = {};
+document.querySelectorAll("button[data-src]").forEach((b) => {
+  fetch(b.dataset.src).then((r) => r.blob()).then((blob) => { clips[b.dataset.src] = URL.createObjectURL(blob); });
+  b.onclick = () => { if (!clips[b.dataset.src]) return; player.src = clips[b.dataset.src]; player.play(); };
+});
 // Picks are kept in this browser; Copy picks puts them on the clipboard to paste back.
 const KEY = "sound-picks";
 let picks = {}; try { picks = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
