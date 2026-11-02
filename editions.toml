@@ -1,0 +1,23 @@
+# Word-list editions, one per grade. The app asks which one on the first visit, and
+# Settings → Grade switches. Each edition has its own packs file (same format as
+# packs.toml) and keeps its own saved progress, stars, achievements, collection, colors,
+# Custom list and settings on the device.
+#
+#   id        short name; saved data is kept under "sbx:<id>:" (packs.toml's edition uses
+#             plain "sbx:", from before editions). Never change it once in use.
+#   name      shown in the grade question and in Settings
+#   file      the packs file
+#   keyboard  optional letter pad default for a new player: "qwerty" (default) or "abc"
+#
+# Listed in the order they're offered. `npm run check` validates every file listed here.
+
+[[edition]]
+id = "k"
+name = "Kindergarten"
+file = "editions/kindergarten.toml"
+keyboard = "abc"
+
+[[edition]]
+id = "g3"
+name = "3rd grade"
+file = "packs.toml"

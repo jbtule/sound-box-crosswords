@@ -46,21 +46,24 @@ for (const [, ref] of listenHtml.matchAll(/(?:src|href)="(?!https?:|data:|\?|\.\
 if (!listenHtml.includes('<meta name="robots" content="noindex, nofollow">')) errors.push("listen/index.html must keep its noindex robots tag");
 if (/href="[^"]*listen/.test(html)) errors.push("index.html must not link to the listen check");
 
-// The browser gets smol-toml from the CDN URL in index.html (and listen/); Node uses node_modules.
-const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).dependencies["smol-toml"];
+// Browser dependencies come from the CDN URLs in each page's import map; Node uses
+// node_modules. Every entry must pin the exact version in package.json.
+const deps = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).dependencies;
 for (const [name, page] of [["index.html", html], ["listen/index.html", listenHtml]]) {
-  const cdn = page.match(/"smol-toml": "[^"]*smol-toml@([^/"]+)\//);
-  if (!cdn || cdn[1] !== pkg) errors.push(`${name} import map uses smol-toml ${cdn?.[1]}, package.json has ${pkg}`);
+  let map = {};
+  try { map = JSON.parse(page.match(/<script type="importmap">([\s\S]*?)<\/script>/)[1]).imports; }
+  catch (e) { errors.push(`${name}: can't read the import map`); }
+  for (const [dep, url] of Object.entries(map)) {
+    const v = url.match(new RegExp(`/${dep}@([^/"]+)/`));
+    if (!deps[dep]) errors.push(`${name} import map loads ${dep}, which isn't in package.json dependencies`);
+    else if (!v || v[1] !== deps[dep]) errors.push(`${name} import map uses ${dep} ${v?.[1]}, package.json has ${deps[dep]}`);
+  }
 }
 
-// qr.svg (the share sheet's QR code) is generated; keep it current with its address.
-const { SHARE_URL: SHARE_ADDR } = await import("./qr.mjs");
-{
-  const { SHARE_URL, QR_FILE, qrSvg } = await import("./qr.mjs");
-  if (!existsSync(QR_FILE) || readFileSync(QR_FILE, "utf8") !== await qrSvg()) errors.push("qr.svg is out of date: run npm run qr");
-  if (!readFileSync(join(root, "js", "app.js"), "utf8").includes(`url: "${SHARE_URL}"`)) errors.push(`js/app.js SHARE.url should be ${SHARE_URL}`);
-  if (!html.includes(`>${SHARE_URL}</code>`)) errors.push(`index.html share link should show ${SHARE_URL}`);
-}
+// The share sheet's address (its QR code is drawn in the browser by the qrcode library).
+const SHARE_ADDR = "https://tools.tuley.name/sound-box-crosswords/";
+if (!readFileSync(join(root, "js", "app.js"), "utf8").includes(`var SHARE_BASE = "${SHARE_ADDR}";`)) errors.push(`js/app.js SHARE_BASE should be ${SHARE_ADDR}`);
+if (!html.includes(`>${SHARE_ADDR}</code>`)) errors.push(`index.html share link should show ${SHARE_ADDR}`);
 
 // The link-preview image: present, 1200×630, and where the og:image tag points.
 {
@@ -81,36 +84,88 @@ const { parse } = await import("smol-toml");
 const { readPacks } = await import("../js/words.js");
 const { parseList, makePuzzle, blankSentence, MAX_COLS, MAX_ROWS } = await import("../js/crossword.js");
 
-const tomlText = readFileSync(join(root, "packs.toml"), "utf8");
-let raw = { pack: [] }, packs = {}, starter = "";
+// Editions (editions.toml): one packs file per grade, each checked the same way.
+const { readEditions, storagePrefix } = await import("../js/words.js");
+let editions = [];
 try {
-  raw = parse(tomlText);
-  ({ packs, starter } = readPacks(tomlText));
+  editions = readEditions(readFileSync(join(root, "editions.toml"), "utf8"));
 } catch (e) {
-  errors.push(`packs.toml: ${e.message}`);
+  errors.push(`editions.toml: ${e.message}`);
 }
-const ids = new Set();
-for (const [i, p] of (raw.pack || []).entries()) {
-  const label = `packs.toml pack #${i + 1}${p.id ? ` (${p.id})` : ""}`;
-  for (const f of ["id", "name", "note", "words"]) {
-    if (typeof p[f] !== "string" || !p[f].trim()) errors.push(`${label}: needs ${f} = "..."`);
-  }
-  if (p.id === "mine") errors.push(`${label}: id "mine" is reserved for the Custom list`);
-  if (ids.has(p.id)) errors.push(`${label}: id "${p.id}" is used twice`);
-  // The note is shown on screen, so it must not spell out a pack word, even split
-  // into syllables ("fr-og"). That would turn recall into copying.
-  if (typeof p.note === "string" && typeof p.words === "string") {
-    const shown = new Set(p.note.toLowerCase().replace(/[-'\u2019]/g, "").split(/[^a-z]+/));
-    for (const e of parseList(p.words)) {
-      if (shown.has(e.w.replace(/'/g, ""))) errors.push(`${label}: note gives away "${e.w}"`);
+if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]");
+{
+  const edIds = new Set(), prefixes = new Set();
+  for (const ed of editions) {
+    const at = `editions.toml (${ed.id || "?"})`;
+    for (const f of ["id", "name", "file"]) if (typeof ed[f] !== "string" || !ed[f].trim()) errors.push(`${at}: needs ${f} = "..."`);
+    if (ed.id && !/^[a-z0-9-]+$/.test(ed.id)) errors.push(`${at}: id should be lowercase letters, digits and dashes`);
+    if (edIds.has(ed.id)) errors.push(`${at}: id is used twice`);
+    if (ed.file && !existsSync(join(root, ed.file))) errors.push(`${at}: missing file ${ed.file}`);
+    if (!["qwerty", "abc"].includes(ed.keyboard)) errors.push(`${at}: keyboard should be "qwerty" or "abc"`);
+    if (ed.id && ed.file) {
+      const pre = storagePrefix(ed);
+      if (prefixes.has(pre)) errors.push(`${at}: shares saved data (${pre}) with another edition`);
+      prefixes.add(pre);
     }
+    edIds.add(ed.id);
   }
-  ids.add(p.id);
+  if (!editions.some((ed) => ed.file === "packs.toml")) errors.push("editions.toml: packs.toml must stay an edition (existing saved progress belongs to it)");
 }
-if (!starter) errors.push(`packs.toml: missing [custom] words = """..."""`);
+// The share sheet draws a QR code for the site, or for one grade (?edition=<id>).
+{
+  const QRCode = (await import("qrcode")).default;
+  for (const url of [SHARE_ADDR, ...editions.map((ed) => `${SHARE_ADDR}?edition=${ed.id}`)]) {
+    try {
+      const svg = await QRCode.toString(url, { type: "svg", errorCorrectionLevel: "M", margin: 2 });
+      if (!svg.startsWith("<svg")) throw new Error("not an SVG");
+    } catch (e) { errors.push(`qrcode can't draw ${url}: ${e.message}`); }
+  }
+}
 
-const lists = Object.entries(packs).map(([id, p]) => ({ id, text: p.list }));
-lists.push({ id: "custom", text: starter });
+// Every word list in every edition: { id (for messages), text, custom }.
+const lists = [];
+const textOk = new Set(); // packs with words_in_text = true
+for (const ed of editions) {
+  if (!ed.file || !existsSync(join(root, ed.file))) continue;
+  const file = ed.file;
+  const tomlText = readFileSync(join(root, file), "utf8");
+  let raw = { pack: [] }, packs = {}, starter = "";
+  try {
+    raw = parse(tomlText);
+    ({ packs, starter } = readPacks(tomlText));
+  } catch (e) {
+    errors.push(`${file}: ${e.message}`);
+    continue;
+  }
+  const ids = new Set();
+  const tag = file === "packs.toml" ? "" : ed.id + "/";
+  for (const [i, p] of (raw.pack || []).entries()) {
+    const label = `${file} pack #${i + 1}${p.id ? ` (${p.id})` : ""}`;
+    for (const f of ["id", "name", "note", "words"]) {
+      if (typeof p[f] !== "string" || !p[f].trim()) errors.push(`${label}: needs ${f} = "..."`);
+    }
+    if (p.id === "mine") errors.push(`${label}: id "mine" is reserved for the Custom list`);
+    if (ids.has(p.id)) errors.push(`${label}: id "${p.id}" is used twice`);
+    // The note is shown on screen, so it must not spell out a pack word, even split
+    // into syllables ("fr-og"). That would turn recall into copying.
+    // A pack can set words_in_text = true (kindergarten high-frequency words): finding a
+    // word printed elsewhere is part of learning to read it, so its words may appear in
+    // the note and in each other's sentences. A clue's own word is always blanked.
+    if (p.words_in_text !== undefined && typeof p.words_in_text !== "boolean") errors.push(`${label}: words_in_text should be true or false`);
+    if (p.words_in_text === true) textOk.add(tag + p.id);
+    if (typeof p.note === "string" && typeof p.words === "string" && p.words_in_text !== true) {
+      const shown = new Set(p.note.toLowerCase().replace(/[-'\u2019]/g, "").split(/[^a-z]+/));
+      for (const e of parseList(p.words)) {
+        if (shown.has(e.w.replace(/'/g, ""))) errors.push(`${label}: note gives away "${e.w}"`);
+      }
+    }
+    ids.add(p.id);
+  }
+  if (!(raw.pack || []).length) errors.push(`${file}: needs at least one [[pack]]`);
+  if (!starter) errors.push(`${file}: missing [custom] words = """..."""`);
+  for (const [id, p] of Object.entries(packs)) lists.push({ id: tag + id, text: p.list, custom: false });
+  lists.push({ id: tag + "custom", text: starter, custom: true });
+}
 
 // Short hint parts that speech engines read as words, not letters. "un" and "ub" were
 // timed against Google US English and read normally.
@@ -124,7 +179,7 @@ const ABBREV = new Set(["mit", "bih", "uhn", "uhb", "ca", "tle", "ril", "ple", "
   "blvd", "rd", "ref", "pg", "pp", "ch", "fig", "govt", "approx", "misc", "gen", "lt", "sgt", "capt", "col", "jr", "sr"]);
 // word, then optional emoji (none = listen-only), (sounds) hint, and "context sentence".
 const LINE = /^([a-z][a-z']*(?:-[a-z']+)*)(?: +([^\s("]\S*))?(?: +\(([^)]*)\))?(?: +"([^"]+)")?$/;
-for (const { id, text } of lists) {
+for (const { id, text, custom } of lists) {
   if (!text) continue; // "mine" is filled in by the user
   const seen = new Set();
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
@@ -136,7 +191,7 @@ for (const { id, text } of lists) {
     if (seen.has(w)) errors.push(`${id}: "${w}" is listed twice`);
     if (m[2] != null && !/\p{Extended_Pictographic}/u.test(m[2])) errors.push(`${id}: "${w}" picture "${m[2]}" isn't an emoji`);
     // A word with no picture needs a spoken sentence for context (their vs there).
-    if (m[2] == null && m[4] == null && id !== "custom") errors.push(`${id}: "${w}" has no picture, so it needs a "sentence that uses it"`);
+    if (m[2] == null && m[4] == null && !custom) errors.push(`${id}: "${w}" has no picture, so it needs a "sentence that uses it"`);
     if (m[4] != null && !new RegExp(`\\b${w}\\b`, "i").test(m[4])) errors.push(`${id}: "${w}" sentence doesn't use the word: "${m[4]}"`);
     const beats = m[1].split("-").length;
     // Spoken alone, syllables get misread as abbreviations ("vol" → "volume", "ap" → "A P"),
@@ -156,7 +211,7 @@ for (const { id, text } of lists) {
   }
   // Sentences are shown with the word blanked out, so one that uses another word from the
   // same list would spell it on screen when both are in a puzzle.
-  if (id !== "custom") {
+  if (!custom && !textOk.has(id)) {
     const all = parseList(text).map((e) => e.w);
     for (const e of parseList(text)) {
       if (!e.sentence) continue;
@@ -166,11 +221,16 @@ for (const { id, text } of lists) {
     }
   }
   if (parseList(text).length !== seen.size) errors.push(`${id}: parseList disagrees with the line count`);
-  if (id !== "custom" && lines.length < 10) errors.push(`${id}: only ${lines.length} words; packs need variety to build puzzles`);
+  if (!custom && lines.length < 10) errors.push(`${id}: only ${lines.length} words; packs need variety to build puzzles`);
 }
 
 const RUNS = 50;
-for (const { id, text } of lists) {
+// Two- and three-letter words share few letters, so their puzzles run smaller (about 5
+// words, and 3 at the least, which suits kindergarten) and can't all cross each other
+// early on, so covering the pack takes a few more puzzles. Longer words fit about 6, and
+// at least 4.
+const shortWords = (pool) => pool.reduce((n, e) => n + e.w.length, 0) / pool.length <= 3.5;
+for (const { id, text, custom } of lists) {
   const pool = parseList(text);
   if (pool.length < 3) continue;
   let recent = [], fewest = Infinity;
@@ -185,15 +245,16 @@ for (const { id, text } of lists) {
       });
     }
   }
-  if (fewest < 4) errors.push(`${id}: some puzzles only fit ${fewest} words`);
+  const least = shortWords(pool) ? 3 : 4;
+  if (fewest < least) errors.push(`${id}: some puzzles only fit ${fewest} words`);
 }
 
 // Coverage: building puzzles from the words not done yet this round (like the app does)
-// should see every word in close to the fewest possible puzzles (about 6 words each).
+// should see every word in close to the fewest possible puzzles (see shortWords above).
 const coverage = [];
-for (const { id, text } of lists) {
+for (const { id, text, custom } of lists) {
   const pool = parseList(text);
-  if (pool.length < 6 || id === "custom") continue;
+  if (pool.length < 6 || custom) continue;
   const trials = 20, counts = [];
   for (let t = 0; t < trials; t++) {
     const seen = new Set();
@@ -207,9 +268,10 @@ for (const { id, text } of lists) {
     }
     counts.push(n);
   }
-  const avg = counts.reduce((a, b) => a + b) / trials, best = Math.ceil(pool.length / 6);
+  const per = shortWords(pool) ? 5 : 6;
+  const avg = counts.reduce((a, b) => a + b) / trials, best = Math.ceil(pool.length / per);
   coverage.push(`${id} ${avg.toFixed(1)} (best ${best})`);
-  if (avg > best + 1.5) errors.push(`${id}: takes ${avg.toFixed(1)} puzzles on average to cover ${pool.length} words (best possible ${best})`);
+  if (avg > best + (shortWords(pool) ? 3 : 1.5)) errors.push(`${id}: takes ${avg.toFixed(1)} puzzles on average to cover ${pool.length} words (best possible ${best})`);
 }
 
 // Color schemes (js/palettes.js): the syllable bands are the core mechanic, so in every

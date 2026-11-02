@@ -24,6 +24,11 @@
 #               apart: their "The kids hung their coats on the hooks."
 #               Also shown with the word as a blank, so don't use other words from the pack.
 #
+#   words_in_text = true   optional: lets this pack's words appear in its note and in each
+#               other's sentences. Only for packs where spotting a printed word helps
+#               (kindergarten high-frequency words); normally the check forbids it.
+#
+# This is the 3rd grade edition; editions.toml lists every grade's file.
 # School units go first, newest at the top (add Unit 4 above Unit 3).
 #
 # Run `npm run check` after editing; it catches typos and builds test puzzles.

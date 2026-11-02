@@ -1,9 +1,10 @@
 // Listen check: a grown-up tool for hearing every recorded clip and marking it right or
-// wrong. /listen/ lists the packs; /listen/?pack=<id> is one pack's page. It reads the same
-// packs.toml and audio.json as the app, so it plays exactly what the app plays.
+// wrong. /listen/ lists every edition's packs; /listen/?edition=<id>&pack=<id> is one
+// pack's page (no edition means packs.toml's). It reads the same editions.toml, packs
+// files and audio.json as the app, so it plays exactly what the app plays.
 // Marks live in localStorage ("sbx:listen"), keyed by clip: a clip's key hashes its text
 // and voice settings, so a changed hint is a new clip and shows up as not heard.
-import { readPacks } from "../js/words.js";
+import { readPacks, readEditions } from "../js/words.js";
 import { parseList, clipsFor } from "../js/crossword.js";
 
 var $ = function (s) { return document.querySelector(s); };
@@ -29,20 +30,22 @@ async function getText(rel) {
   return res.text();
 }
 
-// Every page: { id, name, words: [{ syll, pic, clips: [{ kind, text, part, key }] }] }.
-function pages(data, audio) {
+// Every page: { id, edition, name, words: [{ syll, pic, clips: [{ kind, text, part, key }] }] }.
+// `name` includes the grade when there's more than one (for reports).
+function pages(ed, multi, data, audio, withPhrases) {
   var out = [];
   function withKeys(clips) {
     return clips.map(function (c) { return Object.assign({}, c, { key: audio.clips[c.kind + ":" + c.text] || null }); });
   }
   function fromList(id, name, list) {
-    out.push({ id: id, name: name, words: parseList(list).map(function (e) { return { syll: e.syll, pic: e.pic, clips: withKeys(clipsFor(e)) }; }) });
+    out.push({ id: id, edition: ed, short: name, name: (multi ? ed.name + " · " : "") + name,
+      words: parseList(list).map(function (e) { return { syll: e.syll, pic: e.pic, clips: withKeys(clipsFor(e)) }; }) });
   }
   Object.keys(data.packs).forEach(function (id) { if (id !== "mine") fromList(id, data.packs[id].name, data.packs[id].list); });
   if (data.starter) fromList("custom", "Custom starter", data.starter);
   var phrases = Object.keys(audio.clips).filter(function (k) { return k.startsWith("p:"); }).map(function (k) { return k.slice(2); });
-  if (phrases.length) {
-    out.push({ id: "phrases", name: "Phrases", words: phrases.map(function (p) { return { syll: p, pic: "", clips: withKeys([{ kind: "p", text: p }]) }; }) });
+  if (phrases.length && withPhrases) {
+    out.push({ id: "phrases", edition: ed, short: "Phrases", name: (multi ? ed.name + " · " : "") + "Phrases", words: phrases.map(function (p) { return { syll: p, pic: "", clips: withKeys([{ kind: "p", text: p }]) }; }) });
   }
   return out;
 }
@@ -82,13 +85,22 @@ function next() {
 function play(items) { player.pause(); queue = items.slice(); next(); }
 
 /* ---------- index ---------- */
-function renderIndex(all) {
+function href(page) { return "?edition=" + encodeURIComponent(page.edition.id) + "&pack=" + encodeURIComponent(page.id); }
+function renderIndex(all, eds) {
   var list = $("#list"); list.innerHTML = "";
+  eds.forEach(function (ed) {
+    var mine = all.filter(function (p) { return p.edition === ed; });
+    if (eds.length > 1) list.appendChild(el("h2", "grade", ed.name));
+    list.appendChild(indexList(mine));
+  });
+  setupReport(all, "all packs");
+}
+function indexList(all) {
   var ul = el("ul", "packs");
   all.forEach(function (page) {
     var c = counts(page), li = el("li", "card"), a = el("a");
-    a.href = "?pack=" + encodeURIComponent(page.id);
-    a.appendChild(el("span", "name", page.name));
+    a.href = href(page);
+    a.appendChild(el("span", "name", page.short));
     var pills = el("span", "counts");
     if (c.new) pills.appendChild(el("span", "pill new", c.new + " not heard"));
     if (c.bad) pills.appendChild(el("span", "pill bad", c.bad + " ✗"));
@@ -97,8 +109,7 @@ function renderIndex(all) {
     a.appendChild(pills);
     li.appendChild(a); ul.appendChild(li);
   });
-  list.appendChild(ul);
-  setupReport(all, "all packs");
+  return ul;
 }
 
 /* ---------- one pack ---------- */
@@ -187,7 +198,7 @@ function setupReport(pagesToReport, label) {
   $("#report").hidden = !lines.length;
   if (!lines.length) return;
   var body = "Marked wrong on the listen check (" + label + "):\n\n" + lines.join("\n") +
-    "\n\nFix by changing the word's (how-it-sounds) hint or sentence in packs.toml; a new hint gets a new recording.";
+    "\n\nFix by changing the word's (how-it-sounds) hint or sentence in its packs file (see editions.toml); a new hint gets a new recording.";
   $("#copyBtn").onclick = function () {
     navigator.clipboard.writeText(body).then(function () { $("#status").textContent = "Copied."; }, function () { $("#status").textContent = "Couldn't copy."; });
   };
@@ -196,11 +207,17 @@ function setupReport(pagesToReport, label) {
 
 /* ---------- start ---------- */
 async function start() {
-  var id = new URLSearchParams(location.search).get("pack");
-  var data, audio;
+  var params = new URLSearchParams(location.search), id = params.get("pack");
+  var eds, all = [], audio;
   try {
-    data = readPacks(await getText("../packs.toml"));
+    eds = readEditions(await getText("../editions.toml"));
     audio = await getJSON("../audio.json", LIVE + "audio.json");
+    if (audio && audio.clips) {
+      for (var ed of eds) {
+        var data = readPacks(await getText("../" + ed.file));
+        all = all.concat(pages(ed, eds.length > 1, data, audio, ed.file === "packs.toml"));
+      }
+    }
   } catch (e) {
     $("#list").appendChild(el("p", "empty", "Couldn't load the word packs. Check the connection and reload."));
     return;
@@ -209,9 +226,10 @@ async function start() {
     $("#list").appendChild(el("p", "empty", "No recordings in this deploy (the app is using the device voice)."));
     return;
   }
-  var all = pages(data, audio);
-  if (!id) { renderIndex(all); return; }
-  var page = all.find(function (p) { return p.id === id; });
+  if (!id) { renderIndex(all, eds); return; }
+  // No ?edition= means the original one (packs.toml), so older links still work.
+  var edId = params.get("edition") || (eds.find(function (e) { return e.file === "packs.toml"; }) || eds[0]).id;
+  var page = all.find(function (p) { return p.id === id && p.edition.id === edId; });
   if (!page) { location.replace("./"); return; }
   document.title = page.name + " · Listen check";
   $("#title").textContent = page.name;

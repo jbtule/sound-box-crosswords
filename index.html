@@ -97,6 +97,16 @@
   </div>
 </div>
 
+<!-- First visit only (pickEdition in app.js): which grade's word lists. -->
+<section class="award" id="gradeAsk" hidden>
+  <div class="award-card" role="dialog" aria-modal="true" aria-labelledby="gradeTitle" aria-describedby="gradeHelp">
+    <div class="award-icon" aria-hidden="true">📚</div>
+    <h2 id="gradeTitle">Which grade?</h2>
+    <p id="gradeHelp">Each grade has its own word lists and achievements. You can change it in Settings.</p>
+    <div class="grade-choices" id="gradeChoices"></div>
+  </div>
+</section>
+
 <section class="award" id="award" hidden>
   <div class="award-card" role="dialog" aria-modal="true" aria-labelledby="awardTitle" aria-describedby="awardDetail">
     <p class="kicker" id="awardKicker">New achievement!</p>
@@ -141,6 +151,11 @@
 <section class="sheet" id="sheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <div class="row" style="justify-content:space-between"><h2 id="sheetTitle">Settings</h2><button class="ghost" id="closeBtn" type="button">Done</button></div>
+    <div id="gradeSec" hidden>
+      <h3>Grade</h3>
+      <div class="opt" id="gradeList" role="radiogroup" aria-label="Grade"></div>
+      <p class="help">Each grade has its own word lists, stars and achievements on this device.</p>
+    </div>
     <div id="installSec" hidden>
       <h3>Home Screen</h3>
       <p class="help">Add Sound Box to the Home Screen to keep progress saved (Safari can clear it after a while unused) and play full screen, even offline.</p>
@@ -194,12 +209,16 @@
   </div>
 </section>
 
-<!-- qr.svg is pre-rendered by `npm run qr` (scripts/qr.mjs), so no QR library ships. -->
 <section class="sheet" id="shareSheet" hidden>
   <div class="panel share-panel" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
     <div class="row" style="justify-content:space-between"><h2 id="shareTitle">Share Sound Box</h2><button class="ghost" id="shareClose" type="button">Done</button></div>
-    <p class="help">Scan with a phone camera to open it:</p>
-    <img class="share-qr" src="qr.svg" width="200" height="200" alt="QR code for tools.tuley.name/sound-box-crosswords">
+    <div class="opt share-scope" id="shareScope" role="radiogroup" aria-label="What to share" hidden>
+      <label><input type="radio" name="shareScope" id="shareOne" value="one" checked> <span id="shareOneName">This grade</span> only</label>
+      <label><input type="radio" name="shareScope" id="shareAll" value="all"> All grades</label>
+    </div>
+    <!-- Drawn by the qrcode library (loaded when this opens) for whichever link is chosen. -->
+    <p class="help" id="shareScan" hidden>Scan with a phone camera to open it:</p>
+    <div class="share-qr" id="shareQr" role="img" aria-label="QR code" hidden></div>
     <p class="help">Or send the link: <code id="shareUrl">https://tools.tuley.name/sound-box-crosswords/</code></p>
     <div class="row" style="justify-content:center"><button class="primary" id="shareGo" type="button" hidden>Share…</button><button class="ghost share-copy" id="shareCopy" type="button">Copy link</button></div>
   </div>
@@ -208,7 +227,10 @@
 <!-- Keep this version in sync with package.json; scripts/check.mjs verifies it. +esm is
      jsDelivr's one-file bundle: one request instead of nine, any of which could fail. -->
 <script type="importmap">
-{ "imports": { "smol-toml": "https://cdn.jsdelivr.net/npm/smol-toml@1.9.1/+esm" } }
+{ "imports": {
+  "smol-toml": "https://cdn.jsdelivr.net/npm/smol-toml@1.9.1/+esm",
+  "qrcode": "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm"
+} }
 </script>
 <script type="module" src="js/app.js"></script>
 </body>

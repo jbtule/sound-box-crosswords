@@ -18,7 +18,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { readPacks } from "../../js/words.js";
+import { readPacks, readEditions } from "../../js/words.js";
 import { parseList, clipsFor } from "../../js/crossword.js";
 
 export const MODEL = "kokoro-v1.0";
@@ -47,10 +47,14 @@ export function keyFor(kind, text) {
   return createHash("sha256").update(id).digest("hex").slice(0, 20);
 }
 
-// Every clip the packs (and the starter Custom list) need: [{ id: "w:volcano", key, kind, text, speed, voice, method }].
+// Every clip the packs (and each starter Custom list) need, across all editions: [{ id: "w:volcano", key, kind, text, speed, voice, method }].
 export function planClips() {
-  const { packs, starter } = readPacks(readFileSync(join(root, "packs.toml"), "utf8"));
-  const lists = Object.values(packs).map((p) => p.list).concat(starter);
+  // Every edition's packs file (editions.toml), each with its starter Custom list.
+  const lists = [];
+  for (const ed of readEditions(readFileSync(join(root, "editions.toml"), "utf8"))) {
+    const { packs, starter } = readPacks(readFileSync(join(root, ed.file), "utf8"));
+    lists.push(...Object.values(packs).map((p) => p.list), starter);
+  }
   const clips = new Map();
   const add = (kind, text) => {
     const id = kind + ":" + text;

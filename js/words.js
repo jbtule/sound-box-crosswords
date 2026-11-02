@@ -1,6 +1,6 @@
-// Loads the word packs from packs.toml. See the comments at the top of that file
-// for the format. "smol-toml" resolves through the import map in index.html in the
-// browser, and from node_modules in Node (scripts/check.mjs).
+// Loads the word-list editions (editions.toml) and their packs (packs.toml and
+// editions/*.toml, all in the format described at the top of packs.toml). "smol-toml"
+// resolves through the import map in the browser, and from node_modules in Node.
 import { parse } from "smol-toml";
 
 // Always last: the custom list, saved in localStorage.
@@ -14,11 +14,27 @@ export function readPacks(text) {
   return { packs: packs, starter: data.custom ? data.custom.words.trim() : "" };
 }
 
-export async function loadPacks() {
-  // Carry this module's ?v= cache-busting stamp (added at deploy) over to packs.toml.
-  var url = new URL("../packs.toml", import.meta.url);
+// TOML text → [{ id, name, file, keyboard }] in offer order.
+export function readEditions(text) {
+  return (parse(text).edition || []).map(function (e) {
+    return { id: e.id, name: e.name, file: e.file, keyboard: e.keyboard || "qwerty" };
+  });
+}
+
+// Where an edition's saved data lives. packs.toml's edition keeps the plain prefix it had
+// before there were editions, so existing progress stays put.
+export function storagePrefix(edition) {
+  return edition.file === "packs.toml" ? "sbx:" : "sbx:" + edition.id + ":";
+}
+
+// Fetches a site file, carrying this module's ?v= cache-busting stamp (added at deploy).
+async function fetchText(file) {
+  var url = new URL("../" + file, import.meta.url);
   url.search = new URL(import.meta.url).search;
   var res = await fetch(url);
-  if (!res.ok) throw new Error("packs.toml: HTTP " + res.status);
-  return readPacks(await res.text());
+  if (!res.ok) throw new Error(file + ": HTTP " + res.status);
+  return res.text();
 }
+
+export async function loadEditions() { return readEditions(await fetchText("editions.toml")); }
+export async function loadPacks(file) { return readPacks(await fetchText(file || "packs.toml")); }
