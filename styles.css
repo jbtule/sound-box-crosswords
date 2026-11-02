@@ -207,6 +207,13 @@ h1 span { color: var(--accent); }
 
 .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 .primary { background: var(--ink); color: var(--card); border: none; border-radius: 999px; padding: 11px 22px; font-weight: 600; font-family: var(--display); font-size: 1.05rem; }
+.share-link { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 auto -6px; min-height: 44px; padding: 4px 12px; border: none; background: none; color: var(--muted); font-size: 0.8rem; text-decoration: underline; text-underline-offset: 2px; }
+.share-link svg { width: 14px; height: 14px; flex: none; opacity: 0.8; }
+.share-panel { align-items: stretch; text-align: center; }
+.share-panel .help { margin: 0; }
+#shareUrl { overflow-wrap: anywhere; }
+/* Dark on white whatever the theme: phone cameras read that most easily. */
+.share-qr { display: block; width: 200px; height: auto; margin: 0 auto; padding: 8px; background: #fff; border: 1.5px solid var(--key-edge); border-radius: 12px; }
 .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 .badge { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 3px 10px; border: 1.5px solid var(--key-edge); border-radius: 999px; background: var(--card); color: var(--muted); font-size: 0.75rem; font-weight: 600; text-decoration: none; }
 .badge svg { width: 14px; height: 14px; }

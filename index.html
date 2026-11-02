@@ -68,6 +68,10 @@
   </section>
 
   <div class="actions"><button class="primary" id="newBtn" type="button">New puzzle</button></div>
+  <button class="share-link" id="shareBtn" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h1M18 18h3v3h-3z"/></svg>
+    Share Sound Box with another family
+  </button>
   <!-- scripts/stamp.mjs fills in the commit at deploy time; locally it reads "dev". -->
   <div class="badges">
     <a class="badge" id="buildLink" href="https://github.com/jbtule/sound-box-crosswords" target="_blank" rel="noopener">
@@ -168,6 +172,17 @@
       <p class="help">One word per line. Add dashes between syllables (<code>rain-bow</code>) so the colors and “Clap it” work. An emoji after the word becomes the picture; leave it off for words a picture can’t show, and the clue is “listen” only. Add a sentence in quotes to say the word in context: <code>there "Put the box over there."</code> If “Clap it” says a beat wrong, add how it sounds in brackets: <code>pea-nut 🥜 (pee-nut)</code>. The starter list is an example — swap in this week’s school words.</p>
       <div class="row" style="margin-top:10px"><button class="primary" id="saveBtn" type="button">Save and play custom words</button><span id="saveMsg" role="status"></span></div>
     </div>
+  </div>
+</section>
+
+<!-- qr.svg is pre-rendered by `npm run qr` (scripts/qr.mjs), so no QR library ships. -->
+<section class="sheet" id="shareSheet" hidden>
+  <div class="panel share-panel" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+    <div class="row" style="justify-content:space-between"><h2 id="shareTitle">Share Sound Box</h2><button class="ghost" id="shareClose" type="button">Done</button></div>
+    <p class="help">Scan with a phone camera to open it:</p>
+    <img class="share-qr" src="qr.svg" width="200" height="200" alt="QR code for tools.tuley.name/sound-box-crosswords">
+    <p class="help">Or send the link: <code id="shareUrl">https://tools.tuley.name/sound-box-crosswords/</code></p>
+    <div class="row" style="justify-content:center"><button class="primary" id="shareGo" type="button">Share…</button></div>
   </div>
 </section>
 

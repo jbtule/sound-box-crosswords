@@ -412,6 +412,7 @@ document.addEventListener("keydown", function (e) {
     return;
   }
   if (!$("#achSheet").hidden) { if (e.key === "Escape") closeAchievements(); return; }
+  if (!$("#shareSheet").hidden) { if (e.key === "Escape") closeShare(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (/^[a-z]$/i.test(e.key)) { input(e.key.toLowerCase()); e.preventDefault(); }
   else if (e.key === "'" || e.key === "\u2019") { input("'"); e.preventDefault(); } // iPad keyboards type ’
@@ -780,6 +781,29 @@ $("#installHow").addEventListener("click", function () {
 });
 renderInstall();
 
+/* ---------- share the app ---------- */
+// A quiet footer link for handing the app to another family: a QR code to scan in person,
+// plus the share sheet where there is one, or Copy link. The fixed address, not
+// location.href, so it matches qr.svg.
+var SHARE = { title: "Sound Box Crosswords", text: "Picture crosswords for spelling practice.", url: "https://tools.tuley.name/sound-box-crosswords/" };
+var canShare = typeof navigator.share === "function" && (typeof navigator.canShare !== "function" || navigator.canShare(SHARE));
+function openShare() {
+  $("#shareGo").textContent = canShare ? "Share…" : "Copy link";
+  $("#shareSheet").hidden = false;
+  $("#shareClose").focus();
+}
+function closeShare() { $("#shareSheet").hidden = true; $("#shareBtn").focus(); }
+$("#shareBtn").addEventListener("click", openShare);
+$("#shareClose").addEventListener("click", closeShare);
+$("#shareSheet").addEventListener("click", function (e) { if (e.target === $("#shareSheet")) closeShare(); });
+$("#shareGo").addEventListener("click", function () {
+  var btn = $("#shareGo");
+  if (canShare) { navigator.share(SHARE).then(closeShare, function () {}); return; } // dismissed: stay open
+  Promise.resolve().then(function () { return navigator.clipboard.writeText(SHARE.url); })
+    .then(function () { btn.textContent = "Copied!"; }, function () { btn.textContent = "Couldn't copy"; })
+    .then(function () { setTimeout(function () { btn.textContent = "Copy link"; }, 2000); });
+});
+
 /* ---------- start ---------- */
 $("#pic").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0.85); });
 $("#hearBtn").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0.75); });
@@ -807,7 +831,7 @@ if (!hasSpeech) { ["hearBtn", "clapBtn"].forEach(function (id) { $("#" + id).tit
 var BUILD = new URL(import.meta.url).searchParams.get("v"), updateReady = false;
 function safeToReload() {
   var typed = Object.keys(fill).some(function (k) { return fill[k]; });
-  return (finished || !typed) && $("#sheet").hidden && $("#achSheet").hidden && $("#award").hidden;
+  return (finished || !typed) && $("#sheet").hidden && $("#achSheet").hidden && $("#shareSheet").hidden && $("#award").hidden;
 }
 document.addEventListener("visibilitychange", function () {
   if (!BUILD || updateReady || document.visibilityState !== "visible") return;

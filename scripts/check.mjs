@@ -40,6 +40,14 @@ const cdn = html.match(/"smol-toml": "[^"]*smol-toml@([^/"]+)\//);
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).dependencies["smol-toml"];
 if (!cdn || cdn[1] !== pkg) errors.push(`index.html import map uses smol-toml ${cdn?.[1]}, package.json has ${pkg}`);
 
+// qr.svg (the share sheet's QR code) is generated; keep it current with its address.
+{
+  const { SHARE_URL, QR_FILE, qrSvg } = await import("./qr.mjs");
+  if (!existsSync(QR_FILE) || readFileSync(QR_FILE, "utf8") !== await qrSvg()) errors.push("qr.svg is out of date: run npm run qr");
+  if (!readFileSync(join(root, "js", "app.js"), "utf8").includes(`url: "${SHARE_URL}"`)) errors.push(`js/app.js SHARE.url should be ${SHARE_URL}`);
+  if (!html.includes(`>${SHARE_URL}</code>`)) errors.push(`index.html share link should show ${SHARE_URL}`);
+}
+
 const { parse } = await import("smol-toml");
 const { readPacks } = await import("../js/words.js");
 const { parseList, makePuzzle, blankSentence, MAX_COLS, MAX_ROWS } = await import("../js/crossword.js");
