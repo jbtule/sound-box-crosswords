@@ -110,6 +110,10 @@ alone, and a TTS voice misreads short or odd parts ("vol" → "volume", "ap" →
 
 ## 5. Check and play
 
+- If you can run Apple's `container` (Jay's Mac), run `sh scripts/audio/hints.sh <model-dir>`
+  (model files as in `scripts/audio/kokoro.sh`) and read the new words' rows: each hint part
+  next to the whole word, as the recording voice will say them. A part whose vowel doesn't
+  match the word's (`ick` comes out `ˈIk`, "Ike") needs another spelling (`ikk` → `ˈɪk`).
 - `npm install` once in the worktree if `node_modules` is missing (then `git checkout
   package-lock.json` if it changed), then `npm run check`. Fix every error; never weaken
   the check to pass.
