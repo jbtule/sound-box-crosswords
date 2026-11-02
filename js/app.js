@@ -5,7 +5,7 @@ import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
 import { catalog, award, dayKey, daysThisWeek } from "./achievements.js";
-import { parseList, makePuzzle, blankSentence, shuffle } from "./crossword.js";
+import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle } from "./crossword.js";
 import { speak, say, sayRecorded, hasClip, onClips, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
 var $ = function (s) { return document.querySelector(s); };
@@ -248,6 +248,33 @@ function update() {
     t.classList.toggle("cur", i === cur && !finished);
     t.classList.toggle("fin", !!doneW[i]);
   });
+  savePuzzle();
+}
+
+// The puzzle in progress is saved (per edition) after every change, so closing the app,
+// a reload or an update doesn't lose it; cleared once it's solved. Layout only (each
+// word's details come from the word list when it's restored).
+function savePuzzle() {
+  store.set("puzzle", P && !finished ? {
+    pack: packId, words: P.words.map(function (W) { return { w: W.w, r: W.r, c: W.c, dir: W.dir }; }),
+    fill: fill, locked: locked, doneW: doneW, cur: cur, pos: pos, misses: misses, missedW: missedW, newPics: newPics, recent: recent
+  } : null);
+}
+// On launch: the saved puzzle, if it's for the current pack and every word is still in it.
+function loadPuzzle() {
+  var s = store.get("puzzle", null);
+  if (!s || s.pack !== packId || !PACKS[packId]) return false;
+  var p = restorePuzzle(entries(packId), s.words);
+  if (!p) return false;
+  P = p; finished = false;
+  fill = s.fill || {}; locked = s.locked || {}; doneW = s.doneW || {};
+  misses = s.misses || 0; missedW = s.missedW || {}; newPics = s.newPics || 0;
+  recent = Array.isArray(s.recent) ? s.recent : [];
+  renderBoard();
+  renderClues();
+  var i = s.cur >= 0 && s.cur < P.words.length ? s.cur : order()[0];
+  select(i, s.pos >= 0 && s.pos < P.words[i].w.length ? s.pos : null, false);
+  return true;
 }
 function renderClues() {
   var list = $("#clueList"); list.innerHTML = "";
@@ -980,12 +1007,12 @@ if (!hasSpeech) { ["hearBtn", "clapBtn", "soundBtn"].forEach(function (id) { $("
 
 // A home-screen app usually resumes instead of relaunching, so it would keep running an
 // old deploy. Each time it comes back on screen, compare this build's ?v= stamp with the
-// live page's. If it changed, reload now when nothing would be lost (no letters typed, no
-// sheet or popup open), or else at the next new puzzle. Unstamped (local) builds skip it.
+// live page's. If it changed, reload now (the puzzle in progress is saved and comes back)
+// unless a sheet or popup is open, or else at the next new puzzle. Unstamped (local) builds skip it.
 var BUILD = new URL(import.meta.url).searchParams.get("v"), updateReady = false;
+// The puzzle in progress is saved (savePuzzle), so only an open sheet or popup waits.
 function safeToReload() {
-  var typed = Object.keys(fill).some(function (k) { return fill[k]; });
-  return (finished || !typed) && $("#sheet").hidden && $("#achSheet").hidden && $("#shareSheet").hidden && $("#award").hidden;
+  return $("#sheet").hidden && $("#achSheet").hidden && $("#shareSheet").hidden && $("#award").hidden;
 }
 document.addEventListener("visibilitychange", function () {
   if (!BUILD || updateReady || document.visibilityState !== "visible") return;
@@ -1003,4 +1030,4 @@ document.addEventListener("visibilitychange", function () {
 checkAchievements(); // quietly award anything already met (e.g. from before this update)
 renderPacks();
 renderKeyboard();
-newPuzzle();
+if (!loadPuzzle()) newPuzzle();
