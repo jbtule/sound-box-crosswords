@@ -1,7 +1,7 @@
 // Game state, play logic, rendering, and the grown-up settings sheet.
 import { loadPacks } from "./words.js";
 import { parseList, makePuzzle } from "./crossword.js";
-import { speak, stopSpeech, hasSpeech } from "./speech.js";
+import { speak, stopSpeech, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
 var $ = function (s) { return document.querySelector(s); };
 
@@ -20,7 +20,7 @@ try {
   throw e;
 }
 
-var settings = Object.assign({ check: "word", syl: true, kb: "abc", speakSel: true }, store.get("settings", {}));
+var settings = Object.assign({ check: "word", syl: true, kb: "abc", speakSel: true, voice: "" }, store.get("settings", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
 var packId = store.get("pack", "");
@@ -322,9 +322,28 @@ function openSheet() {
   $("#kbAbc").checked = settings.kb === "abc";
   $("#kbQwerty").checked = settings.kb === "qwerty";
   $("#customText").value = customText;
+  renderVoices();
   $("#saveMsg").textContent = "";
   $("#sheet").hidden = false;
   $("#closeBtn").focus();
+}
+// Voice picker. "" means Automatic: the best voice on the device, so a newly downloaded
+// Enhanced or Premium voice is used without changing anything here.
+function renderVoices() {
+  var sel = $("#voiceSel"), vs = listVoices();
+  sel.innerHTML = "";
+  var auto = document.createElement("option");
+  auto.value = ""; auto.textContent = "Automatic" + (vs.length ? " (" + vs[0].label + ")" : "");
+  sel.appendChild(auto);
+  vs.forEach(function (v) {
+    var o = document.createElement("option");
+    o.value = v.id; o.textContent = v.label;
+    sel.appendChild(o);
+  });
+  sel.value = vs.some(function (v) { return v.id === settings.voice; }) ? settings.voice : "";
+  sel.disabled = !hasSpeech;
+  $("#voiceTry").disabled = !hasSpeech;
+  if (!hasSpeech) $("#voiceHelp").textContent = "Sound isn't available in this browser.";
 }
 function closeSheet() { $("#sheet").hidden = true; $("#settingsBtn").focus(); }
 function saveSettings() { store.set("settings", settings); }
@@ -334,6 +353,13 @@ $("#sheet").addEventListener("click", function (e) { if (e.target === $("#sheet"
 ["chkLetter", "chkWord"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.check = e.target.value; saveSettings(); }); });
 $("#optSyl").addEventListener("change", function (e) { settings.syl = e.target.checked; saveSettings(); update(); });
 $("#optSpeakSel").addEventListener("change", function (e) { settings.speakSel = e.target.checked; saveSettings(); });
+$("#voiceSel").addEventListener("change", function (e) {
+  settings.voice = e.target.value; saveSettings(); setVoice(settings.voice);
+  speak("butterfly", 0.85, true);
+});
+$("#voiceTry").addEventListener("click", function () { speak("butterfly", 0.85, true); });
+setVoice(settings.voice);
+onVoicesChanged(function () { if (!$("#sheet").hidden) renderVoices(); });
 ["kbAbc", "kbQwerty"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.kb = e.target.value; saveSettings(); renderKeyboard(); }); });
 $("#saveBtn").addEventListener("click", function () {
   var txt = $("#customText").value, n = parseList(txt).length;

@@ -38,7 +38,7 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
 7. **A grown-up can tune it** without code: whole-word (default) vs check-each-letter mode, syllable
-   colors on/off, auto-speak, A–Z vs QWERTY pad, custom word list.
+   colors on/off, auto-speak, voice, A–Z vs QWERTY pad, custom word list.
 
 When a request is ambiguous, prefer the option that better serves goals 1–4.
 
@@ -66,8 +66,13 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   spelling (goal 3), and it covers half the screen. Physical keyboards are handled directly.
 - **Target: iPad Safari**, also phones and desktop. Touch first; physical keyboards work too.
   Must fit ~380px wide; the grid sizes cells to fit (`sizeBoard`, 24–50px).
-- **Speech** uses the Web Speech API (`speechSynthesis`), en-US voice, slowed rates. It only
-  works after a user tap on iOS. Fail quietly if unavailable.
+- **Speech** uses the Web Speech API (`speechSynthesis`), slowed rates. It only works after a
+  user tap on iOS. Fail quietly if unavailable. Voices are whatever the device has, so the
+  app ranks them: downloaded Premium > Enhanced > basic, en-US first, novelty/robotic Apple
+  voices excluded. With no downloads it behaves as before; once a grown-up downloads a
+  better voice (iPad: Settings → Accessibility → Spoken Content → Voices), "Automatic"
+  uses it with no setting change. Voices are identified by `voiceURI`, not name (iOS names
+  basic and Enhanced voices the same).
 - **Pictures are emoji**, which keeps it offline-friendly and license-free. Don't add
   copyrighted characters or images.
 - **State** (settings, custom list, stars, selected pack) lives in `localStorage` under the
@@ -96,7 +101,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   keeps the layout with the most words and smallest area, max 11 columns × 12 rows so it
   fits a phone, avoids `recent` words. Returns `P` (`words`, `cells`, `rows`, `cols`); each
   word has `cells`, `chunks` (syllables) and `sylOf` (syllable index per letter).
-- `js/speech.js`: `speak`, `stopSpeech`, `hasSpeech`.
+- `js/speech.js`: `speak`, `stopSpeech`, `hasSpeech`; voice ranking (`score`), `listVoices`,
+  `setVoice` (a `voiceURI`, or "" for Automatic), `onVoicesChanged` (Safari loads voices late).
 - `js/app.js`: everything on screen.
   - Play state: `fill`, `locked`, `doneW`, `cur` (word), `pos` (letter index), `misses`.
   - `input` / `checkWord` / `complete` / `settleCrossings`: letter vs whole-word checking.
