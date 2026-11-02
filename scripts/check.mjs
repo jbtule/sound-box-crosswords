@@ -54,6 +54,13 @@ if (!starter) errors.push(`packs.toml: missing [custom] words = """..."""`);
 const lists = Object.entries(packs).map(([id, p]) => ({ id, text: p.list }));
 lists.push({ id: "custom", text: starter });
 
+// Short hint parts that speech engines read as words, not letters.
+const SAFE_SHORT = new Set(["uh", "oh", "go", "no", "so", "ex", "um", "in", "up", "it", "at", "on", "us"]);
+// Common abbreviations that speech engines expand or spell out.
+const ABBREV = new Set(["vol", "tel", "min", "max", "ap", "co", "fla", "mon", "tue", "thu", "fri",
+  "jan", "feb", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec", "st", "dr", "mr", "mrs", "ms",
+  "ft", "pt", "gal", "oz", "lb", "km", "cm", "mm", "sec", "hr", "est", "etc", "vs", "inc", "ltd", "corp", "dept", "ave",
+  "blvd", "rd", "ref", "pg", "pp", "ch", "fig", "govt", "approx", "misc", "gen", "lt", "sgt", "capt", "col", "jr", "sr"]);
 const LINE = /^([a-z]+(?:-[a-z]+)*) (\S+)(?: \(([^)]*)\))?$/;
 for (const { id, text } of lists) {
   if (!text) continue; // "mine" is filled in by the user
@@ -66,10 +73,19 @@ for (const { id, text } of lists) {
     if (w.length < 2 || w.length > 12) errors.push(`${id}: "${w}" must be 2–12 letters`);
     if (seen.has(w)) errors.push(`${id}: "${w}" is listed twice`);
     if (!/\p{Extended_Pictographic}/u.test(m[2])) errors.push(`${id}: "${w}" has no emoji picture`);
+    const beats = m[1].split("-").length;
+    // Spoken alone, syllables get misread as abbreviations ("vol" → "volume", "ap" → "A P"),
+    // so every multi-syllable word spells out how each syllable sounds.
+    if (beats > 1 && m[3] == null) errors.push(`${id}: "${m[1]}" needs a (how-it-sounds) hint for Clap it`);
     if (m[3] != null) {
-      const say = m[3].split("-"), beats = m[1].split("-").length;
+      const say = m[3].split("-");
       if (say.length !== beats) errors.push(`${id}: "${w}" has ${beats} syllables but its (sounds) hint has ${say.length} parts`);
       if (say.some((s) => !/^[a-z' ]+$/.test(s))) errors.push(`${id}: "${w}" sounds hint "${m[3]}" should be lowercase letters split by dashes`);
+      for (const s of say) {
+        if ((s.length <= 2 && !SAFE_SHORT.has(s)) || !/[aeiouy]/.test(s) || ABBREV.has(s)) {
+          errors.push(`${id}: "${w}" hint part "${s}" may be read as an abbreviation; use a longer spelling or a real word`);
+        }
+      }
     }
     seen.add(w);
   }

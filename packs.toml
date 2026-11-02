@@ -7,9 +7,11 @@
 #   words  one word per line: the word with dashes between syllables, a space, then an
 #          emoji for the picture. Dashes drive the syllable colors and "Clap it", so split
 #          words the way a teacher would clap them. Letters only, 2–12 letters.
-#          Optional: add (how-it-sounds) at the end, one part per syllable, when "Clap it"
-#          says a syllable wrong on its own: ba-nan-a 🍌 (buh-nan-uh). Only Clap it uses
-#          it; the boxes and the whole-word speech keep the real spelling.
+#          Words with 2+ syllables also need (how-it-sounds) at the end, one part per
+#          syllable: ba-nan-a 🍌 (buh-nan-uh). "Clap it" says these, because a syllable
+#          spoken alone is often misread ("vol" → "volume", "ap" → "A P"). Use real words or
+#          3+ letter spellings ("app", "tell", "vahl"); "uh" for the soft unstressed vowel.
+#          The boxes and the whole-word speech keep the real spelling.
 #
 # Run `npm run check` after editing; it catches typos and builds test puzzles.
 
@@ -66,8 +68,8 @@ cart 🛒
 worm 🪱
 arm 💪
 jar 🫙
-tur-tle 🐢 (tur-tul)
-bur-ger 🍔 (bur-gur)
+tur-tle 🐢 (turr-tull)
+bur-ger 🍔 (burr-gur)
 """
 
 [[pack]]
@@ -75,34 +77,34 @@ id = "two"
 name = "2 beats"
 note = "Clap the two beats, then spell one beat at a time."
 words = """
-rab-bit 🐇
-pump-kin 🎃
-bas-ket 🧺
-sun-set 🌅
-ro-bot 🤖
-lem-on 🍋 (lem-un)
+rab-bit 🐇 (rab-bit)
+pump-kin 🎃 (pump-kin)
+bas-ket 🧺 (bass-kit)
+sun-set 🌅 (sun-set)
+ro-bot 🤖 (roe-bot)
+lem-on 🍋 (lem-mun)
 ti-ger 🐅 (tie-gur)
-mag-net 🧲
-car-rot 🥕
-kit-ten 🐈
-pop-corn 🍿
-pen-cil ✏️ (pen-sul)
-rock-et 🚀
-cac-tus 🌵 (kak-tus)
-can-dle 🕯️ (kan-dul)
+mag-net 🧲 (mag-nit)
+car-rot 🥕 (care-rut)
+kit-ten 🐈 (kit-ten)
+pop-corn 🍿 (pop-corn)
+pen-cil ✏️ (pen-sull)
+rock-et 🚀 (rock-it)
+cac-tus 🌵 (kack-tus)
+can-dle 🕯️ (kan-dull)
 win-dow 🪟 (win-doe)
-sand-wich 🥪
-drag-on 🐉 (drag-un)
-hel-met ⛑️
-but-ton 🔘
+sand-wich 🥪 (sand-witch)
+drag-on 🐉 (drag-gun)
+hel-met ⛑️ (hel-mit)
+but-ton 🔘 (but-tun)
 pan-da 🐼 (pan-duh)
 ze-bra 🦓 (zee-bruh)
 liz-ard 🦎 (liz-erd)
 spi-der 🕷️ (spy-der)
-mon-key 🐒
+mon-key 🐒 (mun-key)
 chick-en 🐔 (chick-in)
-cup-cake 🧁
-snow-man ⛄
+cup-cake 🧁 (cup-cake)
+snow-man ⛄ (snow-man)
 """
 
 [[pack]]
@@ -110,32 +112,32 @@ id = "three"
 name = "3 beats"
 note = "Three beats. Keep the last one from getting lost."
 words = """
-oc-to-pus 🐙 (ok-tuh-puss)
+oc-to-pus 🐙 (ock-tuh-puss)
 ba-nan-a 🍌 (buh-nan-uh)
-but-ter-fly 🦋
+but-ter-fly 🦋 (but-ter-fly)
 di-no-saur 🦕 (die-nuh-sore)
 kan-ga-roo 🦘 (kang-guh-roo)
-el-e-phant 🐘 (el-uh-funt)
+el-e-phant 🐘 (ell-uh-funt)
 to-ma-to 🍅 (tuh-may-toe)
-com-put-er 💻 (kum-pyoo-ter)
-um-brel-la ☂️ (um-brel-luh)
-ham-bur-ger 🍔 (ham-bur-gur)
+com-put-er 💻 (kum-pew-ter)
+um-brel-la ☂️ (um-brell-uh)
+ham-bur-ger 🍔 (ham-burr-gur)
 broc-co-li 🥦 (brock-uh-lee)
-vol-ca-no 🌋 (vol-kay-no)
-tel-e-scope 🔭 (tel-uh-scope)
+vol-ca-no 🌋 (vahl-kay-no)
+tel-e-scope 🔭 (tell-uh-scope)
 la-dy-bug 🐞 (lay-dee-bug)
-go-ril-la 🦍 (guh-ril-luh)
-pine-ap-ple 🍍 (pine-ap-pul)
-straw-ber-ry 🍓 (straw-bair-ee)
-croc-o-dile 🐊 (krock-uh-dile)
+go-ril-la 🦍 (guh-rill-uh)
+pine-ap-ple 🍍 (pine-app-pull)
+straw-ber-ry 🍓 (straw-bear-ree)
+croc-o-dile 🐊 (crock-uh-dial)
 fla-min-go 🦩 (fluh-ming-go)
-pi-an-o 🎹 (pee-an-oh)
+pi-an-o 🎹 (pea-ann-oh)
 """
 
 # Starter list for "My words" (the grown-up's own list) until they save their own.
 [custom]
 words = """
-ex-plore 🧭
+ex-plore 🧭 (ex-plore)
 store 🏪
 more ➕
 snore 😴

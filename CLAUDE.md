@@ -90,9 +90,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   is keyed by it; don't rename), `name`, `note` (shown under the chips), and `words`;
   `[custom] words` is the starter "My words" list. **Word list format** (packs and the custom list share it): one entry per
   line, `syl-la-bles emoji`, e.g. `but-ter-fly 🦋`. Dashes mark syllables and drive the
-  coloring and *Clap it*. Letters only, 2–12 letters. Optional `(how-it-sounds)` at the end,
-  one part per syllable, e.g. `ba-nan-a 🍌 (buh-nan-uh)`: *Clap it* speaks those instead of
-  the spelled syllables, which TTS often misreads alone (`to` → "too", `ger` → "jer"). Syllable splits should match how a
+  coloring and *Clap it*. Letters only, 2–12 letters. `(how-it-sounds)` at the end, one part
+  per syllable, e.g. `ba-nan-a 🍌 (buh-nan-uh)`: *Clap it* speaks those instead of the
+  spelled syllables, which TTS misreads alone (`vol` → "volume", `ap` → "A P", `to` →
+  "too", `ger` → "jer"). **Required for every multi-syllable pack word** (optional in a
+  grown-up's own list). Use real words or 3+ letter spellings with a clear vowel; the
+  check flags short parts and common abbreviations. Syllable splits should match how a
   teacher would clap the word.
 - `js/words.js`: `loadPacks` fetches and parses `packs.toml`; `readPacks` turns TOML text
   into `{ packs, starter }` and appends the built-in `mine` pack.
