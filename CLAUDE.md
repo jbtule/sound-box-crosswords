@@ -153,6 +153,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   (`js/stickers.js`: abstract SVG badge + gradient + sound motif, different ones in pack
   order) instead of the in-game sound wave. Never emoji or objects, so they can't be
   mistaken for a pack picture, now or in future packs. The solved card shows "+N pictures".
+- `js/sharecard.js`: `renderCard` draws an achievement as a 1080×1350 PNG in the current
+  theme (app name, emoji, title, detail, date, up to 6 collected pictures, site address;
+  never spelling words or a name); `shareCard` opens the share sheet, or downloads where
+  file sharing isn't supported. The big award card shows Share; earned achievements in the
+  🏆 sheet reopen in it. The PNG is made when the card shows, since iPad Safari only opens
+  the share sheet straight from a tap.
 - `js/chime.js`: `chime()`, a soft two-note Web Audio chime on solve (Settings toggle). The
   audio context is unlocked on the first tap for iOS. It doesn't follow the mute switch:
   iOS can only do that for the whole page, which would silence the recorded words too.
