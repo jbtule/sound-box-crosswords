@@ -19,7 +19,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { readPacks } from "../../js/words.js";
-import { parseList } from "../../js/crossword.js";
+import { parseList, clipsFor } from "../../js/crossword.js";
 
 export const MODEL = "kokoro-v1.0";
 export const VOICE = "af_heart";
@@ -57,12 +57,7 @@ export function planClips() {
     if (!clips.has(id)) clips.set(id, { id, key: keyFor(kind, text), kind, text, speed: speedOf(kind, text), voice: VOICE, method: METHOD[kind] });
   };
   for (const list of lists) {
-    for (const e of parseList(list)) {
-      add("w", e.w);
-      const syll = e.syll.split("-");
-      if (syll.length > 1) (e.say || syll).forEach((s) => add("s", s));
-      if (e.sentence) add("t", e.sentence);
-    }
+    for (const e of parseList(list)) for (const c of clipsFor(e)) add(c.kind, c.text);
   }
   PHRASES.forEach((p) => add("p", p));
   return [...clips.values()];

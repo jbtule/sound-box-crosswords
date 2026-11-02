@@ -115,6 +115,14 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `social-card.png`: the link-preview image (`og:image` in `index.html`), 1200×630. Made by
   `npm run card` (`scripts/card.mjs` screenshots `scripts/social-card.html`, which borrows
   `styles.css`); rerun after changing either. Its words must not be pack words.
+- `listen/`: the **listen check**, a grown-up tool for hearing every recorded clip and
+  marking it ✓ or ✗. `/listen/` lists the packs, `/listen/?pack=<id>` is one pack's page.
+  It reads `packs.toml` and `audio.json` like the app (locally it falls back to the live
+  `audio.json`), and `clipsFor` in `crossword.js` decides each word's clips for both it and
+  the audio build. Marks are per device (`sbx:listen`), keyed by clip, so a changed hint
+  shows up as not heard. Report copies the ✗ list or opens a GitHub issue. It spells
+  every pack word, so nothing in the app links to it and it's `noindex` (the check
+  enforces both).
 - `sw.js`: service worker, so a home-screen launch works offline. The page and unstamped
   files are network first (4 s, then the saved copy); `?v=` files, the CDN parser, fonts
   and audio clips are saved copy first. Clips are answered by byte range (Safari's
