@@ -146,6 +146,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 
 ## Working on it
 
+- **Every change goes through a pull request.** More than one agent may be working at once,
+  so don't push to `main`: `git fetch`, branch from `origin/main`, push the branch, and open
+  a PR. CI runs the check on the PR; merging to `main` deploys. Leave merging to Jay.
+  Use a separate git worktree per agent (Claude Code keeps them in `.claude/worktrees/`,
+  which is gitignored); stage files by name rather than `git add -A`.
 - Run locally with any static server, e.g. `python3 -m http.server`, then open
   http://localhost:8000. Opening `index.html` as a file won't work (modules need http).
 - After editing, run `npm run check` (needs `npm install` once): syntax-checks `js/`,
