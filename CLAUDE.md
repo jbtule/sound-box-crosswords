@@ -71,8 +71,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - **Recorded audio** for pack words, Clap it syllables, sentences, and "You solved it!":
   Kokoro (open-source neural TTS, voice `af_heart`), pre-generated at deploy by
   `scripts/audio/build.mjs` and served from Cloudflare Pages
-  (`sound-box-crosswords.asset-data.stream`, project `sound-box-crosswords-audio`). Clip
-  names hash model + voice + speed + text, so only new or changed text is generated; the
+  (`sound-box-crosswords.asset-data.stream`, project `sound-box-crosswords-audio`). Words
+  and syllables are said at the end of a phrase ("and next, ___.") and cut out, since
+  Kokoro mispronounces them alone (`generate.py`; how that was chosen and how to re-test:
+  `scripts/audio/eval/`). Clip names hash model + voice + speed + method (`METHOD` in
+  `build.mjs`) + text, so only new or changed text is generated; the
   rest is downloaded from the live host. The site ships `audio.json` (`"kind:text"` → clip);
   `say(kind, text)` in `speech.js` plays a clip or falls back to the device voice (Custom
   words, local dev, network failure). Kokoro runs on Linux only (the macOS espeak wheel is
