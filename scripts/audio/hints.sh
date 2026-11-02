@@ -1,8 +1,8 @@
 #!/bin/sh
 # Lists how the recording voice will say each word's (how-it-sounds) hint parts, beside the
 # whole word, across every edition: sh scripts/audio/hints.sh <model-dir>
-# Read the right-hand column for a part whose vowel doesn't match the word's (a long "I"
-# where the word has a short "ɪ", say), then pick a spelling that comes out right. Runs in a
+# For a hint reported wrong in the listen check: find its row, compare the part with the
+# word (a long "I" where the word has a short "ɪ", say), and try spellings until it matches. Runs in a
 # Linux container like sounds/run.sh; <model-dir> is the same one (models and a venv).
 set -eu
 root=$(cd "$(dirname "$0")/../.." && pwd)

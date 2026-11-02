@@ -110,10 +110,6 @@ alone, and a TTS voice misreads short or odd parts ("vol" → "volume", "ap" →
 
 ## 5. Check and play
 
-- If you can run Apple's `container` (Jay's Mac), run `sh scripts/audio/hints.sh <model-dir>`
-  (model files as in `scripts/audio/kokoro.sh`) and read the new words' rows: each hint part
-  next to the whole word, as the recording voice will say them. A part whose vowel doesn't
-  match the word's (`ick` comes out `ˈIk`, "Ike") needs another spelling (`ikk` → `ˈɪk`).
 - `npm install` once in the worktree if `node_modules` is missing (then `git checkout
   package-lock.json` if it changed), then `npm run check`. Fix every error; never weaken
   the check to pass.
@@ -144,9 +140,13 @@ it's ready, give the listen check link for the new pack:
 shows just the new recordings to play and mark ✓ or ✗.
 
 A ✗ comes back as pasted text or a GitHub issue ("Recordings to fix: …"), one line per
-clip with the pack, word, part, note and clip id. Fix each in a follow-up PR:
+clip with the pack, word, part, note and clip id. Fix only what was reported (don't sweep
+other words that might be wrong: they've been heard), each in a follow-up PR:
 
 - A syllable: change that word's `( )` hint to a clearer spelling (same rules as step 4).
+  The voice has its own misreads (`ick` → "Ike"): `sh scripts/audio/hints.sh <model-dir>`
+  (in Apple's `container`; model files as in `scripts/audio/kokoro.sh`) shows how it will say
+  a hint, so try spellings until the part matches the word (`ikk` → `ˈɪk`).
 - A whole word: try a hint-free fix first only if it's a known case (`SPEED_FOR` in
   `scripts/audio/build.mjs` slows one clip); otherwise describe it in the PR and ask.
 - A sentence: reword it (still short, uses the word, no other pack words).

@@ -174,8 +174,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   "too", `ger` → "jer"). **Required for every multi-syllable pack word** (optional in a
   grown-up's own list). Use real words or 3+ letter spellings with a clear vowel; the
   check flags short parts and common abbreviations. The recording voice has misreads of its
-  own (`ick` → "Ike", `bass` → "base"): `scripts/audio/hints.sh` lists how it will say every
-  hint part beside the whole word. Last, an optional `"context sentence"`
+  own (`ick` → "Ike"): when one is reported, `scripts/audio/hints.sh` shows how it will say
+  each hint part beside the whole word, to find a spelling that works. Fix what's reported
+  in the listen check, not guesses. Last, an optional `"context sentence"`
   that uses the word: *Hear it*, the picture, and auto-speak then say word, sentence, word
   (spelling-test style; `sayWord` in `app.js`). **Required for pack words with no emoji**,
   and it tells homophones apart (their/there). Also shown under the clue with the word as a blank of small boxes, one per letter like the grid (`blankSentence` in
