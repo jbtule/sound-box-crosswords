@@ -109,7 +109,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   wrapped in try/catch. It's per device; no accounts or server. Each edition's data is under
   its own prefix (`storagePrefix` in `words.js`: plain `sbx:` for `packs.toml`'s edition,
   `sbx:<id>:` for others), through `store` in `app.js`; `device` (plain `sbx:`) holds
-  what's shared: the chosen edition and the Home Screen tip.
+  what's shared: the chosen edition, the Home Screen tip, and the voice and chime
+  (`shared`; `SHARED` in `app.js`).
 - Light and dark themes via CSS custom properties on `:root`, with
   `prefers-color-scheme` and `[data-theme]` overrides. Define new colors as tokens.
 - Respect `prefers-reduced-motion`.
@@ -152,8 +153,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - **Editions** (`editions.toml`): one packs file per grade, e.g. Kindergarten
   (`editions/kindergarten.toml`) and 3rd grade (`packs.toml`). The first visit asks "Which
   grade?" (`pickEdition` in `app.js`), unless there's progress from before editions (then
-  `packs.toml`'s) or a `?edition=<id>` link; Settings → Grade switches. Each edition keeps
-  its own progress, achievements, collection, colors, Custom list and settings; an edition
+  `packs.toml`'s) or a `?edition=<id>` link; Settings → Edition (a dropdown) switches. Each
+  edition keeps its own progress, achievements, collection, colors, Custom list and settings
+  (letter pad, syllable colors, auto-speak); the voice and chime are the device's; an edition
   can set the letter pad default (`keyboard = "abc"`) and turn on Sound it out
   (`sound_it_out = true`). The check, the audio build and the
   listen check cover every edition. Never change an edition's `id` once in use.
