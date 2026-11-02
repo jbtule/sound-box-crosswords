@@ -2,7 +2,7 @@
   "name": "Sound Box Crosswords",
   "short_name": "Sound Box",
   "id": "/sound-box-crosswords/",
-  "description": "Picture crosswords for spelling practice, one box per letter.",
+  "description": "Spelling practice you can hear: spoken clues, and syllables in color.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

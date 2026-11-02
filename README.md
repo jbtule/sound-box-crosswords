@@ -1,6 +1,6 @@
 # Sound Box Crosswords
 
-Picture crosswords for targeted spelling practice: consonant blends, bossy-R vowels,
+Crosswords with spoken clues for targeted spelling practice: consonant blends, bossy-R vowels,
 and 2- and 3-syllable words, plus a custom word list.
 
 - Syllables are color-coded in the grid so a dropped chunk stands out.
