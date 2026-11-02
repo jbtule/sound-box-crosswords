@@ -65,7 +65,8 @@ score, chore, dinosaur, shy and hel, which the recognizer flagged. It's strict a
 
 ## Known gaps
 
-- **shore** sounds worse than before. Other -ore words were fine by ear.
+- **shore** came out as "sure" at the word speed (0.9). It's said at 0.8 instead
+  (`SPEED_FOR` in `build.mjs`), picked by ear from six candidates.
 - Custom words still use the device voice; this only affects the pre-generated clips.
 
 ## Running it

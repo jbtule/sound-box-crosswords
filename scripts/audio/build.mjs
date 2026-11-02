@@ -27,6 +27,9 @@ export const VOICE = "af_heart";
 // p = fixed phrase. js/speech.js uses the same kind letters.
 export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95 };
 export const PHRASES = ["You solved it!"];
+// Clips that sound wrong at their kind's speed, picked by ear. At 0.9 the cut "shore"
+// sounds like "sure".
+const SPEED_FOR = { "w:shore": 0.8 };
 const ENCODING = "mp3-64k-mono-trim-v1"; // bump to regenerate every clip
 // How generate.py renders each kind: "cut" says the word inside a phrase and cuts it out
 // (single words and syllables mispronounce alone); "text" says the text as is.
@@ -35,8 +38,10 @@ const CUT = "cut-next-v1"; // bump when the cut method changes
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
+const speedOf = (kind, text) => SPEED_FOR[kind + ":" + text] ?? SPEED[kind];
+
 export function keyFor(kind, text) {
-  const parts = [MODEL, VOICE, SPEED[kind], ENCODING];
+  const parts = [MODEL, VOICE, speedOf(kind, text), ENCODING];
   if (METHOD[kind] === "cut") parts.push(CUT); // "text" clips keep their original keys
   const id = JSON.stringify([...parts, text]);
   return createHash("sha256").update(id).digest("hex").slice(0, 20);
@@ -49,7 +54,7 @@ export function planClips() {
   const clips = new Map();
   const add = (kind, text) => {
     const id = kind + ":" + text;
-    if (!clips.has(id)) clips.set(id, { id, key: keyFor(kind, text), kind, text, speed: SPEED[kind], voice: VOICE, method: METHOD[kind] });
+    if (!clips.has(id)) clips.set(id, { id, key: keyFor(kind, text), kind, text, speed: speedOf(kind, text), voice: VOICE, method: METHOD[kind] });
   };
   for (const list of lists) {
     for (const e of parseList(list)) {
