@@ -49,8 +49,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 
 ## Technical constraints
 
-- **One self-contained `index.html`.** No build step, no framework, no package manager.
-  Fonts from Google Fonts (Fredoka for display, Lexend for body). Everything else inline.
+- **Plain static files, no build step.** No framework, no bundler, no dependencies. Browser
+  ES modules loaded straight from `index.html`; GitHub Pages serves the repo as-is.
+  `package.json` exists only to mark `js/*.js` as modules for Node (and `npm run check`).
+  Fonts from Google Fonts (Fredoka for display, Lexend for body). Everything else is local.
 - **Target: iPad Safari**, also phones and desktop. Touch first; physical keyboards work too.
   Must fit ~380px wide; the grid sizes cells to fit (`sizeBoard`, 24–50px).
 - **Speech** uses the Web Speech API (`speechSynthesis`), en-US voice, slowed rates. It only
@@ -63,34 +65,39 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `prefers-color-scheme` and `[data-theme]` overrides. Define new colors as tokens.
 - Respect `prefers-reduced-motion`.
 
-## Code map (all in `index.html`)
+## Code map
 
-- `PACKS`: each pack has `name`, `note` (one line shown under the chips), and `list`.
-- **Word list format** (packs and the custom list share it): one entry per line,
-  `syl-la-bles emoji`, e.g. `but-ter-fly 🦋`. Dashes mark syllables and drive the coloring
-  and *Clap it*. Words are letters only, 2–12 letters. Parsed by `parseList`.
-  Syllable splits should match how a teacher would clap the word.
-- `tryBuild` / `build`: crossword generator. Greedy placement with crossing checks, many
-  random attempts, keeps the layout with the most words and smallest area. Max 11 columns
-  × 12 rows so it fits a phone. Avoids recently used words (`recent`).
-- `newPuzzle`: normalizes coordinates, numbers the grid, builds `P` (`words`, `cells`,
-  `rows`, `cols`). Each word has `cells`, `chunks` (syllables) and `sylOf` (syllable index
-  per letter).
-- Play state: `fill`, `locked`, `doneW`, `cur` (word), `pos` (letter index), `misses`, `hints`.
-- `input` / `checkWord` / `complete` / `settleCrossings`: letter vs whole-word checking.
-  In letter mode, wrong letters wiggle and are rejected; in word mode, wrong letters flash
-  and clear once all boxes are full. Finishing one word can finish a crossing word.
-- `clap`, `hint`, `back`, `speak`: scaffolds and speech.
-- `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
-- Grown-ups sheet: `openSheet` / `closeSheet` and the change handlers below them.
+- `index.html`: markup only (board, clue bar, letter pad, grown-ups sheet).
+- `styles.css`: all styles. Color tokens on `:root` with dark overrides at the top.
+  `--cell` is the box color token; `--cell-size` is the box size set by `sizeBoard`.
+- `js/words.js`: `PACKS` (each has `name`, `note` shown under the chips, and `list`) and
+  `DEFAULT_CUSTOM`. **Word list format** (packs and the custom list share it): one entry per
+  line, `syl-la-bles emoji`, e.g. `but-ter-fly 🦋`. Dashes mark syllables and drive the
+  coloring and *Clap it*. Letters only, 2–12 letters. Syllable splits should match how a
+  teacher would clap the word.
+- `js/crossword.js`: no DOM, runs in Node. `parseList` reads word lists. `makePuzzle(pool,
+  recent)` builds a crossword: greedy placement with crossing checks, many random attempts,
+  keeps the layout with the most words and smallest area, max 11 columns × 12 rows so it
+  fits a phone, avoids `recent` words. Returns `P` (`words`, `cells`, `rows`, `cols`); each
+  word has `cells`, `chunks` (syllables) and `sylOf` (syllable index per letter).
+- `js/speech.js`: `speak`, `stopSpeech`, `hasSpeech`.
+- `js/app.js`: everything on screen.
+  - Play state: `fill`, `locked`, `doneW`, `cur` (word), `pos` (letter index), `misses`, `hints`.
+  - `input` / `checkWord` / `complete` / `settleCrossings`: letter vs whole-word checking.
+    In letter mode, wrong letters wiggle and are rejected; in word mode, wrong letters flash
+    and clear once all boxes are full. Finishing one word can finish a crossing word.
+  - `clap`, `hint`, `back`: scaffolds.
+  - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
+  - Grown-ups sheet: `openSheet` / `closeSheet` and the change handlers below them.
 
 ## Working on it
 
-- Keep the single-file structure. After editing, run `node scripts/check.mjs` (syntax-checks
-  the inline script and validates every pack's word list). CI runs the same check.
+- Run locally with any static server, e.g. `python3 -m http.server`, then open
+  http://localhost:8000. Opening `index.html` as a file won't work (modules need http).
+- After editing, run `node scripts/check.mjs`: syntax-checks `js/`, checks local links in
+  `index.html`, validates every word list, and builds 50 puzzles per pack. CI runs it too.
 - GitHub Actions workflows must pass `zizmor .`: SHA-pinned actions, minimal `permissions`,
   `persist-credentials: false`.
-- CSS naming: `--cell` is the box color token; `--cell-size` is the box size set by `sizeBoard`.
 - Test in a narrow viewport (~380px) and in dark mode. Make sure long words (9+ letters)
   still fit and the letter pad stays tappable (keys ≥ 44px tall).
 - When adding words, check that the emoji clearly shows that word, and that the spelling

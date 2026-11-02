@@ -1,38 +1,38 @@
-// Sanity checks for index.html. No dependencies: `node scripts/check.mjs`.
-// 1. The inline <script> parses.
+// Sanity checks. No dependencies: `node scripts/check.mjs`.
+// 1. Every js/*.js file parses, and index.html points at files that exist.
 // 2. Every built-in word list follows the `syl-la-bles emoji` format.
-import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+// 3. The generator builds valid puzzles from every pack.
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
-const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+const root = fileURLToPath(new URL("..", import.meta.url));
 const errors = [];
 
-const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
-if (scripts.length !== 1) errors.push(`expected 1 inline <script>, found ${scripts.length}`);
-const js = scripts.join("\n");
-const tmp = join(mkdtempSync(join(tmpdir(), "sbx-")), "app.js");
-writeFileSync(tmp, js);
-try {
-  execFileSync(process.execPath, ["--check", tmp], { stdio: "pipe" });
-} catch (e) {
-  errors.push("script syntax error:\n" + e.stderr.toString());
+for (const f of readdirSync(join(root, "js")).filter((f) => f.endsWith(".js"))) {
+  try {
+    execFileSync(process.execPath, ["--check", join(root, "js", f)], { stdio: "pipe" });
+  } catch (e) {
+    errors.push(`js/${f} syntax error:\n` + e.stderr.toString());
+  }
+}
+const html = readFileSync(join(root, "index.html"), "utf8");
+for (const [, ref] of html.matchAll(/(?:src|href)="(?!https?:|data:)([^"]+)"/g)) {
+  if (!existsSync(join(root, ref))) errors.push(`index.html links to missing file ${ref}`);
 }
 
-const lists = [];
-for (const m of js.matchAll(/(\w+): \{ name: "([^"]+)"[^]*?list:\s*("(?:[^"\\]|\\.)*")/g)) {
-  lists.push({ id: m[1], text: JSON.parse(m[3]) });
-}
-const custom = js.match(/DEFAULT_CUSTOM = ("(?:[^"\\]|\\.)*")/);
-if (custom) lists.push({ id: "DEFAULT_CUSTOM", text: JSON.parse(custom[1]) });
-if (lists.length < 5) errors.push(`only found ${lists.length} word lists; did the PACKS format change?`);
+const { PACKS, DEFAULT_CUSTOM } = await import("../js/words.js");
+const { parseList, makePuzzle, MAX_COLS, MAX_ROWS } = await import("../js/crossword.js");
+
+const lists = Object.entries(PACKS).map(([id, p]) => ({ id, text: p.list }));
+lists.push({ id: "DEFAULT_CUSTOM", text: DEFAULT_CUSTOM });
 
 const LINE = /^([a-z]+(?:-[a-z]+)*) (\S+)$/;
 for (const { id, text } of lists) {
   if (!text) continue; // "mine" is filled in by the user
   const seen = new Set();
-  const lines = text.split("\n");
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
   for (const line of lines) {
     const m = line.match(LINE);
     if (!m) { errors.push(`${id}: "${line}" should look like "syl-la-bles 🙂"`); continue; }
@@ -42,11 +42,31 @@ for (const { id, text } of lists) {
     if (!/\p{Extended_Pictographic}/u.test(m[2])) errors.push(`${id}: "${w}" has no emoji picture`);
     seen.add(w);
   }
+  if (parseList(text).length !== seen.size) errors.push(`${id}: parseList disagrees with the line count`);
   if (id !== "DEFAULT_CUSTOM" && lines.length < 10) errors.push(`${id}: only ${lines.length} words; packs need variety to build puzzles`);
 }
 
+const RUNS = 50;
+for (const { id, text } of lists) {
+  const pool = parseList(text);
+  if (pool.length < 3) continue;
+  let recent = [], fewest = Infinity;
+  for (let i = 0; i < RUNS; i++) {
+    const P = makePuzzle(pool, recent);
+    recent = P.words.map((w) => w.w).concat(recent).slice(0, 8);
+    fewest = Math.min(fewest, P.words.length);
+    if (P.cols > MAX_COLS || P.rows > MAX_ROWS) errors.push(`${id}: puzzle is ${P.cols}×${P.rows}, over ${MAX_COLS}×${MAX_ROWS}`);
+    for (const W of P.words) {
+      W.cells.forEach((kk, j) => {
+        if (P.cells[kk].letter !== W.w[j]) errors.push(`${id}: "${W.w}" clashes with a crossing word at ${kk}`);
+      });
+    }
+  }
+  if (fewest < 4) errors.push(`${id}: some puzzles only fit ${fewest} words`);
+}
+
 if (errors.length) {
-  console.error(errors.map((e) => "✗ " + e).join("\n"));
+  console.error([...new Set(errors)].map((e) => "✗ " + e).join("\n"));
   process.exit(1);
 }
-console.log(`✓ script parses; ${lists.length} word lists OK`);
+console.log(`✓ scripts parse; ${lists.length} word lists OK; ${RUNS} puzzles built per list`);

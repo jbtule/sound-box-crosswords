@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "type": "module",
+  "description": "No dependencies. This file only tells Node that js/*.js are ES modules, for scripts/check.mjs.",
+  "scripts": {
+    "check": "node scripts/check.mjs"
+  }
+}
