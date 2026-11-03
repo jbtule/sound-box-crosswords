@@ -47,11 +47,22 @@ const root = fileURLToPath(new URL("../..", import.meta.url));
 const speedOf = (kind, text) => SPEED_FOR[kind + ":" + text] ?? SPEED[kind];
 const methodOf = (kind, text) => METHOD_FOR[kind + ":" + text] ?? METHOD[kind];
 
-// Single sounds are made by scripts/audio/sounds/lab.py the way picks.json says; their keys
-// hash those files (and generate.py), so a new pick or recipe makes new clips.
-const SOUND_RECIPE = createHash("sha256")
-  .update(["sounds/picks.json", "sounds/lab.py", "generate.py"].map((f) => readFileSync(join(root, "scripts/audio", f), "utf8")).join("\0"))
-  .digest("hex").slice(0, 12);
+// Single sounds (Sound it out) are made by scripts/audio/sounds/lab.py the way picks.json
+// says, with the Kokoro code in kokoro_core.py. Their clip names use SOUND_RECIPE, not a
+// hash of that code, so a grown-up's listen-check marks on the 46 sounds survive edits that
+// don't change them (adding a method to generate.py once re-recorded them all).
+// SOUND_INPUTS is the hash of those three files (soundInputs); `npm run check` fails when it
+// no longer matches. Then: if the change alters how a sound is made (a new pick, a new
+// recipe, a change to the cut), set SOUND_RECIPE to a new value too, which re-records all
+// 46 and resets their marks. If it doesn't (a comment, a refactor), update SOUND_INPUTS only.
+export const SOUND_RECIPE = "007b92ef43eb";
+export const SOUND_INPUTS = "76c26911d0ec";
+export const SOUND_FILES = ["sounds/picks.json", "sounds/lab.py", "kokoro_core.py"];
+export function soundInputs() {
+  return createHash("sha256")
+    .update(SOUND_FILES.map((f) => readFileSync(join(root, "scripts/audio", f), "utf8")).join("\0"))
+    .digest("hex").slice(0, 12);
+}
 
 export function keyFor(kind, text) {
   if (kind === "f") return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "sound", SOUND_RECIPE, text])).digest("hex").slice(0, 20);

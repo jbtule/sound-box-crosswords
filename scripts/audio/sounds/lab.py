@@ -22,7 +22,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-import generate as g  # noqa: E402
+import kokoro_core as g  # noqa: E402
 
 # name (as written in word lists), example word, the example in phonemes with the target in
 # [brackets], and the type: stop (a burst: clip tight), hold (can be held), vowel.
