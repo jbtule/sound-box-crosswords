@@ -149,7 +149,7 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
   const packs = ["Blends", "Bossy R", "Two Beats", "Three Beats", "Unit 1"].map((name, i) => ({ id: "p" + i, name, done: 5, total: 5, firsts: 5 }))
     .concat({ id: "mine", name: "Custom", done: 3, total: 3, firsts: 3 });
   const lines = new Set(spokenLines(packs));
-  const all = { listener: 1e6, twofer: 1e6, shared: 1e6, look: 1e6, peek: 1e6, words: 1e6, qwerty: 1e6 };
+  const all = { listener: 1e6, twofer: 1e6, shared: 1e6, look: 1e6, peek: 1e6, words: 1e6, qwerty: 1e6, weekend: 1e6 };
   const big = { packs, clean: 1e6, comeback: 1e6, days: Array.from({ length: 1000 }, (_, i) => "d" + i), edition: "3rd grade", secret: all };
   const { spokenParts } = await import("../js/achievements.js");
   const shown = catalog(big);

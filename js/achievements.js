@@ -8,8 +8,8 @@
 //   comeback: words spelled right on the first try after an earlier miss
 //   days:     ["YYYY-MM-DD", ...] local days with a finished puzzle
 //   edition:  the grade's name ("3rd grade"), for Champion of Champions and Legend of Legends
-//   secret:   { listener, twofer, shared, look, peek, words, qwerty } counts for the secret
-//             achievements (SECRETS; weekend days come from `days`)
+//   secret:   { listener, twofer, shared, look, peek, words, qwerty, weekend } counts for the
+//             secret achievements (SECRETS)
 // }
 
 var TIERS = {
@@ -34,7 +34,7 @@ var LABELS = {
 };
 
 // Secret achievements: shown as ??? in the 🏆 sheet until earned, and their card says
-// "Secret achievement!". Each counts something in state.secret (weekend: days).
+// "Secret achievement!". Each counts something in state.secret.
 var SECRETS = [
   { key: "listener", goal: 1, icon: "👂", title: "Good Listener", detail: "Used the listening helpers on every word in a puzzle" },
   { key: "twofer", goal: 1, icon: "✌️", title: "Two for One", detail: "Finished two words at once" },
@@ -47,13 +47,6 @@ var SECRETS = [
 ];
 // The whole grade at once, for grades with at least this many packs (Custom doesn't count).
 var GRAND_MIN = 5;
-
-function weekendDays(days) {
-  return days.filter(function (d) {
-    var m = /^(\d+)-(\d+)-(\d+)$/.exec(d), w = m ? new Date(+m[1], m[2] - 1, +m[3]).getDay() : -1;
-    return w === 0 || w === 6;
-  }).length;
-}
 
 function tierItem(track, i, have) {
   var l = LABELS[track], n = TIERS[track][i];
@@ -101,7 +94,7 @@ export function catalog(state) {
       if (have[track] < n) break; // only the next goal, not every future tier
     }
   });
-  var sec = Object.assign({}, state.secret, { weekend: weekendDays(state.days) });
+  var sec = state.secret || {};
   SECRETS.forEach(function (x) {
     out.push({ id: "secret:" + x.key, icon: x.icon, title: x.title, detail: x.detail, goal: x.goal, have: sec[x.key] || 0, secret: true });
   });

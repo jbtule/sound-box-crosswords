@@ -457,6 +457,8 @@ function finish() {
   if (pz.twofer) counts.twofer = (counts.twofer || 0) + 1;
   if (settings.kb === "qwerty" || pz.keys) counts.qwerty = (counts.qwerty || 0) + 1;
   if (listenedToAll()) counts.listener = (counts.listener || 0) + 1;
+  var wd = new Date().getDay();
+  if (wd === 0 || wd === 6) counts.weekend = (counts.weekend || 0) + 1; // this puzzle, not past weekends
   store.set("counts", counts);
   var today = dayKey(Date.now());
   if (days.indexOf(today) < 0) { days.push(today); store.set("days", days); }
@@ -722,7 +724,7 @@ function achState() {
       return { id: id, name: PACKS[id].name, done: c.done, total: c.total, firsts: firsts };
     }),
     clean: counts.clean, comeback: counts.comeback, days: days, edition: EDITION.name,
-    secret: { listener: counts.listener, twofer: counts.twofer, shared: counts.shared, look: counts.look, peek: counts.peek, qwerty: counts.qwerty, words: wordsRight() }
+    secret: { listener: counts.listener, twofer: counts.twofer, shared: counts.shared, look: counts.look, peek: counts.peek, qwerty: counts.qwerty, weekend: counts.weekend, words: wordsRight() }
   };
 }
 // Words spelled right (typed, not finished by a crossing word), in every pack.
