@@ -35,19 +35,22 @@ function tierItem(track, i, have) {
   return { id: track + ":" + n, icon: l.tiers[i][0], title: l.tiers[i][1], detail: l.detail(n), goal: n, have: have };
 }
 
-// Every achievement that could be shown: [{ id, icon, title, detail, goal, have, met }].
+// Every achievement that could be shown: [{ id, icon, title, detail, goal, have, met }],
+// plus `pack` (its id) on a pack's Champion and Legend. Their detail shows the pack's size
+// ("All 23 words in Blends"); what's said stays the same for every pack ("Every word in
+// this pack"), so a pack needs no recording beyond its name.
 // For tiered tracks that's each tier up to and including the first one not yet met.
 export function catalog(state) {
   var out = [];
   state.packs.forEach(function (p) {
     if (p.total < 3) return;
-    out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "Every word in " + p.name, goal: p.total, have: p.done,
+    out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "All " + p.total + " words in " + p.name, goal: p.total, have: p.done, pack: p.id,
       spoken: ["Champion!", p.name, "Every word in this pack"] });
     // Then a Legend: every word right on the first try (at some point, not all at once).
     // Shown once Champion is reached, as the next goal; not for the Custom list ("mine"). It
     // doesn't unlock colors (palettes count pack: achievements only).
     if (p.done >= p.total && p.id !== "mine") {
-      out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "Every word in " + p.name + " right on the first try", goal: p.total, have: p.firsts || 0,
+      out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "All " + p.total + " words in " + p.name + " right on the first try", goal: p.total, have: p.firsts || 0, pack: p.id,
         spoken: ["Legend!", p.name, "Every word right on the first try"] });
     }
   });
