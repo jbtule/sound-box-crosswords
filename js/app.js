@@ -641,8 +641,29 @@ $("#editionSel").addEventListener("change", function (e) {
   device.set("edition", e.target.value);
   location.replace(location.pathname);
 });
+// Start over: clears this edition's progress and everything earned from it. Achievements,
+// stars, pictures and colors are all worked out from progress, so clearing only the
+// achievements would bring them straight back. Typing the phrase keeps it from happening
+// by accident.
+var RESET_PHRASE = "start over";
+var RESET_KEYS = ["achievements", "progress", "counts", "days", "log", "stars", "puzzle"];
+function resetMatches() { return $("#resetText").value.trim().toLowerCase() === RESET_PHRASE; }
+$("#resetOpen").addEventListener("click", function () {
+  $("#resetOpen").hidden = true; $("#resetBox").hidden = false; $("#resetText").focus();
+});
+$("#resetText").addEventListener("input", function () { $("#resetGo").disabled = !resetMatches(); });
+$("#resetText").addEventListener("keydown", function (e) { if (e.key === "Enter" && resetMatches()) $("#resetGo").click(); });
+$("#resetGo").addEventListener("click", function () {
+  if (!resetMatches()) return;
+  RESET_KEYS.forEach(function (k) { try { localStorage.removeItem(PREFIX + k); } catch (e) {} });
+  delete settings.palette; saveSettings();
+  location.replace(location.pathname + location.search);
+});
+function closeReset() { $("#resetText").value = ""; $("#resetGo").disabled = true; $("#resetBox").hidden = true; $("#resetOpen").hidden = false; }
 function openSheet() {
   renderGrades();
+  closeReset();
+  document.querySelectorAll(".edName").forEach(function (el) { el.textContent = EDITIONS.length > 1 ? EDITION.name : "this grade"; });
   $("#optSyl").checked = settings.syl;
   $("#optSpeakSel").checked = settings.speakSel;
   $("#optChime").checked = settings.chime;

@@ -199,6 +199,15 @@
       <div class="row" style="margin-top:10px"><button class="primary" id="saveBtn" type="button">Save and play custom words</button><span id="saveMsg" role="status"></span></div>
     </div>
     <div>
+      <h3>Start over</h3>
+      <p class="help">Clears <span class="edName">this grade</span>’s achievements, stars, collected pictures, unlocked colors and puzzle history on this device. Settings and Custom words stay.</p>
+      <button class="ghost" id="resetOpen" type="button">Start over…</button>
+      <div id="resetBox" hidden>
+        <label class="help" for="resetText">To confirm, type <b>start over</b></label>
+        <div class="row"><input id="resetText" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"><button class="danger" id="resetGo" type="button" disabled>Erase progress</button></div>
+      </div>
+    </div>
+    <div>
       <h3>About</h3>
       <p class="help">Sound Box Crosswords © 2026 James Tuley. Free to use, change and share for noncommercial purposes, including at home and in schools, under the <a href="https://github.com/jbtule/sound-box-crosswords/blob/main/LICENSE.md" target="_blank" rel="noopener">PolyForm Noncommercial License 1.0.0</a>.</p>
     </div>
