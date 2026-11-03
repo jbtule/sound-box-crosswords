@@ -74,11 +74,12 @@ export function spokenParts(a) {
   return a.spoken || [a.title + "!", a.detail];
 }
 
-// Every line a card can say, for the given packs ([{ id, name }]): "New achievement!", the
-// fixed words, each pack's name, and each tier's title and detail, so the audio build can
-// record them all (scripts/audio/build.mjs). The check keeps this in step with catalog().
+// Every line a card can say, for the given packs ([{ id, name }]): "New achievement!" (a new
+// card), "Achievement!" (👂 on a card, in app.js), the fixed words, each pack's name, and
+// each tier's title and detail, so the audio build can record them all
+// (scripts/audio/build.mjs). The check keeps this in step with catalog().
 export function spokenLines(packs) {
-  var out = ["New achievement!", "Champion!", "Legend!", "Every word in this pack", "Every word right on the first try"];
+  var out = ["New achievement!", "Achievement!", "Champion!", "Legend!", "Every word in this pack", "Every word right on the first try"];
   packs.forEach(function (p) { out.push(p.name); });
   Object.keys(TIERS).forEach(function (track) {
     TIERS[track].forEach(function (n, i) { var t = tierItem(track, i, 0); out.push(t.title + "!", t.detail); });

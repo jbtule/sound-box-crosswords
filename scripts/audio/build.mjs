@@ -31,7 +31,7 @@ export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95, f: 0.8 };
 export const PHRASES = ["You solved it!", "Great job!"];
 // Clips that sound wrong at their kind's speed, picked by ear. At 0.9 the cut "shore"
 // sounds like "sure".
-const SPEED_FOR = { "w:shore": 0.8, "p:New achievement!": 1.0 };
+const SPEED_FOR = { "w:shore": 0.8, "p:New achievement!": 1.0, "p:Achievement!": 1.0 };
 const ENCODING = "mp3-64k-mono-trim-v1"; // bump to regenerate every clip
 // How generate.py renders each kind: "cut" says the word inside a phrase and cuts it out
 // (single words and syllables mispronounce alone); "text" says the text as is.
@@ -39,7 +39,7 @@ export const METHOD = { w: "cut", s: "cut", t: "text", p: "text", f: "sound" };
 const CUT = "cut-next-v1"; // bump when the cut method changes
 // Clips made another way, picked by ear: "lively" says the line in the voice style Kokoro
 // uses for long sentences, which sounds more excited ("New achievement!").
-const METHOD_FOR = { "p:New achievement!": "lively" };
+const METHOD_FOR = { "p:New achievement!": "lively", "p:Achievement!": "lively" };
 const LIVELY = "lively-v1"; // bump when the lively method changes
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
