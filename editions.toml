@@ -5,7 +5,9 @@
 #
 #   id        short name; saved data is kept under "sbx:<id>:" (packs.toml's edition uses
 #             plain "sbx:", from before editions). Never change it once in use.
-#   name      shown in the grade question and in Settings
+#   name      shown in the grade question and in Settings; can be long ("3rd grade, Room 12")
+#   short     on achievement cards, shared cards and the 🏆 sheet, where space is tight and
+#             it tells grades apart (up to 16 characters; each edition's must differ)
 #   file      the packs file
 #   keyboard  optional letter pad default for a new player: "qwerty" (default) or "abc"
 #   sound_it_out  optional, true: words with their sounds listed ({c a t}) get a Sound it
@@ -16,6 +18,7 @@
 [[edition]]
 id = "k"
 name = "Kindergarten"
+short = "Kindergarten"
 file = "editions/kindergarten.toml"
 keyboard = "abc"
 sound_it_out = true
@@ -23,4 +26,5 @@ sound_it_out = true
 [[edition]]
 id = "g3"
 name = "3rd grade"
+short = "3rd grade"
 file = "packs.toml"

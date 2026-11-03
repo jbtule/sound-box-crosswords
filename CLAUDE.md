@@ -163,7 +163,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `styles.css`: all styles. Color tokens on `:root` with dark overrides at the top.
   `--cell` is the box color token; `--cell-size` is the box size set by `sizeBoard`.
 - **Editions** (`editions.toml`): one packs file per grade, e.g. Kindergarten
-  (`editions/kindergarten.toml`) and 3rd grade (`packs.toml`). The first visit asks "Which
+  (`editions/kindergarten.toml`) and 3rd grade (`packs.toml`). Each has a `name` (the grade question and Settings; can be long, e.g. a classroom) and a `short` (achievement cards, shared cards, the 🏆 sheet; up to 16 characters, unique). The first visit asks "Which
   grade?" (`pickEdition` in `app.js`), unless there's progress from before editions (then
   `packs.toml`'s) or a `?edition=<id>` link; Settings → Edition (a dropdown) switches. A Home Screen
   app starts with empty storage, so the page's address (`?start=<id>`) and manifest

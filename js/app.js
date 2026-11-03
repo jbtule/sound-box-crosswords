@@ -723,7 +723,7 @@ function achState() {
       var firsts = entries(id).filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
       return { id: id, name: PACKS[id].name, done: c.done, total: c.total, firsts: firsts };
     }),
-    clean: counts.clean, comeback: counts.comeback, days: days, edition: EDITION.name,
+    clean: counts.clean, comeback: counts.comeback, days: days, edition: EDITION.short,
     secret: { listener: counts.listener, twofer: counts.twofer, shared: counts.shared, look: counts.look, peek: counts.peek, qwerty: counts.qwerty, weekend: counts.weekend, words: wordsRight() }
   };
 }
@@ -818,7 +818,7 @@ function prepareShare(a) {
   shareFor = a.id; shareBlob = null;
   $("#awardShare").hidden = true;
   var shown = sharePics(a);
-  renderCard(a, earned[a.id] || Date.now(), shown.pics, EDITIONS.length > 1 ? EDITION.name : "", shown.more).then(function (b) {
+  renderCard(a, earned[a.id] || Date.now(), shown.pics, EDITIONS.length > 1 ? EDITION.short : "", shown.more).then(function (b) {
     if (shareFor !== a.id) return; // moved on to another card meanwhile
     shareBlob = b;
     $("#awardShare").hidden = false;
@@ -830,7 +830,7 @@ function showAward(first) {
   // its name, what it took. The first waits for "You solved it!"; moving to another card
   // replaces what's being said.
   var kicker = awardFrom ? "Achievement" : a.secret ? "Secret achievement!" : "New achievement!";
-  $("#awardKicker").textContent = kicker + (EDITIONS.length > 1 ? "\n" + EDITION.name : "");
+  $("#awardKicker").textContent = kicker + (EDITIONS.length > 1 ? "\n" + EDITION.short : "");
   if (!awardFrom) {
     if (!first) stopSpeech();
     if (settings.chime) sayAfter(sparkle);
@@ -950,7 +950,7 @@ function showTab(name) {
 }
 function openAchievements() {
   var now = Date.now(), all = catalog(achState());
-  $("#achDays").textContent = (EDITIONS.length > 1 ? EDITION.name + " · " : "") +
+  $("#achDays").textContent = (EDITIONS.length > 1 ? EDITION.short + " · " : "") +
     "Practiced " + daysThisWeek(days, now) + " of the last 7 days · " +
     days.length + (days.length === 1 ? " day" : " days") + " in all";
   var list = $("#achList"); list.innerHTML = "";
