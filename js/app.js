@@ -6,7 +6,7 @@ import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
 import { catalog, award, dayKey, daysThisWeek, spokenParts } from "./achievements.js";
 import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle } from "./crossword.js";
-import { speak, say, sayAfter, sayRecorded, hasClip, onClips, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
+import { speak, say, sayAfter, sayRecorded, hasClip, onClips, stopSpeech, speechEpoch, hasSpeech } from "./speech.js";
 
 var $ = function (s) { return document.querySelector(s); };
 
@@ -89,12 +89,12 @@ try {
 }
 
 // Settings: the letter pad, syllable colors and auto-speak are the edition's own (each child's);
-// the voice and chime belong to the device, shared by every edition ("shared"). Until that's
-// first saved they come from the settings saved before editions (plain "sbx:settings").
-var SHARED = ["voice", "chime"];
+// the chime belongs to the device, shared by every edition ("shared"). Until that's
+// first saved it comes from the settings saved before editions (plain "sbx:settings").
+var SHARED = ["chime"];
 var sharedBefore = {}, oldSettings = device.get("settings", {});
 SHARED.forEach(function (k) { if (oldSettings && k in oldSettings) sharedBefore[k] = oldSettings[k]; });
-var settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true, voice: "" },
+var settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true },
   store.get("settings", {}), sharedBefore, device.get("shared", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
@@ -631,29 +631,10 @@ function openSheet() {
   $("#kbAbc").checked = settings.kb === "abc";
   $("#kbQwerty").checked = settings.kb === "qwerty";
   $("#customText").value = customText;
-  renderVoices();
   renderProgressSheet();
   $("#saveMsg").textContent = "";
   $("#sheet").hidden = false;
   $("#closeBtn").focus();
-}
-// Voice picker. "" means Automatic: the best voice on the device, so a newly downloaded
-// Enhanced or Premium voice is used without changing anything here.
-function renderVoices() {
-  var sel = $("#voiceSel"), vs = listVoices();
-  sel.innerHTML = "";
-  var auto = document.createElement("option");
-  auto.value = ""; auto.textContent = "Automatic" + (vs.length ? " (" + vs[0].label + ")" : "");
-  sel.appendChild(auto);
-  vs.forEach(function (v) {
-    var o = document.createElement("option");
-    o.value = v.id; o.textContent = v.label;
-    sel.appendChild(o);
-  });
-  sel.value = vs.some(function (v) { return v.id === settings.voice; }) ? settings.voice : "";
-  sel.disabled = !hasSpeech;
-  $("#voiceTry").disabled = !hasSpeech;
-  if (!hasSpeech) $("#voiceHelp").textContent = "Sound isn't available in this browser.";
 }
 /* ---------- achievements ---------- */
 function achState() {
@@ -897,13 +878,6 @@ $("#sheet").addEventListener("click", function (e) { if (e.target === $("#sheet"
 $("#optSyl").addEventListener("change", function (e) { settings.syl = e.target.checked; saveSettings(); update(); });
 $("#optSpeakSel").addEventListener("change", function (e) { settings.speakSel = e.target.checked; saveSettings(); });
 $("#optChime").addEventListener("change", function (e) { settings.chime = e.target.checked; saveSettings(); if (settings.chime) chime(); });
-$("#voiceSel").addEventListener("change", function (e) {
-  settings.voice = e.target.value; saveSettings(); setVoice(settings.voice);
-  speak("butterfly", 0.85, true);
-});
-$("#voiceTry").addEventListener("click", function () { speak("butterfly", 0.85, true); });
-setVoice(settings.voice);
-onVoicesChanged(function () { if (!$("#sheet").hidden) renderVoices(); });
 ["kbAbc", "kbQwerty"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.kb = e.target.value; saveSettings(); renderKeyboard(); sizeBoard(); }); });
 $("#saveBtn").addEventListener("click", function () {
   var txt = $("#customText").value, n = parseList(txt).length;
