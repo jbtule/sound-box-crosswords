@@ -778,12 +778,14 @@ function nextAward() {
 function prevAward() {
   if (awardIndex > 0) { awardIndex--; showAward(); }
 }
-// 👂 Hear it on the card: its name and what it took, again (for players who can't read it
-// yet); also on ones reopened from the 🏆 sheet, which aren't read on their own.
+// 👂 Hear it on the card: "Achievement!", then its name and what it took, again (for
+// players who can't read it yet); also on ones reopened from the 🏆 sheet, which aren't
+// read on their own.
 function hearAward() {
   var a = awardQueue[awardIndex];
   if (!a) return;
   stopSpeech();
+  say("p", "Achievement!");
   sayAchievement(a);
 }
 // The card read aloud, line by line ("Champion!" "Unit 3." "Every word in this pack.").
