@@ -10,6 +10,21 @@ import { speak, say, sayAfter, sayRecorded, hasClip, onClips, stopSpeech, speech
 
 var $ = function (s) { return document.querySelector(s); };
 
+// Running from the Home Screen (full screen, no Safari controls).
+var installed = navigator.standalone === true || !!(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+// There, pinch zoom only gets in the way: nothing on screen needs it, and with no Safari
+// controls a zoomed-in board is hard to get back from. Safari keeps it for anyone who needs
+// it (and iPad's own Zoom in Accessibility works everywhere). iOS ignores
+// user-scalable=no in Safari, so the Home Screen app also cancels its pinch gestures.
+if (installed) {
+  document.documentElement.classList.add("standalone");
+  var vp = document.querySelector('meta[name="viewport"]');
+  if (vp) vp.setAttribute("content", vp.getAttribute("content") + ", maximum-scale=1, user-scalable=no");
+  ["gesturestart", "gesturechange"].forEach(function (t) {
+    document.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false });
+  });
+}
+
 // Saved data. `device` is shared by every edition ("sbx:" prefix: which edition, the Home
 // Screen tip); `store` is the current edition's own (its prefix from storagePrefix(), set
 // at startup), so each grade keeps its own progress, achievements and settings. Private
@@ -941,7 +956,6 @@ $("#saveBtn").addEventListener("click", function () {
 // unused, which it doesn't do for Home Screen apps. iPad/iPhone have no install prompt, so
 // Settings shows the Share steps; browsers that fire beforeinstallprompt get a button.
 // Hidden once running from the Home Screen.
-var installed = navigator.standalone === true || !!(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
 var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 var installEvt = null;
 function canInstall() { return !installed && (isIOS || !!installEvt); }
