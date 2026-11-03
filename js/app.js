@@ -1,12 +1,12 @@
 // Game state, play logic, rendering, and the settings sheet.
 import { confetti } from "./confetti.js";
-import { chime } from "./chime.js";
+import { chime, sparkle } from "./chime.js";
 import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
 import { catalog, award, dayKey, daysThisWeek } from "./achievements.js";
 import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle } from "./crossword.js";
-import { speak, say, sayRecorded, hasClip, onClips, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
+import { speak, say, sayAfter, sayRecorded, hasClip, onClips, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
 var $ = function (s) { return document.querySelector(s); };
 
@@ -716,10 +716,13 @@ function prepareShare(a) {
 }
 function showAward(first) {
   var a = awardQueue[awardIndex], n = awardQueue.length, last = awardIndex === n - 1;
-  // A new one is read aloud: "New achievement!", its name, what it took. The first waits
-  // for "You solved it!"; moving to another card replaces what's being said.
+  // A new one gets a sparkle (with the Chime setting) and is read aloud: "New achievement!",
+  // its name, what it took. The first waits for "You solved it!"; moving to another card
+  // replaces what's being said.
   if (!awardFrom) {
-    say("p", "New achievement!", null, !first);
+    if (!first) stopSpeech();
+    if (settings.chime) sayAfter(sparkle);
+    say("p", "New achievement!");
     say("p", a.title);
     say("p", a.detail);
   }
@@ -737,10 +740,9 @@ function showAward(first) {
   $("#awardNext").textContent = last ? "Nice!" : "Next";
   var card = $("#award .award-card");
   card.classList.remove("pop"); void card.offsetWidth; card.classList.add("pop");
-  if (awardIndex > awardSeen) { // celebrate each one the first time it's shown
-    awardSeen = awardIndex;
+  if (awardIndex > awardSeen) { // celebrate each one the first time it's shown (its sound is
+    awardSeen = awardIndex;    // the sparkle, queued with the words above)
     confetti(card);
-    if (settings.chime) chime();
   }
   $("#awardNext").focus();
 }
