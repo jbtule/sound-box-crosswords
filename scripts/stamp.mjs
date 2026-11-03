@@ -4,6 +4,8 @@
 //   remapped through the import map, and js/words.js passes the stamp on to editions.toml
 //   and the packs files. The listen check (listen/) is stamped the same way.
 // - The footer's GitHub badge shows the short sha and links to the commit.
+// - editions/<id>.webmanifest for each edition: manifest.webmanifest opening in that grade
+//   (homeScreenEdition in js/app.js points the page at it, for Add to Home Screen).
 // The source files stay runnable as-is; locally the badge just reads "dev".
 import { readFileSync, writeFileSync, readdirSync, rmSync, mkdirSync, cpSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -29,6 +31,15 @@ rmSync(out, { recursive: true, force: true });
 mkdirSync(out);
 for (const f of SITE) cpSync(join(root, f), join(out, f), { recursive: true });
 for (const f of OPTIONAL) if (existsSync(join(root, f))) cpSync(join(root, f), join(out, f));
+
+// One manifest per edition. Edition ids are read with a pattern, not the TOML parser: this
+// job doesn't install packages (the check compares the two).
+const editionIds = (toml) => [...toml.matchAll(/^\s*id\s*=\s*"([^"]+)"/gm)].map((m) => m[1]);
+const manifest = JSON.parse(readFileSync(join(root, "manifest.webmanifest"), "utf8"));
+for (const id of editionIds(readFileSync(join(root, "editions.toml"), "utf8"))) {
+  const m = { ...manifest, start_url: `../?start=${id}`, scope: "../", icons: manifest.icons.map((i) => ({ ...i, src: "../" + i.src })) };
+  writeFileSync(join(out, "editions", id + ".webmanifest"), JSON.stringify(m, null, 2) + "\n");
+}
 
 let html = readFileSync(join(root, "index.html"), "utf8");
 // Each replacement must match exactly once, so a markup change can't silently skip one.
