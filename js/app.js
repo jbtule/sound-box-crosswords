@@ -759,9 +759,9 @@ function hearAward() {
   stopSpeech();
   sayAchievement(a);
 }
-// The card's title and detail, from recorded pieces ("Unit 3", "Champion").
+// The card read aloud, line by line ("Champion." "Unit 3." "Every word in this pack.").
 function sayAchievement(a) {
-  spokenParts(a).forEach(function (line) { line.forEach(function (piece) { say("p", piece); }); });
+  spokenParts(a).forEach(function (line) { say("p", line); });
 }
 function closeAwards() {
   if (!awardFrom) stopSpeech();
