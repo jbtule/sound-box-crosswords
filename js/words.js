@@ -17,7 +17,7 @@ export function readPacks(text) {
 // TOML text → [{ id, name, file, keyboard, soundItOut }] in offer order.
 export function readEditions(text) {
   return (parse(text).edition || []).map(function (e) {
-    return { id: e.id, name: e.name, file: e.file, keyboard: e.keyboard || "qwerty", soundItOut: e.sound_it_out === true, raw: e };
+    return { id: e.id, name: e.name, short: e.short || e.name, file: e.file, keyboard: e.keyboard || "qwerty", soundItOut: e.sound_it_out === true, raw: e };
   });
 }
 

@@ -100,12 +100,16 @@ try {
 }
 if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]");
 {
-  const edIds = new Set(), prefixes = new Set();
+  const edIds = new Set(), prefixes = new Set(), shorts = new Set();
   for (const ed of editions) {
     const at = `editions.toml (${ed.id || "?"})`;
+    if (!ed.raw || typeof ed.raw.short !== "string" || !ed.raw.short.trim()) errors.push(`${at}: needs short = "..."`);
     for (const f of ["id", "name", "file"]) if (typeof ed[f] !== "string" || !ed[f].trim()) errors.push(`${at}: needs ${f} = "..."`);
     if (ed.id && !/^[a-z0-9-]+$/.test(ed.id)) errors.push(`${at}: id should be lowercase letters, digits and dashes`);
     if (edIds.has(ed.id)) errors.push(`${at}: id is used twice`);
+    if (typeof ed.short === "string" && ed.short.length > 16) errors.push(`${at}: short should be at most 16 characters (it goes on achievement cards)`);
+    if (shorts.has(ed.short)) errors.push(`${at}: short is used twice (it tells grades apart on cards)`);
+    shorts.add(ed.short);
     if (ed.file && !existsSync(join(root, ed.file))) errors.push(`${at}: missing file ${ed.file}`);
     if (!["qwerty", "abc"].includes(ed.keyboard)) errors.push(`${at}: keyboard should be "qwerty" or "abc"`);
     if (ed.raw && ed.raw.sound_it_out !== undefined && typeof ed.raw.sound_it_out !== "boolean") errors.push(`${at}: sound_it_out should be true or false`);
