@@ -1,4 +1,4 @@
-# The "New issue" page: forms for a new word pack (add-pack.yml) or grade (add-edition.yml).
+# The "New issue" page: forms for a new word pack (add-pack.yml) or edition (add-edition.yml).
 # Blank issues stay allowed; the link points to the listen check, whose Report button files
 # a recording problem with everything needed to fix it.
 blank_issues_enabled: true

@@ -1,24 +1,20 @@
 name: Add a word pack
-description: Write a new pack of words for a grade that's already in the app, in the packs file's format.
+description: Write a new pack of words for an edition that's already in the app, in the packs file's format.
 title: "Add pack: "
 labels: ["word pack"]
 body:
   - type: markdown
     attributes:
       value: |
-        A pack is one `[[pack]]` block in the grade's packs file (`packs.toml` for 3rd grade, `editions/kindergarten.toml` for Kindergarten).
+        A pack is one `[[pack]]` block in an edition's packs file (each edition's file is listed in [`editions.toml`](https://github.com/jbtule/sound-box-crosswords/blob/main/editions.toml)).
         Write yours below in the same format; the header of [`packs.toml`](https://github.com/jbtule/sound-box-crosswords/blob/main/packs.toml) has the full rules, and the packs already there are good examples.
 
         **This page is public.** Don't include a child's name, school, teacher, or anything else personal, in the words, sentences or notes.
-  - type: dropdown
+  - type: input
     id: edition
     attributes:
-      label: Grade
-      description: Which grade (edition) gets the pack. For a grade that isn't listed, use "Add a grade" instead.
-      # Keep in step with editions.toml: every edition's name (npm run check enforces it).
-      options:
-        - "Kindergarten"
-        - "3rd grade"
+      label: Edition
+      description: The edition that gets the pack, as it's named in the app's Settings → Edition. For one that doesn't exist yet, use "Add an edition" instead.
     validations:
       required: true
   - type: markdown
@@ -26,10 +22,11 @@ body:
       value: |
         ### Writing the pack
 
+        Replace **every** `<...>` placeholder in the box below, brackets included.
+
         **The block**
-        - `id`: lowercase letters, digits and dashes. Progress is saved under it, so it never changes once the pack is in use.
-          School lists use `g<grade>-<year>-unit<N>`, like `g3-2026-unit4` (the year the school year starts).
-        - `name`: the label on the pack button, short (`Unit 4`, `Blends`).
+        - `id`: lowercase letters, digits and dashes, descriptive enough to stay unique: `<edition>-<year>-<pack>` works well (a school's Unit 4 in 3rd grade's 2026–27 year is `g3-2026-unit4`). Progress is saved under it, so it never changes once the pack is in use.
+        - `name`: the label on the pack button, short.
         - `note`: one short line shown under the buttons. It must not spell any of the pack's words, even split up.
 
         **Each word: one line, in this order** (only the word is always required)
@@ -44,22 +41,22 @@ body:
           A syllable said alone is often misread (`vol` → "volume", `ap` → "A P"), so use real words or 3+ letter spellings with a clear vowel, and `uh` for the soft vowel: `(ex-plore)`, `(chick-in)`, `(uh-round)`.
         - **sentence** `" "`: **required when there's no picture**, and for words that sound alike (their / there). Short, everyday, uses the word exactly as spelled.
           It's shown on screen with only its own word blanked, so it **must not use any other word from the pack** (or its -s / -ed / -ing forms).
-        - Kindergarten only, optional: the word's sounds for *Sound it out*, last on the line: `cat 🐈 {c a t}`, `ship 🚢 {sh i p}`. Leave it off sight words.
+        - Only in editions with *Sound it out*, optional: the word's sounds, last on the line: `cat 🐈 {c a t}`, `ship 🚢 {sh i p}`. Leave it off sight words.
   - type: textarea
     id: pack
     attributes:
       label: The pack
-      description: Replace the example with yours. Keep the school's order for a school list.
+      description: Replace every <...> placeholder, and add a line per word. Keep the school's order for a school list.
       render: toml
       value: |
         [[pack]]
-        id = "g3-2026-unit4"
-        name = "Unit 4"
-        note = "3rd grade 2026 school words. A sound wave means listen, then spell."
+        id = "<pack-id>"
+        name = "<Pack name>"
+        note = "<One short line about the pack>"
         words = """
-        ex-plore 🧭 (ex-plore) "We like to explore the woods."
-        their "The kids hung their coats on the hooks."
-        rain-bow 🌈 (rain-bow)
+        <syl-la-bles> <emoji> (<how-it-sounds>) "<A sentence that uses the word.>"
+        <word> <emoji>
+        <word> "<A sentence, needed because this word has no picture.>"
         """
     validations:
       required: true
@@ -68,6 +65,8 @@ body:
     attributes:
       label: Before sending
       options:
+        - label: I replaced every `<...>` placeholder.
+          required: true
         - label: Every word with 2 or more syllables has its sounds in `( )`, one part per syllable.
           required: true
         - label: Every word without a picture has a sentence.
