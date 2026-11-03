@@ -2,7 +2,7 @@
 //   node scripts/stamp.mjs <full-commit-sha>
 // - Cache busting: styles.css and every js/*.js get ?v=<short sha>. The JS modules are
 //   remapped through the import map, and js/words.js passes the stamp on to editions.toml
-//   and the packs files.
+//   and the packs files. The listen check (listen/) is stamped the same way.
 // - The footer's GitHub badge shows the short sha and links to the commit.
 // The source files stay runnable as-is; locally the badge just reads "dev".
 import { readFileSync, writeFileSync, readdirSync, rmSync, mkdirSync, cpSync, existsSync } from "node:fs";
@@ -55,8 +55,21 @@ swap('<span id="buildSha">dev</span>', `<span id="buildSha">${short}</span>`);
 
 writeFileSync(join(out, "index.html"), html);
 
-// The listen check's badge too (same markup).
+// The listen check: the same cache busting (its script, the stylesheet, the js/ modules
+// through its import map; listen.js passes the stamp on to the word lists and audio.json),
+// and the badge.
 html = readFileSync(join(root, "listen", "index.html"), "utf8");
+swap('href="../styles.css"', `href="../styles.css${v}"`);
+swap('src="listen.js"', `src="listen.js${v}"`);
+{
+  const m = html.match(/<script type="importmap">([\s\S]*?)<\/script>/);
+  if (!m) throw new Error("stamp: no import map in listen/index.html");
+  const lmap = JSON.parse(m[1]);
+  for (const f of readdirSync(join(root, "js")).filter((f) => f.endsWith(".js"))) {
+    lmap.imports[`../js/${f}`] = `../js/${f}${v}`;
+  }
+  swap(m[1], "\n" + JSON.stringify(lmap, null, 2) + "\n");
+}
 swap(`id="buildLink" href="${repo}"`, `id="buildLink" href="${repo}/commit/${sha}"`);
 swap('<span id="buildSha">dev</span>', `<span id="buildSha">${short}</span>`);
 writeFileSync(join(out, "listen", "index.html"), html);
