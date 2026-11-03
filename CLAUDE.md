@@ -91,7 +91,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   and syllables are said at the end of a phrase ("and next, ___.") and cut out, since
   Kokoro mispronounces them alone (`generate.py`; how that was chosen and how to re-test:
   `scripts/audio/eval/`). Clip names hash model + voice + speed + method (`METHOD` in
-  `build.mjs`) + text, so only new or changed text is generated; the
+  `build.mjs`; `SPEED_FOR` / `METHOD_FOR` for single clips picked by ear, e.g. "New achievement!"
+  in Kokoro's long-sentence voice style, which sounds more excited) + text, so only new or changed text is generated; the
   rest is downloaded from the live host. The site ships `audio.json` (`"kind:text"` → clip);
   `say(kind, text)` in `speech.js` plays a clip or falls back to the device voice (Custom
   words, local dev, network failure). Kokoro runs on Linux only (the macOS espeak wheel is

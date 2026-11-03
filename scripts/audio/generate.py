@@ -102,13 +102,23 @@ def cut(text, voice, speed):
     return cut_phonemes(phonemes(text), voice, speed)
 
 
-def cut_phonemes(ps, voice, speed, start=0, end=None, lead_ms=LEAD_MS, tail_ms=TAIL_MS):
+# "lively": the text said alone with the voice style Kokoro uses for a long sentence, which
+# sounds brighter on a short line. Picked by ear for "New achievement!".
+LIVELY_STYLE = 120
+
+
+def lively(text, voice, speed):
+    return cut_phonemes(phonemes(text), voice, speed, tail_ms=120, carrier=("", ""), style_n=LIVELY_STYLE)
+
+
+def cut_phonemes(ps, voice, speed, start=0, end=None, lead_ms=LEAD_MS, tail_ms=TAIL_MS, carrier=CARRIER, style_n=None):
     """Says misaki phonemes `ps` in the carrier and cuts them out, or just tokens
-    ps[start:end] of them (one sound out of a word)."""
+    ps[start:end] of them (one sound out of a word). `style_n` picks the voice style for
+    a line of that many tokens instead of this one's length."""
     tok = kokoro.tokenizer.tokenize
-    pre, post = CARRIER
+    pre, post = carrier
     toks = tok(pre + ps + post)
-    style = kokoro.voices[voice][len(toks)]
+    style = kokoro.voices[voice][style_n or len(toks)]
     audio, dur = session().run(None, {"tokens": [[0, *toks, 0]], "style": style, "speed": np.array([speed], np.float32)})
     dur = dur.reshape(-1)
     spf = len(audio) / dur.sum()  # samples per duration frame
@@ -146,6 +156,8 @@ def main():
             audio, sr = sound(item["text"]), SR  # trimmed and leveled already
         elif item.get("method") == "cut":
             audio, sr = trim(cut(item["text"], item["voice"], item["speed"]), SR), SR
+        elif item.get("method") == "lively":
+            audio, sr = trim(lively(item["text"], item["voice"], item["speed"]), SR), SR
         else:
             audio, sr = kokoro.create(item["text"], voice=item["voice"], speed=item["speed"], lang="en-us")
             audio = trim(audio, sr)
