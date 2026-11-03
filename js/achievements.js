@@ -27,7 +27,7 @@ var LABELS = {
     detail: function (n) { return n + (n === 1 ? " puzzle" : " puzzles") + " with no try-agains"; } },
   // Comebacks (right after an earlier miss): not giving up.
   comeback: { tiers: [["🏀", "Bounce Back"], ["🐢", "Keep Going"], ["🧗", "Climber"], ["🦸", "Spelling Hero"], ["🐉", "Dragon Heart"]],
-    detail: function (n) { return n === 1 ? "1 word right after missing it" : n + " words right after missing them"; } }
+    detail: function (n) { return n === 1 ? "1 word right first try after missing it" : n + " words right first try after missing them"; } }
 };
 
 function tierItem(track, i, have) {
