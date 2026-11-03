@@ -228,7 +228,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   file sharing isn't supported. The big award card shows Share; earned achievements in the
   🏆 sheet reopen in it. The PNG is made when the card shows, since iPad Safari only opens
   the share sheet straight from a tap.
-- `js/chime.js`: `chime()`, a soft two-note Web Audio chime on solve (Settings toggle). The
+- `js/chime.js`: Web Audio reward sounds, picked by ear (Settings → Chime): `chime()` on solve
+  (a quick glitter run of high bells), `sparkle()` before "New achievement!" (a climb into a chord). The
   audio context is unlocked on the first tap for iOS. It doesn't follow the mute switch:
   iOS can only do that for the whole page, which would silence the recorded words too.
 - `js/speech.js`: `say(kind, text, rate, cancel)` (recorded clip or device voice, one
