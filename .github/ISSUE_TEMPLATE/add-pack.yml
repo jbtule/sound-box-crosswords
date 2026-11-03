@@ -1,0 +1,83 @@
+name: Add a word pack
+description: Write a new pack of words for a grade that's already in the app, in the packs file's format.
+title: "Add pack: "
+labels: ["word pack"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A pack is one `[[pack]]` block in the grade's packs file (`packs.toml` for 3rd grade, `editions/kindergarten.toml` for Kindergarten).
+        Write yours below in the same format; the header of [`packs.toml`](https://github.com/jbtule/sound-box-crosswords/blob/main/packs.toml) has the full rules, and the packs already there are good examples.
+
+        **This page is public.** Don't include a child's name, school, teacher, or anything else personal, in the words, sentences or notes.
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Grade
+      description: Which grade (edition) gets the pack. For a grade that isn't listed, use "Add a grade" instead.
+      # Keep in step with editions.toml: every edition's name (npm run check enforces it).
+      options:
+        - "Kindergarten"
+        - "3rd grade"
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ### Writing the pack
+
+        **The block**
+        - `id`: lowercase letters, digits and dashes. Progress is saved under it, so it never changes once the pack is in use.
+          School lists use `g<grade>-<year>-unit<N>`, like `g3-2026-unit4` (the year the school year starts).
+        - `name`: the label on the pack button, short (`Unit 4`, `Blends`).
+        - `note`: one short line shown under the buttons. It must not spell any of the pack's words, even split up.
+
+        **Each word: one line, in this order** (only the word is always required)
+        ```
+        ba-nan-a  🍌  (buh-nan-uh)  "We ate a banana."
+        word      picture  sounds    sentence
+        ```
+        - **word**: letters only (apostrophes are fine: `don't`), 2–12 letters, 10 or more words.
+          Dashes between syllables, split the way a teacher would clap it: `sun-shine`, `jump-ing`, but `jumped`.
+        - **picture**: one emoji that clearly shows *that* word. Leave it off when none does (their, would, done) rather than picking a near miss.
+        - **sounds** `( )`: **required for 2+ syllables.** How *Break it down* says each syllable, one part per syllable.
+          A syllable said alone is often misread (`vol` → "volume", `ap` → "A P"), so use real words or 3+ letter spellings with a clear vowel, and `uh` for the soft vowel: `(ex-plore)`, `(chick-in)`, `(uh-round)`.
+        - **sentence** `" "`: **required when there's no picture**, and for words that sound alike (their / there). Short, everyday, uses the word exactly as spelled.
+          It's shown on screen with only its own word blanked, so it **must not use any other word from the pack** (or its -s / -ed / -ing forms).
+        - Kindergarten only, optional: the word's sounds for *Sound it out*, last on the line: `cat 🐈 {c a t}`, `ship 🚢 {sh i p}`. Leave it off sight words.
+  - type: textarea
+    id: pack
+    attributes:
+      label: The pack
+      description: Replace the example with yours. Keep the school's order for a school list.
+      render: toml
+      value: |
+        [[pack]]
+        id = "g3-2026-unit4"
+        name = "Unit 4"
+        note = "3rd grade 2026 school words. A sound wave means listen, then spell."
+        words = """
+        ex-plore 🧭 (ex-plore) "We like to explore the woods."
+        their "The kids hung their coats on the hooks."
+        rain-bow 🌈 (rain-bow)
+        """
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Before sending
+      options:
+        - label: Every word with 2 or more syllables has its sounds in `( )`, one part per syllable.
+          required: true
+        - label: Every word without a picture has a sentence.
+          required: true
+        - label: No sentence (and not the note) uses another word from this pack.
+          required: true
+        - label: Nothing here names or describes a real child, school or teacher.
+          required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Where the list came from, splits or pictures you weren't sure about, words the class says differently. A photo of the original sheet helps the review (drag it in here).

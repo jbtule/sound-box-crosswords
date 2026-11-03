@@ -1,0 +1,85 @@
+name: Add a grade
+description: Write a new edition (its own packs, progress and achievements) in the app's format.
+title: "Add grade: "
+labels: ["edition"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        An edition is a separate set of packs, like another grade or one classroom's lists. Each keeps its own progress, achievements, collection and settings, and the first visit asks which one to play.
+        It takes two things: an `[[edition]]` entry in [`editions.toml`](https://github.com/jbtule/sound-box-crosswords/blob/main/editions.toml), and a packs file with at least one pack. To add words to a grade that's already there, use "Add a word pack" instead.
+
+        **This page is public.** Don't include a child's name, school, teacher, or anything else personal. Name a classroom generally ("3rd grade, Room 12"), not by its teacher.
+  - type: markdown
+    attributes:
+      value: |
+        ### 1. The edition entry
+
+        - `id`: short, lowercase letters, digits and dashes (`g2`, `g3-room12`). Progress is saved under it, so it **never changes** once in use.
+        - `name`: shown in the "Which grade?" question and in Settings. Can be long.
+        - `short`: on achievement cards and shared pictures. Up to 16 characters, different from every other grade's.
+        - `file`: the packs file, `editions/<something>.toml`.
+        - `keyboard`: optional. Leave it off for QWERTY (like a keyboard); `"abc"` starts with the A-to-Z pad, for kids still learning letters.
+        - `sound_it_out`: optional, `true` for early readers: a button that says each sound (c-a-t) while its letters light up.
+  - type: textarea
+    id: edition
+    attributes:
+      label: Edition entry
+      render: toml
+      value: |
+        [[edition]]
+        id = "g2"
+        name = "2nd grade"
+        short = "2nd grade"
+        file = "editions/second-grade.toml"
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ### 2. The packs file
+
+        One or more `[[pack]]` blocks, written the same way as in the "Add a word pack" form; the header of [`packs.toml`](https://github.com/jbtule/sound-box-crosswords/blob/main/packs.toml) has the full rules.
+        - `id` (never changes once in use), `name` (the pack button), `note` (one line under the buttons, never spelling a pack word).
+        - Words one per line, 10 or more: `ba-nan-a 🍌 (buh-nan-uh) "We ate a banana."`
+          - Dashes between syllables, split the way a teacher would clap it.
+          - A picture only when an emoji clearly shows that word.
+          - **Sounds `( )` for every word of 2+ syllables**, using real words or 3+ letter spellings (`(ex-plore)`, `(uh-round)`).
+          - **A sentence for every word without a picture**, which must not use any other word from the same pack.
+        - With `sound_it_out = true`, add each word's sounds last on the line: `cat 🐈 {c a t}`. Not for sight words.
+        - Optionally a `[custom]` block with a starter Custom list for the grade.
+  - type: textarea
+    id: packs
+    attributes:
+      label: Packs file
+      render: toml
+      value: |
+        [[pack]]
+        id = "g2-2026-unit1"
+        name = "Unit 1"
+        note = "2nd grade 2026 school words. A sound wave means listen, then spell."
+        words = """
+        rain 🌧️ "We stayed in when it started to rain."
+        snail 🐌
+        sun-shine ☀️ (sun-shine)
+        """
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Before sending
+      options:
+        - label: The `id` and `short` aren't used by another grade.
+          required: true
+        - label: Every word with 2 or more syllables has its sounds in `( )`, and every word without a picture has a sentence.
+          required: true
+        - label: No sentence or note uses another word from its pack.
+          required: true
+        - label: Nothing here names or describes a real child, school or teacher.
+          required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Who it's for (grade, reading level), school year, how often new lists come. Photos of the original lists help the review (drag them in here).

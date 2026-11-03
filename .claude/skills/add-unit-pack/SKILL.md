@@ -32,6 +32,9 @@ rules below add to them; they don't replace them.
 - **What you need:** the words, the grade, the school year, and the unit number. If the
   unit number or grade isn't given, look at the newest Unit pack in `packs.toml` (its `id`
   is `g<grade>-<year>-unit<N>`) and ask whether this is the next one. Don't guess.
+- **From an issue:** the "Add a word pack" form (`.github/ISSUE_TEMPLATE/add-pack.yml`)
+  gives the grade, the kind of list, the pack name, the words (or a photo), bonus words and
+  notes. Link the issue in the PR (`Closes #N`).
 - **From a photo:** copy the words exactly as printed. Don't fix the school's spelling and
   don't add or drop words. List anything you can't read clearly and ask about it.
 - **Bonus or challenge words:** ask whether to include them. Default to the main list only.

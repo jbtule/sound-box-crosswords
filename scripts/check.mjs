@@ -118,6 +118,14 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
   }
   if (!editions.some((ed) => ed.file === "packs.toml")) errors.push("editions.toml: packs.toml must stay an edition (existing saved progress belongs to it)");
 }
+// The "Add a word pack" issue form offers every grade by its name.
+{
+  const form = readFileSync(join(root, ".github/ISSUE_TEMPLATE/add-pack.yml"), "utf8");
+  const listed = [...form.matchAll(/^ {8}- "([^"]+)"$/gm)].map((m) => m[1]);
+  for (const ed of editions) if (ed.name && !listed.includes(ed.name)) errors.push(`.github/ISSUE_TEMPLATE/add-pack.yml: the Grade dropdown needs "${ed.name}"`);
+  for (const n of listed) if (!editions.some((ed) => ed.name === n)) errors.push(`.github/ISSUE_TEMPLATE/add-pack.yml: "${n}" isn't an edition's name in editions.toml`);
+}
+
 // The share sheet draws a QR code for the site, or for one grade (?edition=<id>).
 {
   const QRCode = (await import("qrcode")).default;
