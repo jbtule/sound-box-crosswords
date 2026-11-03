@@ -718,18 +718,24 @@ function showAwards(list, from) {
 // Share: the PNG is made as soon as a card shows, because iPad Safari only opens the share
 // sheet straight from a tap (no waiting on drawing in between).
 var shareFor = null, shareBlob = null;
-function sharePics() { // a few collected pictures for the card (pictures only, never words)
+// A few collected pictures for the card (pictures only, never words). A pack achievement
+// shows that pack's pictures and how many words there are besides ("+17"), so a big pack
+// looks big; others show pictures from every pack.
+function sharePics(a) {
   var pics = [];
-  Object.keys(PACKS).forEach(function (id) {
+  (a.pack ? [a.pack] : Object.keys(PACKS)).forEach(function (id) {
+    if (!PACKS[id]) return;
     var stats = packProgress(id).stats;
     entries(id).forEach(function (e) { if (e.pic && stats[e.w] && stats[e.w].ok > 0 && pics.indexOf(e.pic) < 0) pics.push(e.pic); });
   });
-  return shuffle(pics).slice(0, 6);
+  pics = shuffle(pics).slice(0, a.pack ? 5 : 6);
+  return { pics: pics, more: a.pack ? Math.max(0, a.goal - pics.length) : 0 };
 }
 function prepareShare(a) {
   shareFor = a.id; shareBlob = null;
   $("#awardShare").hidden = true;
-  renderCard(a, earned[a.id] || Date.now(), sharePics(), EDITIONS.length > 1 ? EDITION.name : "").then(function (b) {
+  var shown = sharePics(a);
+  renderCard(a, earned[a.id] || Date.now(), shown.pics, EDITIONS.length > 1 ? EDITION.name : "", shown.more).then(function (b) {
     if (shareFor !== a.id) return; // moved on to another card meanwhile
     shareBlob = b;
     $("#awardShare").hidden = false;

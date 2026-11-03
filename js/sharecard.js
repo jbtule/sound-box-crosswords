@@ -20,9 +20,10 @@ function fit(ctx, text, weightFamily, size, min, maxW) {
 }
 
 // a = { icon, title, detail }, when = timestamp, pics = up to 6 emoji from the collection,
-// edition = the edition's name when there's more than one (e.g. "Kindergarten"), else "".
+// edition = the edition's name when there's more than one (e.g. "Kindergarten"), else "",
+// more = words beyond the pictures, shown as a last "+17" tile (pack achievements).
 // Resolves to a PNG Blob.
-export async function renderCard(a, when, pics, edition) {
+export async function renderCard(a, when, pics, edition, more) {
   // Draw with the app's fonts, not a fallback (they load from Google Fonts).
   try {
     await Promise.all([
@@ -83,16 +84,25 @@ export async function renderCard(a, when, pics, edition) {
   ctx.font = "500 40px " + body;
   ctx.fillText(new Date(when).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" }), W / 2, 985);
 
-  if (pics && pics.length) {
-    var n = Math.min(pics.length, 6), size = 110, gap = 20, rowW = n * size + (n - 1) * gap, x0 = (W - rowW) / 2;
-    for (var i = 0; i < n; i++) {
+  pics = (pics || []).slice(0, more ? 5 : 6);
+  var tiles = pics.length + (more ? 1 : 0);
+  if (tiles) {
+    var size = 110, gap = 20, rowW = tiles * size + (tiles - 1) * gap, x0 = (W - rowW) / 2;
+    for (var i = 0; i < tiles; i++) {
       var px = x0 + i * (size + gap);
       ctx.fillStyle = bg;
       ctx.beginPath();
       ctx.roundRect ? ctx.roundRect(px, 1060, size, size, 26) : ctx.rect(px, 1060, size, size);
       ctx.fill();
-      ctx.font = "70px " + emoji;
-      ctx.fillText(pics[i], px + size / 2, 1060 + size / 2 + 4);
+      if (i < pics.length) {
+        ctx.font = "70px " + emoji;
+        ctx.fillText(pics[i], px + size / 2, 1060 + size / 2 + 4);
+      } else {
+        var label = "+" + more;
+        ctx.fillStyle = accent;
+        fit(ctx, label, "700 {s}px " + display, 52, 30, size - 16);
+        ctx.fillText(label, px + size / 2, 1060 + size / 2 + 2);
+      }
     }
   }
 
