@@ -48,7 +48,8 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    rewards.
 7. **A grown-up can tune it** without code, in Settings: syllable colors on/off, auto-speak,
    QWERTY (default) vs A–Z pad, custom word list. Nothing in Settings makes the game easier,
-   so it needs no lock. Keep it that way: don't add settings that weaken recall.
+   so it needs no lock (Start over, which erases progress, asks for a typed phrase instead).
+   Keep it that way: don't add settings that weaken recall.
 
 When a request is ambiguous, prefer the option that better serves goals 1–4.
 
@@ -230,7 +231,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   holds every scheme to Classic's contrast and keeps the two syllable bands clearly apart.
 - `js/sharecard.js`: `renderCard` draws an achievement as a 1080×1350 PNG in the current
   theme (app name, emoji, title, detail, date, up to 6 collected pictures, site address;
-  never spelling words or a name); `shareCard` opens the share sheet, or downloads where
+  never spelling words or a name). A pack's Champion or Legend shows that pack's pictures
+  plus a "+N" tile for the rest of its words, so a big pack looks big (`sharePics` in
+  `app.js`); its detail gives the size ("All 23 words in Blends"), though what's said
+  stays "Every word in this pack"; `shareCard` opens the share sheet, or downloads where
   file sharing isn't supported. The big award card shows Share; earned achievements in the
   🏆 sheet reopen in it. The PNG is made when the card shows, since iPad Safari only opens
   the share sheet straight from a tap.
@@ -258,6 +262,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   - `clap`: the Break it down scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
   - Settings sheet: `openSheet` / `closeSheet` and the change handlers below them.
+  - Start over (Settings): clears this edition's `achievements`, `progress`, `counts`, `days`,
+    `log`, `stars` and `puzzle` (`RESET_KEYS`) and the color scheme, once "start over" is
+    typed. Achievements, stars, pictures and colors are all worked out from progress, so
+    clearing only achievements would bring them back. Settings and the Custom list stay.
 
 ## Working on it
 
