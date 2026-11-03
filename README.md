@@ -31,8 +31,8 @@ settings are saved in the browser's localStorage.
 - `npm install` once, then `npm run check` before pushing. It checks syntax and
   links, validates every word list, and builds test puzzles from each pack. CI runs it on
   every push and PR.
-- Upgrading smol-toml: change the version in both `package.json` and the import map in
-  `index.html`. The check fails if they differ.
+- Upgrading smol-toml or qrcode: change the version in both `package.json` and the import
+  map in `index.html`. The check fails if they differ.
 - Workflows are kept clean under [zizmor](https://docs.zizmor.sh/): `zizmor .`
 - Pushing to `main` deploys to GitHub Pages through `.github/workflows/ci.yml`, but only if
   the check passes. `scripts/stamp.mjs` copies the site files to `_site/` and stamps the
@@ -55,11 +55,13 @@ own licenses:
 
 - [smol-toml](https://github.com/squirrelchat/smol-toml) (BSD-3-Clause), the TOML parser, loaded
   from jsDelivr.
+- [qrcode](https://github.com/soldair/node-qrcode) (MIT), which draws the share sheet's QR code,
+  loaded from jsDelivr when the share sheet opens.
 - [Fredoka](https://fonts.google.com/specimen/Fredoka) and
   [Lexend](https://fonts.google.com/specimen/Lexend) (SIL Open Font License 1.1), from
   Google Fonts.
 - The recorded voice is generated with [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M)
   (Apache 2.0), voice `af_heart`, run with [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx).
 - Pictures are emoji drawn by each device's own font; none are bundled.
-- Build-time tools (`qrcode`, Playwright, the speech runtime) are under their own
-  licenses and aren't part of the site.
+- Build-time tools (Playwright, the speech runtime) are under their own licenses and
+  aren't part of the site.
