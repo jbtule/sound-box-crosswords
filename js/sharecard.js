@@ -122,11 +122,11 @@ export function shareCard(blob, title) {
   var file = new File([blob], name, { type: "image/png" });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     return navigator.share({ files: [file], title: title, text: "I earned " + title + " on Sound Box Crosswords!" })
-      .catch(function () {}); // cancelled
+      .then(function () { return true; }, function () { return false; }); // false: closed without sharing
   }
   var url = URL.createObjectURL(blob), link = document.createElement("a");
   link.href = url; link.download = name;
   document.body.appendChild(link); link.click(); link.remove();
   setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
-  return Promise.resolve();
+  return Promise.resolve(true); // a download can't tell us more than that it started
 }
