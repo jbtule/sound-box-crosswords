@@ -66,9 +66,9 @@ export function catalog(state) {
 // What an achievement card says aloud: a few short lines, each recorded on its own. A pack
 // achievement says what it is, then the pack, then what it took ("Champion!" "Unit 3."
 // "Every word in this pack."), so a new pack only needs its name recorded; the others say
-// their title and detail as shown.
+// their title (as an exclamation, like all titles) and detail.
 export function spokenParts(a) {
-  return a.spoken || [a.title, a.detail];
+  return a.spoken || [a.title + "!", a.detail];
 }
 
 // Every line a card can say, for the given packs ([{ id, name }]): "New achievement!", the
@@ -78,7 +78,7 @@ export function spokenLines(packs) {
   var out = ["New achievement!", "Champion!", "Legend!", "Every word in this pack", "Every word right on the first try"];
   packs.forEach(function (p) { out.push(p.name); });
   Object.keys(TIERS).forEach(function (track) {
-    TIERS[track].forEach(function (n, i) { var t = tierItem(track, i, 0); out.push(t.title, t.detail); });
+    TIERS[track].forEach(function (n, i) { var t = tierItem(track, i, 0); out.push(t.title + "!", t.detail); });
   });
   return out.filter(function (x, i) { return out.indexOf(x) === i; });
 }
