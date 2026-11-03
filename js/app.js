@@ -39,18 +39,22 @@ if ("serviceWorker" in navigator && !/^(localhost|127\.0\.0\.1)$/.test(location.
 }
 
 // Which grade's word lists (editions.toml). In order: a ?edition= link (then remembered),
-// the one picked before, the original edition for anyone with progress from before there
-// were editions, the only one, or else ask once ("Which grade?"), before the first puzzle.
+// the one picked before, a ?start= address (below), the original edition for anyone with
+// progress from before there were editions, the only one, or else ask once ("Which
+// grade?"), before the first puzzle.
 async function pickEdition(eds) {
+  var e = await chooseEdition(eds);
+  homeScreenEdition(e);
+  return e;
+}
+async function chooseEdition(eds) {
   var byId = function (id) { return eds.find(function (e) { return e.id === id; }); };
   var params = new URLSearchParams(location.search), asked = params.get("edition");
-  if (asked !== null) {
-    params.delete("edition");
-    history.replaceState(null, "", location.pathname + (params.toString() ? "?" + params : "") + location.hash);
-    if (byId(asked)) { device.set("edition", asked); return byId(asked); }
-  }
+  if (asked !== null && byId(asked)) { device.set("edition", asked); return byId(asked); }
   var saved = byId(device.get("edition", ""));
   if (saved) return saved;
+  var start = byId(params.get("start") || "");
+  if (start) { device.set("edition", start.id); return start; }
   var before = ["progress", "log", "settings", "achievements"].some(function (k) { return device.get(k, null) != null; });
   var original = eds.find(function (e) { return e.file === "packs.toml"; });
   if (before && original) { device.set("edition", original.id); return original; }
@@ -69,6 +73,20 @@ async function pickEdition(eds) {
   $("#gradeAsk").hidden = true;
   device.set("edition", chosen.id);
   return chosen;
+}
+// A Home Screen app starts with its own empty storage, so it can't know the grade picked in
+// Safari. iOS saves either the page's address or the manifest's start_url, so both carry
+// it as ?start=<id>: the grade to open when this device hasn't picked one (unlike ?edition=,
+// it doesn't override a grade switched to later in Settings).
+function homeScreenEdition(e) {
+  try {
+    var params = new URLSearchParams(location.search);
+    params.delete("edition");
+    params.set("start", e.id);
+    history.replaceState(null, "", location.pathname + "?" + params + location.hash);
+    var link = document.querySelector('link[rel="manifest"]');
+    if (link) link.setAttribute("href", "editions/" + e.id + ".webmanifest");
+  } catch (err) {}
 }
 
 var PACKS, DEFAULT_CUSTOM, EDITIONS, EDITION;
