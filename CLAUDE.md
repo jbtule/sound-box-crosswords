@@ -47,7 +47,7 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
 7. **A grown-up can tune it** without code, in Settings: syllable colors on/off, auto-speak,
-   voice, QWERTY (default) vs A–Z pad, custom word list. Nothing in Settings makes the game easier,
+   QWERTY (default) vs A–Z pad, custom word list. Nothing in Settings makes the game easier,
    so it needs no lock. Keep it that way: don't add settings that weaken recall.
 
 When a request is ambiguous, prefer the option that better serves goals 1–4.
@@ -102,9 +102,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   user tap on iOS. Fail quietly if unavailable. Voices are whatever the device has, so the
   app ranks them: downloaded Premium > Enhanced > basic, en-US first, novelty/robotic Apple
   voices excluded. With no downloads it behaves as before; once a grown-up downloads a
-  better voice (iPad: Settings → Accessibility → Spoken Content → Voices), "Automatic"
-  uses it with no setting change. Voices are identified by `voiceURI`, not name (iOS names
-  basic and Enhanced voices the same).
+  better voice (iPad: Settings → Accessibility → Spoken Content → Voices), the app uses it
+  with no setting to change. There's no voice picker: the device voice only reads Custom
+  words and fills in when clips can't load, so it isn't worth a setting.
 - **Pictures are emoji**, which keeps it offline-friendly and license-free. Don't add
   copyrighted characters or images. A word with no emoji is listen-only: the app draws a
   sound-wave icon (`WAVE` / `setPic` in `app.js`).
@@ -112,7 +112,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   wrapped in try/catch. It's per device; no accounts or server. Each edition's data is under
   its own prefix (`storagePrefix` in `words.js`: plain `sbx:` for `packs.toml`'s edition,
   `sbx:<id>:` for others), through `store` in `app.js`; `device` (plain `sbx:`) holds
-  what's shared: the chosen edition, the Home Screen tip, and the voice and chime
+  what's shared: the chosen edition, the Home Screen tip, and the chime
   (`shared`; `SHARED` in `app.js`).
 - Light and dark themes via CSS custom properties on `:root`, with
   `prefers-color-scheme` and `[data-theme]` overrides. Define new colors as tokens.
@@ -163,7 +163,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   grade?" (`pickEdition` in `app.js`), unless there's progress from before editions (then
   `packs.toml`'s) or a `?edition=<id>` link; Settings → Edition (a dropdown) switches. Each
   edition keeps its own progress, achievements, collection, colors, Custom list and settings
-  (letter pad, syllable colors, auto-speak); the voice and chime are the device's; an edition
+  (letter pad, syllable colors, auto-speak); the chime is the device's; an edition
   can set the letter pad default (`keyboard = "abc"`) and turn on Sound it out
   (`sound_it_out = true`). The check, the audio build and the
   listen check cover every edition. Never change an edition's `id` once in use.
@@ -232,8 +232,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   iOS can only do that for the whole page, which would silence the recorded words too.
 - `js/speech.js`: `say(kind, text, rate, cancel)` (recorded clip or device voice, one
   queue; kinds `w` word, `s` syllable, `t` sentence, `p` phrase), `stopSpeech`,
-  `speechEpoch`, `speak` (device voice only), `hasSpeech`; voice ranking (`score`), `listVoices`,
-  `setVoice` (a `voiceURI`, or "" for Automatic), `onVoicesChanged` (Safari loads voices late).
+  `speechEpoch`, `speak` (device voice only), `hasSpeech`; device voice ranking (`score`;
+  re-picked when Safari loads voices late).
 - `js/app.js`: everything on screen.
   - Play state: `fill`, `locked`, `doneW`, `cur` (word), `pos` (letter index), `misses`,
     `missedW` (words with a wrong try this puzzle).

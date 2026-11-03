@@ -158,7 +158,7 @@
     <div id="gradeSec" hidden>
       <h3>Edition</h3>
       <div class="row"><select id="editionSel" aria-label="Edition"></select></div>
-      <p class="help">Each edition has its own word lists, stars, achievements and letter pad on this device. The voice and chime are the same for all.</p>
+      <p class="help">Each edition has its own word lists, stars, achievements and letter pad on this device. The chime is the same for all.</p>
     </div>
     <div id="installSec" hidden>
       <h3>Home Screen</h3>
@@ -186,14 +186,6 @@
       <ul class="plain log" id="progressLog"></ul>
     </div>
     <div>
-      <h3>Voice</h3>
-      <div class="row">
-        <select id="voiceSel" aria-label="Voice"></select>
-        <button class="tool" id="voiceTry" type="button">Try it</button>
-      </div>
-      <p class="help" id="voiceHelp">Pack words use a recorded voice. This device voice reads Custom words, and fills in if the recordings can’t load. For a more natural one on iPad or iPhone: Settings → Accessibility → Spoken Content → Voices → English. Download one marked Enhanced or Premium, then reload this page. “Automatic” uses the best one on this device.</p>
-    </div>
-    <div>
       <h3>Letter pad</h3>
       <div class="opt">
         <label><input type="radio" name="kb" id="kbQwerty" value="qwerty"> Keyboard order</label>
@@ -203,7 +195,7 @@
     <div>
       <h3>Custom words</h3>
       <textarea id="customText" aria-label="Your word list" spellcheck="false"></textarea>
-      <p class="help">One word per line. Add dashes between syllables (<code>rain-bow</code>) so the colors and “Break it down” work. An emoji after the word becomes the picture; leave it off for words a picture can’t show, and the clue is “listen” only. Add a sentence in quotes to say the word in context: <code>there "Put the box over there."</code> If “Break it down” says a beat wrong, add how it sounds in brackets: <code>pea-nut 🥜 (pee-nut)</code>. The starter list is an example — swap in this week’s school words.</p>
+      <p class="help">One word per line. Add dashes between syllables (<code>rain-bow</code>) so the colors and “Break it down” work. An emoji after the word becomes the picture; leave it off for words a picture can’t show, and the clue is “listen” only. Add a sentence in quotes to say the word in context: <code>there "Put the box over there."</code> If “Break it down” says a beat wrong, add how it sounds in brackets: <code>pea-nut 🥜 (pee-nut)</code>. The starter list is an example — swap in this week’s school words. Custom words are read by this device’s voice; for a more natural one on iPad or iPhone, download an English voice marked Enhanced or Premium (Settings → Accessibility → Spoken Content → Voices), then reload this page.</p>
       <div class="row" style="margin-top:10px"><button class="primary" id="saveBtn" type="button">Save and play custom words</button><span id="saveMsg" role="status"></span></div>
     </div>
     <div>
