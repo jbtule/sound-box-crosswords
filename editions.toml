@@ -3,8 +3,9 @@
 # as packs.toml) and keeps its own saved progress, stars, achievements, collection, colors,
 # Custom list and settings on the device; the voice and chime are shared by all.
 #
-#   id        short name; saved data is kept under "sbx:<id>:" (packs.toml's edition uses
-#             plain "sbx:", from before editions). Never change it once in use.
+#   id        saved data is kept under "sbx:<id>:" (packs.toml's edition uses plain "sbx:",
+#             from before editions). Never change it once in use. New ones are at least 8
+#             characters, descriptive enough never to clash: grade2-2026-room12.
 #   name      shown in the grade question and in Settings; can be long ("3rd grade, Room 12")
 #   short     on achievement cards, shared cards and the 🏆 sheet, where space is tight and
 #             it tells grades apart (up to 16 characters; each edition's must differ)

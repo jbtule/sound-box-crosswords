@@ -106,6 +106,9 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
     if (!ed.raw || typeof ed.raw.short !== "string" || !ed.raw.short.trim()) errors.push(`${at}: needs short = "..."`);
     for (const f of ["id", "name", "file"]) if (typeof ed[f] !== "string" || !ed[f].trim()) errors.push(`${at}: needs ${f} = "..."`);
     if (ed.id && !/^[a-z0-9-]+$/.test(ed.id)) errors.push(`${at}: id should be lowercase letters, digits and dashes`);
+    // New ids are descriptive enough never to clash (grade2-2026-room12); the first two
+    // were short and can't change.
+    if (ed.id && ed.id.length < 8 && !["k", "g3"].includes(ed.id)) errors.push(`${at}: id should be at least 8 characters, like grade2-2026-room12`);
     if (edIds.has(ed.id)) errors.push(`${at}: id is used twice`);
     if (typeof ed.short === "string" && ed.short.length > 16) errors.push(`${at}: short should be at most 16 characters (it goes on achievement cards)`);
     if (shorts.has(ed.short)) errors.push(`${at}: short is used twice (it tells grades apart on cards)`);
@@ -122,14 +125,6 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
   }
   if (!editions.some((ed) => ed.file === "packs.toml")) errors.push("editions.toml: packs.toml must stay an edition (existing saved progress belongs to it)");
 }
-// The "Add a word pack" issue form offers every grade by its name.
-{
-  const form = readFileSync(join(root, ".github/ISSUE_TEMPLATE/add-pack.yml"), "utf8");
-  const listed = [...form.matchAll(/^ {8}- "([^"]+)"$/gm)].map((m) => m[1]);
-  for (const ed of editions) if (ed.name && !listed.includes(ed.name)) errors.push(`.github/ISSUE_TEMPLATE/add-pack.yml: the Grade dropdown needs "${ed.name}"`);
-  for (const n of listed) if (!editions.some((ed) => ed.name === n)) errors.push(`.github/ISSUE_TEMPLATE/add-pack.yml: "${n}" isn't an edition's name in editions.toml`);
-}
-
 // The share sheet draws a QR code for the site, or for one grade (?edition=<id>).
 {
   const QRCode = (await import("qrcode")).default;
