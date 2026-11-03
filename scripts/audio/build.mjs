@@ -31,16 +31,21 @@ export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95, f: 0.8 };
 export const PHRASES = ["You solved it!", "Great job!"];
 // Clips that sound wrong at their kind's speed, picked by ear. At 0.9 the cut "shore"
 // sounds like "sure".
-const SPEED_FOR = { "w:shore": 0.8 };
+const SPEED_FOR = { "w:shore": 0.8, "p:New achievement!": 1.0 };
 const ENCODING = "mp3-64k-mono-trim-v1"; // bump to regenerate every clip
 // How generate.py renders each kind: "cut" says the word inside a phrase and cuts it out
 // (single words and syllables mispronounce alone); "text" says the text as is.
 export const METHOD = { w: "cut", s: "cut", t: "text", p: "text", f: "sound" };
 const CUT = "cut-next-v1"; // bump when the cut method changes
+// Clips made another way, picked by ear: "lively" says the line in the voice style Kokoro
+// uses for long sentences, which sounds more excited ("New achievement!").
+const METHOD_FOR = { "p:New achievement!": "lively" };
+const LIVELY = "lively-v1"; // bump when the lively method changes
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
 const speedOf = (kind, text) => SPEED_FOR[kind + ":" + text] ?? SPEED[kind];
+const methodOf = (kind, text) => METHOD_FOR[kind + ":" + text] ?? METHOD[kind];
 
 // Single sounds are made by scripts/audio/sounds/lab.py the way picks.json says; their keys
 // hash those files (and generate.py), so a new pick or recipe makes new clips.
@@ -51,7 +56,9 @@ const SOUND_RECIPE = createHash("sha256")
 export function keyFor(kind, text) {
   if (kind === "f") return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "sound", SOUND_RECIPE, text])).digest("hex").slice(0, 20);
   const parts = [MODEL, VOICE, speedOf(kind, text), ENCODING];
-  if (METHOD[kind] === "cut") parts.push(CUT); // "text" clips keep their original keys
+  const method = methodOf(kind, text);
+  if (method === "cut") parts.push(CUT); // "text" clips keep their original keys
+  if (method === "lively") parts.push(LIVELY);
   const id = JSON.stringify([...parts, text]);
   return createHash("sha256").update(id).digest("hex").slice(0, 20);
 }
@@ -67,7 +74,7 @@ export function planClips() {
   const clips = new Map();
   const add = (kind, text) => {
     const id = kind + ":" + text;
-    if (!clips.has(id)) clips.set(id, { id, key: keyFor(kind, text), kind, text, speed: speedOf(kind, text), voice: VOICE, method: METHOD[kind] });
+    if (!clips.has(id)) clips.set(id, { id, key: keyFor(kind, text), kind, text, speed: speedOf(kind, text), voice: VOICE, method: methodOf(kind, text) });
   };
   for (const list of lists) {
     for (const e of parseList(list)) for (const c of clipsFor(e)) add(c.kind, c.text);
