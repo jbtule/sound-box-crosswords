@@ -164,7 +164,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - **Editions** (`editions.toml`): one packs file per grade, e.g. Kindergarten
   (`editions/kindergarten.toml`) and 3rd grade (`packs.toml`). The first visit asks "Which
   grade?" (`pickEdition` in `app.js`), unless there's progress from before editions (then
-  `packs.toml`'s) or a `?edition=<id>` link; Settings → Edition (a dropdown) switches. Each
+  `packs.toml`'s) or a `?edition=<id>` link; Settings → Edition (a dropdown) switches. A Home Screen
+  app starts with empty storage, so the page's address (`?start=<id>`) and manifest
+  (`editions/<id>.webmanifest`, which the check keeps equal to `manifest.webmanifest` but for
+  `start_url`) carry the grade in use (`homeScreenEdition` in `app.js`); `?start=` only
+  applies when the device hasn't picked one. Each
   edition keeps its own progress, achievements, collection, colors, Custom list and settings
   (letter pad, syllable colors, auto-speak); the chime is the device's; an edition
   can set the letter pad default (`keyboard = "abc"`) and turn on Sound it out

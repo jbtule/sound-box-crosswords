@@ -29,6 +29,13 @@ for (const f of ["sw.js", "listen/listen.js"]) {
 try {
   const manifest = JSON.parse(readFileSync(join(root, "manifest.webmanifest"), "utf8"));
   for (const i of manifest.icons) if (!existsSync(join(root, i.src))) errors.push(`manifest.webmanifest: missing icon ${i.src}`);
+  // Each edition's copy (homeScreenEdition in app.js): the same app, opening in that grade.
+  const { readEditions } = await import("../js/words.js");
+  for (const ed of readEditions(readFileSync(join(root, "editions.toml"), "utf8"))) {
+    const want = { ...manifest, start_url: `../?start=${ed.id}`, scope: "../", icons: manifest.icons.map((i) => ({ ...i, src: "../" + i.src })) };
+    const f = `editions/${ed.id}.webmanifest`, have = existsSync(join(root, f)) ? readFileSync(join(root, f), "utf8") : "";
+    if (have !== JSON.stringify(want, null, 2) + "\n") errors.push(`${f}: should be manifest.webmanifest opening in this grade:\n${JSON.stringify(want, null, 2)}`);
+  }
 } catch (e) {
   errors.push(`manifest.webmanifest: ${e.message}`);
 }
