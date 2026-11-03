@@ -65,7 +65,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - **Plain static files, no build step.** No framework, no bundler. Browser ES modules
   loaded straight from `index.html`; the source runs as-is with any static server. The
   deploy only runs `scripts/stamp.mjs`, which copies `index.html`, `styles.css`,
-  `packs.toml` and `js/` to `_site/` and stamps the commit: `?v=<sha>` cache busting (JS
+  `packs.toml` and `js/` to `_site/`, writes each edition's manifest (`editions/<id>.webmanifest`), and stamps the commit: `?v=<sha>` cache busting (JS
   modules via the import map, `packs.toml` via `words.js`) and the footer GitHub badge, on the app and the listen check
   (`listen.js` passes the stamp to the word lists and `audio.json`).
   New top-level site files must be added to `SITE` in `stamp.mjs`.
@@ -167,8 +167,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   grade?" (`pickEdition` in `app.js`), unless there's progress from before editions (then
   `packs.toml`'s) or a `?edition=<id>` link; Settings → Edition (a dropdown) switches. A Home Screen
   app starts with empty storage, so the page's address (`?start=<id>`) and manifest
-  (`editions/<id>.webmanifest`, which the check keeps equal to `manifest.webmanifest` but for
-  `start_url`) carry the grade in use (`homeScreenEdition` in `app.js`); `?start=` only
+  (`editions/<id>.webmanifest`, written at deploy by `stamp.mjs` from `manifest.webmanifest`
+  with that `start_url`) carry the grade in use (`homeScreenEdition` in `app.js`); `?start=` only
   applies when the device hasn't picked one. Each
   edition keeps its own progress, achievements, collection, colors, Custom list and settings
   (letter pad, syllable colors, auto-speak); the chime is the device's; an edition
