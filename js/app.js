@@ -435,6 +435,7 @@ function finish() {
   confetti($(".board-card"));
   if (settings.chime) chime();
   say("p", "You solved it!", 0.95);
+  say("p", "Great job!", 0.95);
   $("#nextBtn").focus();
   if (fresh.length) setTimeout(function () { showAwards(fresh); }, 1100); // after the solve celebration
 }

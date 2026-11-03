@@ -77,7 +77,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   spelling (goal 3), and it covers half the screen. Physical keyboards are handled directly.
 - **Target: iPad Safari**, also phones and desktop. Touch first; physical keyboards work too.
   Must fit ~380px wide; the grid sizes cells to fit (`sizeBoard`, 24–50px).
-- **Recorded audio** for pack words, Break it down syllables, sentences, "You solved it!",
+- **Recorded audio** for pack words, Break it down syllables, sentences, "You solved it!" and "Great job!",
   what achievement cards say ("New achievement!", every title and detail: `spokenLines` in
   `achievements.js`, which the check keeps in step with `catalog`),
   and the 46 single sounds for Sound it out (kind `f`; each made the way
@@ -137,7 +137,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `?edition=<id>&pack=<id>` one pack's page (no `edition` means `packs.toml`'s).
   In editions with Sound it out, a word that lists its sounds also gets a *Sound it out* row
   that plays them with the app's pauses, then the word; one mark for the run. Sounds and Phrases cards
-  hold what every grade shares: the 46 single sounds, and "You solved it!" with the
+  hold what every grade shares: the 46 single sounds, and "You solved it!", "Great job!" and the
   achievement pieces.
   It reads `packs.toml` and `audio.json` like the app (locally it falls back to the live
   `audio.json`), and `clipsFor` in `crossword.js` decides each word's clips for both it and
