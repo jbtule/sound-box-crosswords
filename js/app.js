@@ -760,7 +760,7 @@ function hearAward() {
   stopSpeech();
   sayAchievement(a);
 }
-// The card read aloud, line by line ("Champion." "Unit 3." "Every word in this pack.").
+// The card read aloud, line by line ("Champion!" "Unit 3." "Every word in this pack.").
 function sayAchievement(a) {
   spokenParts(a).forEach(function (line) { say("p", line); });
 }
