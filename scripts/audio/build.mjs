@@ -28,7 +28,7 @@ export const VOICE = "af_heart";
 // p = fixed phrase, f = a single sound for Sound it out (its recipe sets its own speed).
 // js/speech.js uses the same kind letters.
 export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95, f: 0.8 };
-export const PHRASES = ["You solved it!"];
+export const PHRASES = ["You solved it!", "Great job!"];
 // Clips that sound wrong at their kind's speed, picked by ear. At 0.9 the cut "shore"
 // sounds like "sure".
 const SPEED_FOR = { "w:shore": 0.8 };

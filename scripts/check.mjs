@@ -131,14 +131,17 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
   for (const n of picks) if (!names.includes(n)) errors.push(`js/phonics.js: SOUNDS is missing "${n}" (scripts/audio/sounds/picks.json)`);
 }
 
-// Achievement cards are read aloud from recordings of spokenLines(); it must cover every
-// title and detail catalog() can produce, or a card falls back to the device voice.
+// Achievement cards are read aloud line by line (spokenParts); spokenLines() must list
+// every line catalog() can produce, or a card falls back to the device voice.
 {
   const { catalog, spokenLines } = await import("../js/achievements.js");
   const packs = [{ id: "blends", name: "Blends", done: 5, total: 5, firsts: 5 }, { id: "mine", name: "Custom", done: 3, total: 3, firsts: 3 }];
   const lines = new Set(spokenLines(packs));
   const big = { packs, clean: 1e6, comeback: 1e6, days: Array.from({ length: 1000 }, (_, i) => "d" + i) };
-  for (const a of catalog(big)) for (const t of [a.title, a.detail]) if (!lines.has(t)) errors.push(`js/achievements.js: spokenLines() is missing "${t}"`);
+  const { spokenParts } = await import("../js/achievements.js");
+  for (const a of catalog(big)) {
+    for (const t of spokenParts(a)) if (!lines.has(t)) errors.push(`js/achievements.js: spokenLines() is missing "${t}"`);
+  }
 }
 
 // Every word list in every edition: { id (for messages), text, custom }.

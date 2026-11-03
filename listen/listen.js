@@ -45,7 +45,7 @@ async function getText(rel) {
 
 // Every page: { id, edition, name, words: [{ syll, pic, clips: [{ kind, text, part, key }] }] }.
 // `name` includes the grade when there's more than one (for reports).
-function pages(ed, multi, data, audio, withPhrases) {
+function pages(ed, multi, data, audio) {
   var out = [];
   function withKeys(clips) {
     return clips.map(function (c) { return Object.assign({}, c, { key: audio.clips[c.kind + ":" + c.text] || null }); });
@@ -65,10 +65,6 @@ function pages(ed, multi, data, audio, withPhrases) {
   }
   Object.keys(data.packs).forEach(function (id) { if (id !== "mine") fromList(id, data.packs[id].name, data.packs[id].list); });
   if (data.starter) fromList("custom", "Custom starter", data.starter);
-  var phrases = Object.keys(audio.clips).filter(function (k) { return k.startsWith("p:"); }).map(function (k) { return k.slice(2); });
-  if (phrases.length && withPhrases) {
-    out.push({ id: "phrases", edition: ed, short: "Phrases", name: (multi ? ed.name + " · " : "") + "Phrases", words: phrases.map(function (p, i) { return withMarkKeys({ w: "phrase" + i, syll: p, pic: "", clips: withKeys([{ kind: "p", text: p }]) }); }) });
-  }
   return out;
 }
 
@@ -142,13 +138,28 @@ function soundsPage(audio) {
     })
   };
 }
-function soundsCard(page) {
-  var li = el("li", "card"), a = el("a");
-  a.href = "?sounds";
-  a.appendChild(el("span", "name", "Sounds"));
-  a.appendChild(pills(counts(page)));
-  li.append(a, el("p", "sub", "Sound it out: each single sound, used by every grade"));
-  return li;
+// Phrases the app says in every grade ("You solved it!", achievement pieces): one card each,
+// on their own page, like Sounds.
+function phrasesPage(audio) {
+  var phrases = Object.keys(audio.clips).filter(function (k) { return k.startsWith("p:"); }).map(function (k) { return k.slice(2); });
+  return {
+    id: "phrases", edition: SOUNDS_ED, short: "Phrases", name: "Phrases",
+    words: phrases.map(function (p) { return withMarkKeys({ w: "phrase:" + p, syll: p, pic: "", clips: [{ kind: "p", text: p, key: audio.clips["p:" + p] }] }); })
+  };
+}
+// The cards for pages shared by every grade (Sounds, Phrases).
+var GLOBAL = { sounds: "Sound it out: each single sound, used by every grade", phrases: "What the app says in every grade: \"You solved it!\" and achievement pieces" };
+function globalCards(all, ul) {
+  Object.keys(GLOBAL).forEach(function (id) {
+    var page = all.find(function (p) { return p.id === id; });
+    if (!page) return;
+    var li = el("li", "card"), a = el("a");
+    a.href = "?" + id;
+    a.appendChild(el("span", "name", page.short));
+    a.appendChild(pills(counts(page)));
+    li.append(a, el("p", "sub", GLOBAL[id]));
+    ul.appendChild(li);
+  });
 }
 function renderIndex(all, eds) {
   if (eds.length === 1) { renderEdition(all, eds[0], false); return; }
@@ -164,8 +175,7 @@ function renderIndex(all, eds) {
     li.append(a, sub);
     ul.appendChild(li);
   });
-  var snd = all.find(function (p) { return p.id === "sounds"; });
-  if (snd) ul.appendChild(soundsCard(snd));
+  globalCards(all, ul);
   list.appendChild(ul);
   setupReport(all, "all grades");
 }
@@ -179,8 +189,7 @@ function renderEdition(all, ed, multi) {
   }
   var list = $("#list"); list.innerHTML = "";
   var ul = indexList(mine);
-  var snd = !multi && all.find(function (p) { return p.id === "sounds"; });
-  if (snd) ul.appendChild(soundsCard(snd));
+  if (!multi) globalCards(all, ul);
   list.appendChild(ul);
   setupReport(mine, multi ? ed.name : "all packs");
 }
@@ -330,9 +339,9 @@ async function start() {
     if (audio && audio.clips) {
       for (var ed of eds) {
         var data = readPacks(await getText("../" + ed.file));
-        all = all.concat(pages(ed, eds.length > 1, data, audio, ed.file === "packs.toml"));
+        all = all.concat(pages(ed, eds.length > 1, data, audio));
       }
-      all.push(soundsPage(audio));
+      all.push(soundsPage(audio), phrasesPage(audio));
     }
   } catch (e) {
     $("#list").appendChild(el("p", "empty", "Couldn't load the word packs. Check the connection and reload."));
@@ -343,7 +352,9 @@ async function start() {
     return;
   }
   var multi = eds.length > 1, edParam = params.get("edition");
-  if (params.has("sounds")) { showPage(all.find(function (p) { return p.id === "sounds"; }), audio, "‹ All grades", "./"); return; }
+  for (var g of Object.keys(GLOBAL)) {
+    if (params.has(g)) { showPage(all.find(function (p) { return p.id === g; }), audio, "‹ All grades", "./"); return; }
+  }
   if (!id && !edParam) { renderIndex(all, eds); return; }
   // No ?edition= means the original one (packs.toml), so older links still work.
   var ed = eds.find(function (e) { return e.id === edParam; }) || (!edParam && (eds.find(function (e) { return e.file === "packs.toml"; }) || eds[0]));
