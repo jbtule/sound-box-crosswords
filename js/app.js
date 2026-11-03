@@ -524,7 +524,7 @@ function renderKeyboard() {
 document.addEventListener("keydown", function (e) {
   if (!$("#sheet").hidden) { if (e.key === "Escape") closeSheet(); return; }
   if (!$("#award").hidden) { // first: it can sit on top of the 🏆 sheet
-    if (e.key === "Enter" && (e.target === $("#awardShare") || e.target === $("#awardPrev") || e.target === $("#awardClose"))) return;
+    if (e.key === "Enter" && (e.target === $("#awardShare") || e.target === $("#awardPrev") || e.target === $("#awardClose") || e.target === $("#awardHear"))) return;
     if (e.key === "Escape") closeAwards();
     else if (e.key === "Enter" || e.key === "ArrowRight") nextAward();
     else if (e.key === "ArrowLeft") prevAward();
@@ -690,7 +690,7 @@ var awardQueue = [], awardIndex = 0, awardSeen = 0, awardFrom = null;
 function showAwards(list, from) {
   awardQueue = list; awardIndex = 0; awardSeen = from ? Infinity : -1; awardFrom = from || null;
   // The edition's name when there's more than one, since Seed or Liftoff exist in each.
-  $("#awardKicker").textContent = (from ? "Achievement" : "New achievement!") + (EDITIONS.length > 1 ? " · " + EDITION.name : "");
+  $("#awardKicker").textContent = (from ? "Achievement" : "New achievement!") + (EDITIONS.length > 1 ? "\n" + EDITION.name : "");
   $("#award").hidden = false;
   showAward(true);
 }
@@ -723,6 +723,7 @@ function showAward(first) {
     say("p", a.title);
     say("p", a.detail);
   }
+  $("#awardHear").hidden = !hasSpeech;
   prepareShare(a);
   $("#awardIcon").textContent = a.icon;
   $("#awardTitle").textContent = a.title;
@@ -748,6 +749,14 @@ function nextAward() {
 }
 function prevAward() {
   if (awardIndex > 0) { awardIndex--; showAward(); }
+}
+// 👂 Hear it on the card: its name and what it took, again (for players who can't read it
+// yet); also on ones reopened from the 🏆 sheet, which aren't read on their own.
+function hearAward() {
+  var a = awardQueue[awardIndex];
+  if (!a) return;
+  say("p", a.title, null, true);
+  say("p", a.detail);
 }
 function closeAwards() {
   if (!awardFrom) stopSpeech();
@@ -861,6 +870,7 @@ $("#trophyBtn").addEventListener("click", openAchievements);
 $("#awardNext").addEventListener("click", nextAward);
 Object.keys(TABS).forEach(function (k) { $(TABS[k][0]).addEventListener("click", function () { showTab(k); }); });
 $("#awardPrev").addEventListener("click", prevAward);
+$("#awardHear").addEventListener("click", hearAward);
 $("#awardClose").addEventListener("click", closeAwards);
 $("#awardShare").addEventListener("click", function () {
   if (shareBlob) shareCard(shareBlob, awardQueue[awardIndex].title);
