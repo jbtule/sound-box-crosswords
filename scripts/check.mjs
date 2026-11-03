@@ -129,6 +129,11 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
   const picks = Object.keys(JSON.parse(readFileSync(join(root, "scripts/audio/sounds/picks.json"), "utf8")));
   for (const n of names) if (!picks.includes(n)) errors.push(`scripts/audio/sounds/picks.json: no pick for the sound "${n}" (js/phonics.js)`);
   for (const n of picks) if (!names.includes(n)) errors.push(`js/phonics.js: SOUNDS is missing "${n}" (scripts/audio/sounds/picks.json)`);
+  // The sounds' clip names don't follow their code on their own (see SOUND_RECIPE).
+  const { SOUND_INPUTS, SOUND_FILES, soundInputs } = await import("./audio/build.mjs");
+  const now = soundInputs();
+  if (now !== SOUND_INPUTS) errors.push(`scripts/audio/build.mjs: ${SOUND_FILES.join(", ")} changed (SOUND_INPUTS is ${SOUND_INPUTS}, now ${now}). ` +
+    `If the Sound it out clips will sound different, also give SOUND_RECIPE a new value (re-records all 46; their listen marks reset). Either way, set SOUND_INPUTS to "${now}".`);
 }
 
 // Achievement cards are read aloud line by line (spokenParts); spokenLines() must list
