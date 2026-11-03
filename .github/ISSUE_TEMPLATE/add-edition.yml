@@ -1,0 +1,69 @@
+name: Add a grade
+description: A new edition with its own packs, progress and achievements, like another grade or one classroom's lists.
+title: "Add grade: "
+labels: ["edition"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        An edition is a separate set of packs. Each one keeps its own progress, achievements, collection and settings,
+        and the first visit asks which one to play. To add words to a grade that's already there, use "Add a word pack" instead.
+
+        **This page is public.** Don't include a child's name, school, teacher, or anything else personal.
+        A classroom can be named generally ("3rd grade, Room 12") rather than by a teacher's name.
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      description: Shown in the "Which grade?" question and in Settings. Can be long.
+      placeholder: "2nd grade"
+    validations:
+      required: true
+  - type: input
+    id: short
+    attributes:
+      label: Short name
+      description: Shown on achievement cards and shared pictures. Up to 16 characters, and different from every other grade's.
+      placeholder: "2nd grade"
+    validations:
+      required: true
+  - type: dropdown
+    id: keyboard
+    attributes:
+      label: Letter pad to start with
+      description: A grown-up can switch it in Settings either way.
+      options:
+        - QWERTY (like a keyboard)
+        - A to Z (easier for kids still learning letters)
+    validations:
+      required: true
+  - type: dropdown
+    id: sound
+    attributes:
+      label: Sound it out
+      description: A button that says each sound of a word (c-a-t) while its letters light up. Best for early readers.
+      options:
+        - "No"
+        - "Yes"
+    validations:
+      required: true
+  - type: textarea
+    id: packs
+    attributes:
+      label: First packs
+      description: |
+        At least one pack to start with: its name, then its words, one per line (10 or more, each 2–12 letters).
+        Photos of word lists work too: drag them in here.
+      placeholder: |
+        Unit 1
+        rain
+        train
+        snail
+        ...
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Who it's for (grade, reading level), school year, how often new lists come, or anything that should work differently.

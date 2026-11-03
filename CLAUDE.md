@@ -292,6 +292,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `persist-credentials: false`.
 - Test in a narrow viewport (~380px) and in dark mode. Make sure long words (9+ letters)
   still fit and the letter pad stays tappable (keys ≥ 44px tall).
+- Issue forms (`.github/ISSUE_TEMPLATE/`): "Add a word pack" and "Add a grade", for people
+  who share word lists without editing files. The pack form's Grade dropdown lists every
+  edition's `name`; the check keeps it in step with `editions.toml`.
 - To add a school unit's spelling list as a pack, use the `add-unit-pack` skill
   (`.claude/skills/add-unit-pack/SKILL.md`): the steps, the word rules, and a PR review table.
 - When adding words, check that the emoji clearly shows that word, and that the spelling

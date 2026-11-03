@@ -1,0 +1,69 @@
+name: Add a word pack
+description: A new list of words for a grade that's already in the app, like this week's school spelling list.
+title: "Add pack: "
+labels: ["word pack"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share the words and we'll turn them into a pack: syllables, pictures, how each part sounds, and sentences.
+        You only need the words; the rest is worked out and shown to you for review in the pull request.
+
+        **This page is public.** Don't include a child's name, school, teacher, or anything else personal.
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Grade
+      description: Which grade (edition) gets the pack. For a grade that isn't listed, use "Add a grade" instead.
+      # Keep in step with editions.toml: every edition's name (npm run check enforces it).
+      options:
+        - "Kindergarten"
+        - "3rd grade"
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of list
+      options:
+        - School spelling list (a unit or week)
+        - High-frequency / sight words (Kindergarten)
+        - A spelling pattern (blends, bossy R, word endings...)
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: Pack name
+      description: The label on the pack button. Short, and it must not spell any of the words.
+      placeholder: "Unit 4"
+    validations:
+      required: true
+  - type: textarea
+    id: words
+    attributes:
+      label: Words
+      description: |
+        One per line, spelled exactly as given. 10 or more, each 2–12 letters (apostrophes are fine, like don't).
+        A photo of the sheet works too: drag it in here.
+        Dashes for syllables, an emoji, or a sentence are welcome but optional: `rain-bow 🌈 "We saw a rainbow."`
+      placeholder: |
+        explore
+        before
+        store
+    validations:
+      required: true
+  - type: dropdown
+    id: bonus
+    attributes:
+      label: Bonus or challenge words
+      options:
+        - There aren't any
+        - Leave them out
+        - Include them
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: School year and unit number, words to skip, a word the class says differently, or a note to show under the pack buttons.
