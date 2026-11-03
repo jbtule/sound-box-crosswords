@@ -136,8 +136,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   grade's packs (each opens to its words, which jump to their cards), and
   `?edition=<id>&pack=<id>` one pack's page (no `edition` means `packs.toml`'s).
   In editions with Sound it out, a word that lists its sounds also gets a *Sound it out* row
-  that plays them with the app's pauses, then the word; one mark for the run. A Sounds card
-  lists all 46 single sounds.
+  that plays them with the app's pauses, then the word; one mark for the run. Sounds and Phrases cards
+  hold what every grade shares: the 46 single sounds, and "You solved it!" with the
+  achievement pieces.
   It reads `packs.toml` and `audio.json` like the app (locally it falls back to the live
   `audio.json`), and `clipsFor` in `crossword.js` decides each word's clips for both it and
   the audio build. Marks are per device (`sbx:listen`), keyed by word, part and clip (the same

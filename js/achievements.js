@@ -41,12 +41,14 @@ export function catalog(state) {
   var out = [];
   state.packs.forEach(function (p) {
     if (p.total < 3) return;
-    out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "Every word in " + p.name, goal: p.total, have: p.done });
+    out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "Every word in " + p.name, goal: p.total, have: p.done,
+      spoken: [[p.name, "Champion"], ["Every word in", p.name]] });
     // Then a Legend: every word right on the first try (at some point, not all at once).
     // Shown once Champion is reached, as the next goal; not for the Custom list ("mine"). It
     // doesn't unlock colors (palettes count pack: achievements only).
     if (p.done >= p.total && p.id !== "mine") {
-      out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "Every word in " + p.name + " right on the first try", goal: p.total, have: p.firsts || 0 });
+      out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "Every word in " + p.name + " right on the first try", goal: p.total, have: p.firsts || 0,
+        spoken: [[p.name, "Legend"], ["Every word in", p.name, "right on the first try"]] });
     }
   });
   var have = { clean: state.clean, comeback: state.comeback, days: state.days.length };
@@ -61,15 +63,19 @@ export function catalog(state) {
   return out;
 }
 
-// Everything an achievement card says aloud, for the given packs ([{ id, name }]): "New
-// achievement!" and every title and detail line that could come up, so the audio build can
-// record them all (scripts/audio/build.mjs). Same wording as catalog().
+// What an achievement card says aloud, as recorded pieces: [title pieces, detail pieces].
+// Pack achievements are put together from the pack's name and fixed words ("Unit 3" +
+// "Champion"), so a new pack only needs its name recorded; the rest are whole lines.
+export function spokenParts(a) {
+  return a.spoken || [[a.title], [a.detail]];
+}
+
+// Every piece a card can say, for the given packs ([{ id, name }]): "New achievement!", the
+// fixed words, each pack's name, and each tier's title and detail, so the audio build can
+// record them all (scripts/audio/build.mjs). The check keeps this in step with catalog().
 export function spokenLines(packs) {
-  var out = ["New achievement!"];
-  packs.forEach(function (p) {
-    out.push(p.name + " Champion", "Every word in " + p.name);
-    if (p.id !== "mine") out.push(p.name + " Legend", "Every word in " + p.name + " right on the first try");
-  });
+  var out = ["New achievement!", "Champion", "Legend", "Every word in", "right on the first try"];
+  packs.forEach(function (p) { out.push(p.name); });
   Object.keys(TIERS).forEach(function (track) {
     TIERS[track].forEach(function (n, i) { var t = tierItem(track, i, 0); out.push(t.title, t.detail); });
   });

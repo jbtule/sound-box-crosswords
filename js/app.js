@@ -4,7 +4,7 @@ import { chime, sparkle } from "./chime.js";
 import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
-import { catalog, award, dayKey, daysThisWeek } from "./achievements.js";
+import { catalog, award, dayKey, daysThisWeek, spokenParts } from "./achievements.js";
 import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle } from "./crossword.js";
 import { speak, say, sayAfter, sayRecorded, hasClip, onClips, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
@@ -723,8 +723,7 @@ function showAward(first) {
     if (!first) stopSpeech();
     if (settings.chime) sayAfter(sparkle);
     say("p", "New achievement!");
-    say("p", a.title);
-    say("p", a.detail);
+    sayAchievement(a);
   }
   $("#awardHear").hidden = !hasSpeech;
   prepareShare(a);
@@ -757,8 +756,12 @@ function prevAward() {
 function hearAward() {
   var a = awardQueue[awardIndex];
   if (!a) return;
-  say("p", a.title, null, true);
-  say("p", a.detail);
+  stopSpeech();
+  sayAchievement(a);
+}
+// The card's title and detail, from recorded pieces ("Unit 3", "Champion").
+function sayAchievement(a) {
+  spokenParts(a).forEach(function (line) { line.forEach(function (piece) { say("p", piece); }); });
 }
 function closeAwards() {
   if (!awardFrom) stopSpeech();
