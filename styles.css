@@ -126,6 +126,8 @@ h1 span { color: var(--accent); }
 .award-dots span { width: 8px; height: 8px; border-radius: 999px; background: var(--key-edge); }
 .award-dots span.on { background: var(--accent); }
 .award-nav { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+.award .award-hear { min-height: 44px; }
+.award .kicker { padding: 0 36px; white-space: pre-line; } /* the edition on its own line, clear of the ✕ */
 .award-nav .ghost { min-width: 48px; min-height: 48px; font-size: 1.4rem; padding: 0; }
 .award-nav #awardShare { font-size: 1rem; padding: 0 14px; }
 .award .primary { min-width: 140px; min-height: 48px; }

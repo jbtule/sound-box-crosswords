@@ -78,6 +78,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - **Target: iPad Safari**, also phones and desktop. Touch first; physical keyboards work too.
   Must fit ~380px wide; the grid sizes cells to fit (`sizeBoard`, 24–50px).
 - **Recorded audio** for pack words, Break it down syllables, sentences, "You solved it!",
+  what achievement cards say ("New achievement!", every title and detail: `spokenLines` in
+  `achievements.js`, which the check keeps in step with `catalog`),
   and the 46 single sounds for Sound it out (kind `f`; each made the way
   `scripts/audio/sounds/picks.json` says, picked by ear from the candidates
   `scripts/audio/sounds/run.sh` makes with `lab.py`; their clip names hash those files, so a

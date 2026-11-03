@@ -61,6 +61,21 @@ export function catalog(state) {
   return out;
 }
 
+// Everything an achievement card says aloud, for the given packs ([{ id, name }]): "New
+// achievement!" and every title and detail line that could come up, so the audio build can
+// record them all (scripts/audio/build.mjs). Same wording as catalog().
+export function spokenLines(packs) {
+  var out = ["New achievement!"];
+  packs.forEach(function (p) {
+    out.push(p.name + " Champion", "Every word in " + p.name);
+    if (p.id !== "mine") out.push(p.name + " Legend", "Every word in " + p.name + " right on the first try");
+  });
+  Object.keys(TIERS).forEach(function (track) {
+    TIERS[track].forEach(function (n, i) { var t = tierItem(track, i, 0); out.push(t.title, t.detail); });
+  });
+  return out.filter(function (x, i) { return out.indexOf(x) === i; });
+}
+
 // Records newly met achievements in `earned` ({ id: timestamp }) and returns them.
 export function award(state, earned, now) {
   return catalog(state).filter(function (a) {

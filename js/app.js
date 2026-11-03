@@ -1,12 +1,12 @@
 // Game state, play logic, rendering, and the settings sheet.
 import { confetti } from "./confetti.js";
-import { chime } from "./chime.js";
+import { chime, sparkle } from "./chime.js";
 import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
 import { catalog, award, dayKey, daysThisWeek } from "./achievements.js";
 import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle } from "./crossword.js";
-import { speak, say, sayRecorded, hasClip, onClips, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
+import { speak, say, sayAfter, sayRecorded, hasClip, onClips, stopSpeech, speechEpoch, hasSpeech, listVoices, setVoice, onVoicesChanged } from "./speech.js";
 
 var $ = function (s) { return document.querySelector(s); };
 
@@ -524,7 +524,7 @@ function renderKeyboard() {
 document.addEventListener("keydown", function (e) {
   if (!$("#sheet").hidden) { if (e.key === "Escape") closeSheet(); return; }
   if (!$("#award").hidden) { // first: it can sit on top of the 🏆 sheet
-    if (e.key === "Enter" && (e.target === $("#awardShare") || e.target === $("#awardPrev") || e.target === $("#awardClose"))) return;
+    if (e.key === "Enter" && (e.target === $("#awardShare") || e.target === $("#awardPrev") || e.target === $("#awardClose") || e.target === $("#awardHear"))) return;
     if (e.key === "Escape") closeAwards();
     else if (e.key === "Enter" || e.key === "ArrowRight") nextAward();
     else if (e.key === "ArrowLeft") prevAward();
@@ -690,9 +690,9 @@ var awardQueue = [], awardIndex = 0, awardSeen = 0, awardFrom = null;
 function showAwards(list, from) {
   awardQueue = list; awardIndex = 0; awardSeen = from ? Infinity : -1; awardFrom = from || null;
   // The edition's name when there's more than one, since Seed or Liftoff exist in each.
-  $("#awardKicker").textContent = (from ? "Achievement" : "New achievement!") + (EDITIONS.length > 1 ? " · " + EDITION.name : "");
+  $("#awardKicker").textContent = (from ? "Achievement" : "New achievement!") + (EDITIONS.length > 1 ? "\n" + EDITION.name : "");
   $("#award").hidden = false;
-  showAward();
+  showAward(true);
 }
 // Share: the PNG is made as soon as a card shows, because iPad Safari only opens the share
 // sheet straight from a tap (no waiting on drawing in between).
@@ -714,8 +714,19 @@ function prepareShare(a) {
     $("#awardShare").hidden = false;
   }).catch(function () {}); // no canvas: just no Share button
 }
-function showAward() {
+function showAward(first) {
   var a = awardQueue[awardIndex], n = awardQueue.length, last = awardIndex === n - 1;
+  // A new one gets a sparkle (with the Chime setting) and is read aloud: "New achievement!",
+  // its name, what it took. The first waits for "You solved it!"; moving to another card
+  // replaces what's being said.
+  if (!awardFrom) {
+    if (!first) stopSpeech();
+    if (settings.chime) sayAfter(sparkle);
+    say("p", "New achievement!");
+    say("p", a.title);
+    say("p", a.detail);
+  }
+  $("#awardHear").hidden = !hasSpeech;
   prepareShare(a);
   $("#awardIcon").textContent = a.icon;
   $("#awardTitle").textContent = a.title;
@@ -729,10 +740,9 @@ function showAward() {
   $("#awardNext").textContent = last ? "Nice!" : "Next";
   var card = $("#award .award-card");
   card.classList.remove("pop"); void card.offsetWidth; card.classList.add("pop");
-  if (awardIndex > awardSeen) { // celebrate each one the first time it's shown
-    awardSeen = awardIndex;
+  if (awardIndex > awardSeen) { // celebrate each one the first time it's shown (its sound is
+    awardSeen = awardIndex;    // the sparkle, queued with the words above)
     confetti(card);
-    if (settings.chime) chime();
   }
   $("#awardNext").focus();
 }
@@ -742,7 +752,16 @@ function nextAward() {
 function prevAward() {
   if (awardIndex > 0) { awardIndex--; showAward(); }
 }
+// 👂 Hear it on the card: its name and what it took, again (for players who can't read it
+// yet); also on ones reopened from the 🏆 sheet, which aren't read on their own.
+function hearAward() {
+  var a = awardQueue[awardIndex];
+  if (!a) return;
+  say("p", a.title, null, true);
+  say("p", a.detail);
+}
 function closeAwards() {
+  if (!awardFrom) stopSpeech();
   $("#award").hidden = true;
   shareFor = shareBlob = null;
   (awardFrom || $("#nextBtn")).focus();
@@ -853,6 +872,7 @@ $("#trophyBtn").addEventListener("click", openAchievements);
 $("#awardNext").addEventListener("click", nextAward);
 Object.keys(TABS).forEach(function (k) { $(TABS[k][0]).addEventListener("click", function () { showTab(k); }); });
 $("#awardPrev").addEventListener("click", prevAward);
+$("#awardHear").addEventListener("click", hearAward);
 $("#awardClose").addEventListener("click", closeAwards);
 $("#awardShare").addEventListener("click", function () {
   if (shareBlob) shareCard(shareBlob, awardQueue[awardIndex].title);

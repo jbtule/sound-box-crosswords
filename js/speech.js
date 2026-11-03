@@ -166,6 +166,14 @@ export function sayRecorded(kind, text) {
   return queue;
 }
 
+// Runs fn (which may return a promise) in turn in the same queue as say(), e.g. a sound
+// effect between two spoken lines. Skipped if speech is stopped before its turn.
+export function sayAfter(fn) {
+  var my = epoch;
+  queue = queue.then(function () { if (my === epoch) return fn(); });
+  return queue;
+}
+
 // Stops the clip or speech in progress and drops anything queued.
 export function stopSpeech() {
   epoch++;
