@@ -65,7 +65,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   loaded straight from `index.html`; the source runs as-is with any static server. The
   deploy only runs `scripts/stamp.mjs`, which copies `index.html`, `styles.css`,
   `packs.toml` and `js/` to `_site/` and stamps the commit: `?v=<sha>` cache busting (JS
-  modules via the import map, `packs.toml` via `words.js`) and the footer GitHub badge.
+  modules via the import map, `packs.toml` via `words.js`) and the footer GitHub badge, on the app and the listen check
+  (`listen.js` passes the stamp to the word lists and `audio.json`).
   New top-level site files must be added to `SITE` in `stamp.mjs`.
 - **Dependencies are fine** when they earn their place. Browser deps load from a CDN via
   the import map in `index.html`, pinned to an exact version that matches `package.json`

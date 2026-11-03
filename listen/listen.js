@@ -31,14 +31,21 @@ function markOf(c) {
 function state(c) { var m = markOf(c); return !m || m.cleared ? "new" : m.ok ? "ok" : "bad"; }
 function withMarkKeys(word) { word.clips.forEach(function (c) { c.mk = markKey(word.w, c); }); return word; }
 
+// Site files, carrying this script's ?v= stamp (added at deploy, as in the app) so a new
+// deploy's word lists and recordings aren't served from a cache. Locally there's none.
+function stamped(rel) {
+  var url = new URL(rel, location.href);
+  url.search = new URL(import.meta.url).search;
+  return url.href;
+}
 // The live site's copies when running locally (no audio.json without a deploy).
 async function getJSON(rel, fallback) {
-  var res = await fetch(rel).catch(function () { return null; });
+  var res = await fetch(stamped(rel)).catch(function () { return null; });
   if ((!res || !res.ok) && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) res = await fetch(fallback).catch(function () { return null; });
   return res && res.ok ? res.json() : null;
 }
 async function getText(rel) {
-  var res = await fetch(rel);
+  var res = await fetch(stamped(rel));
   if (!res.ok) throw new Error(rel + ": HTTP " + res.status);
   return res.text();
 }
