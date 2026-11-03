@@ -19,6 +19,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { readPacks, readEditions } from "../../js/words.js";
+import { spokenLines } from "../../js/achievements.js";
 import { parseList, clipsFor } from "../../js/crossword.js";
 
 export const MODEL = "kokoro-v1.0";
@@ -72,6 +73,12 @@ export function planClips() {
     for (const e of parseList(list)) for (const c of clipsFor(e)) add(c.kind, c.text);
   }
   PHRASES.forEach((p) => add("p", p));
+  // What achievement cards say aloud: "New achievement!", titles and details, for every
+  // edition's packs.
+  for (const ed of readEditions(readFileSync(join(root, "editions.toml"), "utf8"))) {
+    const { packs } = readPacks(readFileSync(join(root, ed.file), "utf8"));
+    spokenLines(Object.entries(packs).map(([id, p]) => ({ id, name: p.name }))).forEach((t) => add("p", t));
+  }
   // Every Sound it out sound, whether or not a word uses it yet (the listen check plays them all).
   Object.keys(JSON.parse(readFileSync(join(root, "scripts/audio/sounds/picks.json"), "utf8"))).forEach((name) => add("f", name));
   return [...clips.values()];

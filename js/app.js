@@ -692,7 +692,7 @@ function showAwards(list, from) {
   // The edition's name when there's more than one, since Seed or Liftoff exist in each.
   $("#awardKicker").textContent = (from ? "Achievement" : "New achievement!") + (EDITIONS.length > 1 ? " · " + EDITION.name : "");
   $("#award").hidden = false;
-  showAward();
+  showAward(true);
 }
 // Share: the PNG is made as soon as a card shows, because iPad Safari only opens the share
 // sheet straight from a tap (no waiting on drawing in between).
@@ -714,8 +714,15 @@ function prepareShare(a) {
     $("#awardShare").hidden = false;
   }).catch(function () {}); // no canvas: just no Share button
 }
-function showAward() {
+function showAward(first) {
   var a = awardQueue[awardIndex], n = awardQueue.length, last = awardIndex === n - 1;
+  // A new one is read aloud: "New achievement!", its name, what it took. The first waits
+  // for "You solved it!"; moving to another card replaces what's being said.
+  if (!awardFrom) {
+    say("p", "New achievement!", null, !first);
+    say("p", a.title);
+    say("p", a.detail);
+  }
   prepareShare(a);
   $("#awardIcon").textContent = a.icon;
   $("#awardTitle").textContent = a.title;
@@ -743,6 +750,7 @@ function prevAward() {
   if (awardIndex > 0) { awardIndex--; showAward(); }
 }
 function closeAwards() {
+  if (!awardFrom) stopSpeech();
   $("#award").hidden = true;
   shareFor = shareBlob = null;
   (awardFrom || $("#nextBtn")).focus();
