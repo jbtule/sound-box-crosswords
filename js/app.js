@@ -176,11 +176,15 @@ var P = null; // current puzzle, from makePuzzle()
 var fill = {}, locked = {}, doneW = {}, cur = 0, pos = 0, misses = 0, finished = false;
 var missedW = {}; // word indexes with a wrong try in this puzzle
 var newPics = 0;  // pictures added to the collection in this puzzle
+// For the secret achievements, this puzzle so far: words a listening helper was used on
+// before they were finished (`helped`), words finished by a crossing word (`crossed`), a
+// word that finished a crossing word too (`twofer`), and letters typed on real keys (`keys`).
+var pz = { helped: {}, crossed: {}, twofer: false, keys: false };
 
 function newPuzzle() {
   if (updateReady) { location.reload(); return; }
   $("#done").hidden = true;
-  finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {}; newPics = 0;
+  finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {}; newPics = 0; pz = { helped: {}, crossed: {}, twofer: false, keys: false };
   var pool = entries(packId);
   if (pool.length < 3) { P = null; renderEmpty(); return; }
   var pp = packProgress(packId), words = pool.map(function (e) { return e.w; });
@@ -290,7 +294,7 @@ function update() {
 function savePuzzle() {
   store.set("puzzle", P && !finished ? {
     pack: packId, words: P.words.map(function (W) { return { w: W.w, r: W.r, c: W.c, dir: W.dir }; }),
-    fill: fill, locked: locked, doneW: doneW, cur: cur, pos: pos, misses: misses, missedW: missedW, newPics: newPics, recent: recent
+    fill: fill, locked: locked, doneW: doneW, cur: cur, pos: pos, misses: misses, missedW: missedW, newPics: newPics, pz: pz, recent: recent
   } : null);
 }
 // On launch: the saved puzzle, if it's for the current pack and every word is still in it.
@@ -302,6 +306,7 @@ function loadPuzzle() {
   P = p; finished = false;
   fill = s.fill || {}; locked = s.locked || {}; doneW = s.doneW || {};
   misses = s.misses || 0; missedW = s.missedW || {}; newPics = s.newPics || 0;
+  pz = Object.assign({ helped: {}, crossed: {}, twofer: false, keys: false }, s.pz);
   recent = Array.isArray(s.recent) ? s.recent : [];
   renderBoard();
   renderClues();
@@ -428,10 +433,12 @@ function complete(i, typed) {
     st.n++;
     if (!missedW[i]) { if (!st.ok) newPics++; st.ok++; } // first first-try: its picture is collected
   }
+  if (!typed) pz.crossed[i] = true;
   if (pp.round.indexOf(W.w) < 0) pp.round.push(W.w);
   store.set("progress", progress);
   renderProgress();
-  W.cells.forEach(settleCrossings); // its letters may have finished a crossing word
+  var both = W.cells.map(settleCrossings).some(Boolean); // its letters may have finished a crossing word
+  if (both && typed) pz.twofer = true;
   if (Object.keys(doneW).length === P.words.length) { setTimeout(finish, 700); return; }
   if (i === cur) {
     var nx = nextUnfinished();
@@ -447,10 +454,16 @@ function finish() {
   log = log.slice(0, LOG_MAX);
   store.set("log", log);
   if (misses === 0) counts.clean++;
+  if (pz.twofer) counts.twofer = (counts.twofer || 0) + 1;
+  if (settings.kb === "qwerty" || pz.keys) counts.qwerty = (counts.qwerty || 0) + 1;
+  if (listenedToAll()) counts.listener = (counts.listener || 0) + 1;
+  var wd = new Date().getDay();
+  if (wd === 0 || wd === 6) counts.weekend = (counts.weekend || 0) + 1; // this puzzle, not past weekends
   store.set("counts", counts);
   var today = dayKey(Date.now());
   if (days.indexOf(today) < 0) { days.push(today); store.set("days", days); }
-  var fresh = checkAchievements();
+  // Secret ones earned outside a puzzle and not opened yet join this puzzle's.
+  var fresh = checkAchievements().concat(takePending());
   renderPacks();
   update();
   var parts = [P.words.length + " words"];
@@ -491,6 +504,7 @@ async function clap() {
   clapping = true;
   var W = P.words[cur], idx = 0;
   if (W.chunks.length < 2) { clapping = false; return; }
+  if (!doneW[cur]) pz.helped[cur] = true;
   stopSpeech();
   var my = speechEpoch(); // another tap that stops speech also ends the clap
   for (var ci = 0; ci < W.chunks.length && speechEpoch() === my; ci++) {
@@ -518,6 +532,7 @@ async function soundOut() {
   var W = P.words[cur];
   if (!canSoundOut(W)) return;
   clapping = true;
+  if (!doneW[cur]) pz.helped[cur] = true;
   stopSpeech();
   var my = speechEpoch();
   // Box index for each letter that makes a sound (an apostrophe has a box but no sound).
@@ -532,6 +547,16 @@ async function soundOut() {
   }
   if (speechEpoch() === my) await say("w", W.w, 0.8);
   clapping = false;
+}
+
+// Good Listener: Break it down or Sound it out on every word that has one (at least 3),
+// before spelling it. Words a crossing word finished don't need it.
+function listenedToAll() {
+  var want = P.words.map(function (W, i) { return i; }).filter(function (i) {
+    var W = P.words[i];
+    return !pz.crossed[i] && (W.chunks.length > 1 || canSoundOut(W));
+  });
+  return want.length >= 3 && want.every(function (i) { return pz.helped[i]; });
 }
 
 /* ---------- letter pad and physical keyboard ---------- */
@@ -568,7 +593,7 @@ document.addEventListener("keydown", function (e) {
   if (!$("#achSheet").hidden) { if (e.key === "Escape") closeAchievements(); return; }
   if (!$("#shareSheet").hidden) { if (e.key === "Escape") closeShare(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  if (/^[a-z]$/i.test(e.key)) { input(e.key.toLowerCase()); e.preventDefault(); }
+  if (/^[a-z]$/i.test(e.key)) { if (P && !finished) pz.keys = true; input(e.key.toLowerCase()); e.preventDefault(); }
   else if (e.key === "'" || e.key === "\u2019") { input("'"); e.preventDefault(); } // iPad keyboards type ’
   else if (e.key === "Backspace") { back(); e.preventDefault(); }
 });
@@ -661,7 +686,7 @@ $("#editionSel").addEventListener("change", function (e) {
 // achievements would bring them straight back. Typing the phrase keeps it from happening
 // by accident.
 var RESET_PHRASE = "start over";
-var RESET_KEYS = ["achievements", "progress", "counts", "days", "log", "stars", "puzzle"];
+var RESET_KEYS = ["achievements", "progress", "counts", "days", "log", "stars", "puzzle", "pending"];
 function resetMatches() { return $("#resetText").value.trim().toLowerCase() === RESET_PHRASE; }
 $("#resetOpen").addEventListener("click", function () {
   $("#resetOpen").hidden = true; $("#resetBox").hidden = false; $("#resetText").focus();
@@ -698,9 +723,53 @@ function achState() {
       var firsts = entries(id).filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
       return { id: id, name: PACKS[id].name, done: c.done, total: c.total, firsts: firsts };
     }),
-    clean: counts.clean, comeback: counts.comeback, days: days
+    clean: counts.clean, comeback: counts.comeback, days: days, edition: EDITION.name,
+    secret: { listener: counts.listener, twofer: counts.twofer, shared: counts.shared, look: counts.look, peek: counts.peek, qwerty: counts.qwerty, weekend: counts.weekend, words: wordsRight() }
   };
 }
+// Words spelled right (typed, not finished by a crossing word), in every pack.
+function wordsRight() {
+  var n = 0;
+  Object.keys(progress).forEach(function (id) {
+    var stats = (progress[id] && progress[id].stats) || {};
+    Object.keys(stats).forEach(function (w) { n += stats[w].n || 0; });
+  });
+  return n;
+}
+// Secret achievements earned outside a puzzle (sharing, colors, the collection) don't
+// interrupt: they wait in `pending` (saved, so they outlast closing the app) behind a pill
+// that stays until it's tapped, then show as cards. A puzzle solved meanwhile shows them
+// with its own. The pill waits while a sheet or card is open.
+var pending = store.get("pending", []), pillChime = false;
+function noteSecret(key) {
+  counts[key] = (counts[key] || 0) + 1;
+  store.set("counts", counts);
+  var fresh = checkAchievements();
+  if (!fresh.length) return;
+  fresh.forEach(function (a) { if (pending.indexOf(a.id) < 0) pending.push(a.id); });
+  store.set("pending", pending);
+  pillChime = true;
+  refreshPill();
+}
+function takePending() {
+  if (!pending.length) return [];
+  var all = catalog(achState()), out = pending.map(function (id) { return all.find(function (a) { return a.id === id; }); }).filter(Boolean);
+  pending = []; store.set("pending", pending);
+  refreshPill();
+  return out;
+}
+function refreshPill() {
+  var pill = $("#secretPill"), open = !$("#sheet").hidden || !$("#achSheet").hidden || !$("#shareSheet").hidden || !$("#award").hidden || !$("#gradeAsk").hidden;
+  var show = pending.length > 0 && !open;
+  $("#secretText").textContent = pending.length > 1 ? pending.length + " secret achievements!" : "Secret achievement!";
+  if (show && pill.hidden) { pill.classList.remove("show"); void pill.offsetWidth; pill.classList.add("show"); }
+  pill.hidden = !show;
+  if (show && pillChime) { pillChime = false; if (settings.chime) chime(); }
+}
+$("#secretPill").addEventListener("click", function () {
+  var list = takePending();
+  if (list.length) showAwards(list);
+});
 // Awards anything newly met and returns it (for the solved card). Never lets a problem
 // here (e.g. odd saved data) stop the game.
 function checkAchievements() {
@@ -726,7 +795,6 @@ var awardQueue = [], awardIndex = 0, awardSeen = 0, awardFrom = null;
 function showAwards(list, from) {
   awardQueue = list; awardIndex = 0; awardSeen = from ? Infinity : -1; awardFrom = from || null;
   // The edition's name when there's more than one, since Seed or Liftoff exist in each.
-  $("#awardKicker").textContent = (from ? "Achievement" : "New achievement!") + (EDITIONS.length > 1 ? "\n" + EDITION.name : "");
   $("#award").hidden = false;
   showAward(true);
 }
@@ -761,10 +829,12 @@ function showAward(first) {
   // A new one gets a sparkle (with the Chime setting) and is read aloud: "New achievement!",
   // its name, what it took. The first waits for "You solved it!"; moving to another card
   // replaces what's being said.
+  var kicker = awardFrom ? "Achievement" : a.secret ? "Secret achievement!" : "New achievement!";
+  $("#awardKicker").textContent = kicker + (EDITIONS.length > 1 ? "\n" + EDITION.name : "");
   if (!awardFrom) {
     if (!first) stopSpeech();
     if (settings.chime) sayAfter(sparkle);
-    say("p", "New achievement!");
+    say("p", kicker);
     sayAchievement(a);
   }
   $("#awardHear").hidden = !hasSpeech;
@@ -812,6 +882,7 @@ function closeAwards() {
   $("#award").hidden = true;
   shareFor = shareBlob = null;
   (awardFrom || $("#nextBtn")).focus();
+  refreshPill();
 }
 // Picture collection (sticker book), per pack: a word's picture is collected the first
 // time it's spelled right on the first try (stats ok > 0). Pictures only, never words;
@@ -834,7 +905,7 @@ function renderCollection() {
         slot.setAttribute("aria-label", "Collected picture, hear the word");
         if (e.pic) slot.textContent = e.pic;
         else slot.innerHTML = stickers[e.w]; // the game shows a sound wave; the collection, a sound sticker
-        slot.addEventListener("click", function () { say("w", e.w, 0.85, true); });
+        slot.addEventListener("click", function () { say("w", e.w, 0.85, true); if (!earned["secret:peek"]) noteSecret("peek"); });
       } else {
         slot.setAttribute("aria-label", "Not collected yet");
       }
@@ -859,7 +930,9 @@ function renderColors() {
     b.innerHTML = '<span class="pal-boxes" aria-hidden="true"><i class="a cur"></i><i class="a"></i><i class="b"></i><i class="b"></i></span><span class="pal-name"></span>';
     b.querySelector(".pal-name").textContent = locked ? "🔒 Locked" : pal.name;
     b.addEventListener("click", function () {
+      var changed = pal.id !== document.documentElement.dataset.palette;
       settings.palette = pal.id; saveSettings(); applyPalette();
+      if (changed && !earned["secret:look"]) noteSecret("look");
       renderColors();
       $('#palList [data-palette="' + pal.id + '"]').focus();
     });
@@ -886,12 +959,12 @@ function openAchievements() {
   all = all.filter(function (a) { return earned[a.id] || a.have > 0 || a.id.indexOf("pack:") !== 0; });
   all.sort(function (a, b) { return (earned[b.id] || 0) - (earned[a.id] || 0); });
   all.forEach(function (a) {
-    var got = !!earned[a.id], li = document.createElement("li");
+    var got = !!earned[a.id], hide = a.secret && !got, li = document.createElement("li");
     li.className = "ach" + (got ? " got" : "");
     var icon = document.createElement("span"), text = document.createElement("span"), sub = document.createElement("small");
-    icon.className = "icon"; icon.textContent = a.icon;
-    text.className = "text"; text.textContent = a.title;
-    sub.textContent = got ? a.detail + " · " + new Date(earned[a.id]).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    icon.className = "icon"; icon.textContent = hide ? "❓" : a.icon;
+    text.className = "text"; text.textContent = hide ? "???" : a.title;
+    sub.textContent = hide ? "Secret achievement" : got ? a.detail + " · " + new Date(earned[a.id]).toLocaleDateString(undefined, { month: "short", day: "numeric" })
       : a.detail + " · " + Math.min(a.have, a.goal) + " of " + a.goal;
     text.appendChild(sub);
     li.append(icon, text);
@@ -906,8 +979,8 @@ function openAchievements() {
   $("#achSheet").hidden = false;
   $("#achClose").focus();
 }
-function closeAchievements() { $("#achSheet").hidden = true; $("#trophyBtn").focus(); }
-function closeSheet() { $("#sheet").hidden = true; $("#settingsBtn").focus(); }
+function closeAchievements() { $("#achSheet").hidden = true; $("#trophyBtn").focus(); refreshPill(); }
+function closeSheet() { $("#sheet").hidden = true; $("#settingsBtn").focus(); refreshPill(); }
 function saveSettings() {
   var own = {}, shared = {};
   Object.keys(settings).forEach(function (k) { (SHARED.indexOf(k) >= 0 ? shared : own)[k] = settings[k]; });
@@ -922,7 +995,7 @@ $("#awardPrev").addEventListener("click", prevAward);
 $("#awardHear").addEventListener("click", hearAward);
 $("#awardClose").addEventListener("click", closeAwards);
 $("#awardShare").addEventListener("click", function () {
-  if (shareBlob) shareCard(shareBlob, awardQueue[awardIndex].title);
+  if (shareBlob) shareCard(shareBlob, awardQueue[awardIndex].title).then(function (done) { if (done && !earned["secret:shared"]) noteSecret("shared"); });
 });
 $("#award").addEventListener("click", function (e) { if (e.target === $("#award")) closeAwards(); });
 // Swipe left/right on the card to cycle.
@@ -1028,7 +1101,7 @@ function openShare() {
   $("#shareSheet").hidden = false;
   $("#shareClose").focus();
 }
-function closeShare() { $("#shareSheet").hidden = true; $("#shareBtn").focus(); }
+function closeShare() { $("#shareSheet").hidden = true; $("#shareBtn").focus(); refreshPill(); }
 $("#shareBtn").addEventListener("click", openShare);
 ["shareOne", "shareAll"].forEach(function (id) { $("#" + id).addEventListener("change", renderShare); });
 $("#shareClose").addEventListener("click", closeShare);
@@ -1086,7 +1159,11 @@ document.addEventListener("visibilitychange", function () {
     .catch(function () {});
 });
 
-checkAchievements(); // quietly award anything already met (e.g. from before this update)
+// Quietly award anything already met (e.g. from before this update); a secret one met that
+// way waits behind the pill instead, since it's a surprise worth seeing.
+checkAchievements().forEach(function (a) { if (a.secret && pending.indexOf(a.id) < 0) pending.push(a.id); });
+store.set("pending", pending);
+refreshPill();
 renderPacks();
 renderKeyboard();
 if (!loadPuzzle()) newPuzzle();

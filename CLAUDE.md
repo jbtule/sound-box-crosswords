@@ -213,9 +213,18 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   records newly met ones in `sbx:achievements` ({ id: time }); earned ones are never taken
   away (no streaks). Inputs saved by `app.js`: `sbx:counts` { clean, comeback } and
   `sbx:days` (local "YYYY-MM-DD" with a finished puzzle), backfilled from `sbx:log` once.
+  Champion of Champions and then Legend of Legends: every pack's Champion / Legend, in grades
+  with at least 5 packs (Custom doesn't count). Secret achievements (`SECRETS`: Good Listener,
+  Two for One, Triple Digits, Weekend Speller, Touch Typist, Show-Off, New Look, Collector's
+  Eye) show as ??? in the 🏆 sheet until earned, with no hint, and their card says "Secret
+  achievement!"; their counts are in `sbx:counts` too (puzzle ones from `pz`, this puzzle's
+  flags in `app.js`).
   Shown on the solved card, as a big card per new achievement (`showAwards`, after the
-  solve celebration; achievements awarded quietly at startup never pop up), in the 🏆
-  sheet, and as a "You got it this time!" toast.
+  solve celebration; achievements awarded quietly at startup never pop up, except secret
+  ones), in the 🏆 sheet, and as a "You got it this time!" toast. A secret earned outside a
+  puzzle (sharing, colors, the collection) doesn't interrupt: it waits in `sbx:pending` behind
+  the 🕵️ pill under the title (`refreshPill`), which stays until tapped and waits while a
+  sheet or card is open; a puzzle solved meanwhile shows it with its own.
 - Picture collection (🏆 sheet, Collection tab; `renderCollection` in `app.js`): a word's
   picture is collected the first time it's spelled right on the first try (`stats.ok > 0`).
   Pictures only, never words (slots are labeled "collected" / "not yet"); tapping a
@@ -263,7 +272,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
   - Settings sheet: `openSheet` / `closeSheet` and the change handlers below them.
   - Start over (Settings): clears this edition's `achievements`, `progress`, `counts`, `days`,
-    `log`, `stars` and `puzzle` (`RESET_KEYS`) and the color scheme, once "start over" is
+    `log`, `stars`, `puzzle` and `pending` (`RESET_KEYS`) and the color scheme, once "start over" is
     typed. Achievements, stars, pictures and colors are all worked out from progress, so
     clearing only achievements would bring them back. Settings and the Custom list stay.
 

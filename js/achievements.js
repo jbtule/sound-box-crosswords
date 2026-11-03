@@ -7,6 +7,9 @@
 //   clean:    puzzles finished with no try-agains
 //   comeback: words spelled right on the first try after an earlier miss
 //   days:     ["YYYY-MM-DD", ...] local days with a finished puzzle
+//   edition:  the grade's name ("3rd grade"), for Champion of Champions and Legend of Legends
+//   secret:   { listener, twofer, shared, look, peek, words, qwerty, weekend } counts for the
+//             secret achievements (SECRETS)
 // }
 
 var TIERS = {
@@ -29,6 +32,21 @@ var LABELS = {
   comeback: { tiers: [["🏀", "Bounce Back"], ["🐢", "Keep Going"], ["🧗", "Climber"], ["🦸", "Spelling Hero"], ["🐉", "Dragon Heart"]],
     detail: function (n) { return n === 1 ? "1 word right first try after missing it" : n + " words right first try after missing them"; } }
 };
+
+// Secret achievements: shown as ??? in the 🏆 sheet until earned, and their card says
+// "Secret achievement!". Each counts something in state.secret.
+var SECRETS = [
+  { key: "listener", goal: 1, icon: "👂", title: "Good Listener", detail: "Used the listening helpers on every word in a puzzle" },
+  { key: "twofer", goal: 1, icon: "✌️", title: "Two for One", detail: "Finished two words at once" },
+  { key: "words", goal: 100, icon: "💯", title: "Triple Digits", detail: "100 words spelled right" },
+  { key: "weekend", goal: 1, icon: "📅", title: "Weekend Speller", detail: "Finished a puzzle on the weekend" },
+  { key: "qwerty", goal: 5, icon: "⌨️", title: "Touch Typist", detail: "5 puzzles typed on the QWERTY keys" },
+  { key: "shared", goal: 1, icon: "📣", title: "Show-Off", detail: "Shared an achievement" },
+  { key: "look", goal: 1, icon: "🎨", title: "New Look", detail: "Picked new colors" },
+  { key: "peek", goal: 1, icon: "👀", title: "Collector's Eye", detail: "Heard a word from the collection" }
+];
+// The whole grade at once, for grades with at least this many packs (Custom doesn't count).
+var GRAND_MIN = 5;
 
 function tierItem(track, i, have) {
   var l = LABELS[track], n = TIERS[track][i];
@@ -54,6 +72,20 @@ export function catalog(state) {
         spoken: ["Legend!", p.name, "Every word right on the first try"] });
     }
   });
+  // Champion of Champions: every pack's Champion; then Legend of Legends: every pack's Legend.
+  // On screen they name the grade; what's said is the same for every grade.
+  var real = state.packs.filter(function (p) { return p.id !== "mine" && p.total > 0; });
+  if (real.length >= GRAND_MIN) {
+    var champs = real.filter(function (p) { return p.done >= p.total; }).length;
+    var legends = real.filter(function (p) { return (p.firsts || 0) >= p.total; }).length;
+    var where = state.edition || "every pack";
+    out.push({ id: "grand:champion", icon: "👑", title: "Champion of Champions", detail: "Every word in " + where, goal: real.length, have: champs,
+      spoken: ["Champion of Champions!", "Every word in every pack"] });
+    if (champs >= real.length) {
+      out.push({ id: "grand:legend", icon: "🌠", title: "Legend of Legends", detail: "Every word in " + where + " right on the first try", goal: real.length, have: legends,
+        spoken: ["Legend of Legends!", "Every word in every pack, right on the first try"] });
+    }
+  }
   var have = { clean: state.clean, comeback: state.comeback, days: state.days.length };
   Object.keys(TIERS).forEach(function (track) {
     for (var i = 0; i < TIERS[track].length; i++) {
@@ -61,6 +93,10 @@ export function catalog(state) {
       out.push(tierItem(track, i, have[track]));
       if (have[track] < n) break; // only the next goal, not every future tier
     }
+  });
+  var sec = state.secret || {};
+  SECRETS.forEach(function (x) {
+    out.push({ id: "secret:" + x.key, icon: x.icon, title: x.title, detail: x.detail, goal: x.goal, have: sec[x.key] || 0, secret: true });
   });
   out.forEach(function (a) { a.met = a.have >= a.goal; });
   return out;
@@ -74,16 +110,18 @@ export function spokenParts(a) {
   return a.spoken || [a.title + "!", a.detail];
 }
 
-// Every line a card can say, for the given packs ([{ id, name }]): "New achievement!" (a new
-// card), "Achievement!" (👂 on a card, in app.js), the fixed words, each pack's name, and
+// Every line a card can say, for the given packs ([{ id, name }]): "New achievement!" and
+// "Secret achievement!" (a new card), "Achievement!" (👂 on a card, in app.js), the fixed words, each pack's name, and
 // each tier's title and detail, so the audio build can record them all
 // (scripts/audio/build.mjs). The check keeps this in step with catalog().
 export function spokenLines(packs) {
-  var out = ["New achievement!", "Achievement!", "Champion!", "Legend!", "Every word in this pack", "Every word right on the first try"];
+  var out = ["New achievement!", "Secret achievement!", "Achievement!", "Champion!", "Legend!", "Every word in this pack", "Every word right on the first try",
+    "Champion of Champions!", "Every word in every pack", "Legend of Legends!", "Every word in every pack, right on the first try"];
   packs.forEach(function (p) { out.push(p.name); });
   Object.keys(TIERS).forEach(function (track) {
     TIERS[track].forEach(function (n, i) { var t = tierItem(track, i, 0); out.push(t.title + "!", t.detail); });
   });
+  SECRETS.forEach(function (x) { out.push(x.title + "!", x.detail); });
   return out.filter(function (x, i) { return out.indexOf(x) === i; });
 }
 

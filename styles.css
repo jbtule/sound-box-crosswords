@@ -175,6 +175,9 @@ html.standalone { touch-action: pan-x pan-y; }
 .install-nudge { display: flex; align-items: center; gap: 8px; background: var(--accent-soft); border-radius: 14px; padding: 8px 6px 8px 12px; font-size: 0.85rem; text-align: left; }
 .install-nudge .tool { flex: none; }
 .nudge-x { flex: none; width: 40px; height: 40px; border: none; border-radius: 999px; background: transparent; color: var(--muted); font-size: 1rem; }
+/* A secret achievement earned outside a puzzle waits here until it's tapped. */
+.secret-pill { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 18px; border: none; border-radius: 999px; background: var(--ink); color: var(--card); font-weight: 600; font-size: 0.95rem; box-shadow: var(--shadow); }
+.secret-pill.show { animation: award-pop 0.45s cubic-bezier(.2, 1.4, .4, 1) both; }
 .steps { margin: 6px 0 10px; padding-left: 1.3em; display: flex; flex-direction: column; gap: 4px; }
 .share-ico { width: 0.9em; height: 1.1em; vertical-align: -0.15em; }
 
@@ -260,5 +263,5 @@ textarea { width: 100%; min-height: 170px; border: 1.5px solid var(--key-edge); 
   .cell.wiggle, .cell.pop { animation: none; }
   .cell.beat { transform: none; }
   .cell, .key, .progress .fill, .keyboard { transition: none; }
-  .toast.show, .award-card.pop { animation: none; }
+  .toast.show, .award-card.pop, .secret-pill.show { animation: none; }
 }
