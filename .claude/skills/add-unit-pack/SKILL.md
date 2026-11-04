@@ -58,6 +58,7 @@ Add it at the top of the edition's packs file, above the previous unit (newest f
 id = "g3-2026-unit4"
 name = "Unit 4"
 note = "3rd grade 2026 school words. A sound wave means listen, then spell."
+school = true
 words = """
 ...
 """
@@ -66,6 +67,7 @@ words = """
 - `id`: `g<grade>-<year>-unit<N>`, with the same year as the earlier units of that school
   year (`2026` for 2026–27). Saved progress is keyed by it, so it can never change once shipped.
 - `name`: `Unit N`. `note`: the same line as the other units, with grade and year.
+- `school = true`: it's the school's own list, so its button shows 🏫.
 - Keep the words in the school's order.
 
 ## 4. Each word

@@ -9,7 +9,7 @@ const MINE = { name: "Custom", note: "Your own word list. Change it in Settings.
 // TOML text → { packs: { id: { name, note, list } } in file order, starter: "..." }.
 export function readPacks(text) {
   var data = parse(text), packs = {};
-  (data.pack || []).forEach(function (p) { packs[p.id] = { name: p.name, note: p.note, list: p.words }; });
+  (data.pack || []).forEach(function (p) { packs[p.id] = { name: p.name, note: p.note, list: p.words, school: p.school === true }; });
   packs.mine = MINE;
   return { packs: packs, starter: data.custom ? data.custom.words.trim() : "" };
 }

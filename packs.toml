@@ -36,6 +36,8 @@
 #   words_in_text = true   optional: lets this pack's words appear in its note and in each
 #               other's sentences. Only for packs where spotting a printed word helps
 #               (kindergarten high-frequency words); normally the check forbids it.
+#   school = true   optional: the school's own list (a unit's spelling words, the class's
+#               high-frequency words), not one of the app's phonics packs. Its button gets 🏫.
 #
 # This is the 3rd grade edition; editions.toml lists every grade's file.
 # School units go first, newest at the top (add Unit 4 above Unit 3).
@@ -46,6 +48,7 @@
 id = "g3-2026-unit3"
 name = "Unit 3"
 note = "3rd grade 2026 school words. A sound wave means listen, then spell."
+school = true
 words = """
 yard 🏡
 storm ⛈️
@@ -73,6 +76,7 @@ done "I am done with my homework."
 id = "g3-2026-unit2"
 name = "Unit 2"
 note = "3rd grade 2026 school words. A sound wave means listen, then spell."
+school = true
 words = """
 wheel 🛞
 beach 🏖️

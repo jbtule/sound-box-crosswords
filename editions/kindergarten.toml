@@ -38,6 +38,7 @@ id = "k-hfw"
 name = "High frequency words"
 note = "Everyday words to know by heart. Listen to the sentence, then spell."
 words_in_text = true
+school = true
 words = """
 my "I like my red hat."
 the "We see the big dog."

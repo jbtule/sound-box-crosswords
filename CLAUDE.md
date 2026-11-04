@@ -194,7 +194,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   listen check cover every edition. Never change an edition's `id` once in use.
 - `packs.toml`: the word packs, in display order (the 3rd grade edition; other editions'
   files use the same format). Each `[[pack]]` has `id` (saved progress
-  is keyed by it; don't rename), `name`, `note` (shown under the chips), and `words`;
+  is keyed by it; don't rename), `name`, `note` (shown under the chips), `words`, and optionally `school = true` (the school's own list, not
+  one of the app's phonics packs: its chip shows 🏫; `renderPacks`);
   `[custom] words` is the starter "Custom" list. **Word list format** (packs and the custom list share it): one entry per
   line, `syl-la-bles emoji`, e.g. `but-ter-fly 🦋`. Dashes mark syllables and drive the
   coloring and *Break it down*. Letters (plus apostrophes, e.g. `don't`; the

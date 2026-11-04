@@ -201,6 +201,7 @@ for (const ed of editions) {
     // the note and in each other's sentences. A clue's own word is always blanked.
     if (p.words_in_text !== undefined && typeof p.words_in_text !== "boolean") errors.push(`${label}: words_in_text should be true or false`);
     if (p.words_in_text === true) textOk.add(tag + p.id);
+    if (p.school !== undefined && typeof p.school !== "boolean") errors.push(`${label}: school should be true or false`);
     if (typeof p.note === "string" && typeof p.words === "string" && p.words_in_text !== true) {
       const shown = new Set(p.note.toLowerCase().replace(/[-'\u2019]/g, "").split(/[^a-z]+/));
       for (const e of parseList(p.words)) {

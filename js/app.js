@@ -659,7 +659,9 @@ function renderPacks() {
     var b = document.createElement("button");
     b.type = "button"; b.className = "chip";
     b.setAttribute("aria-pressed", id === packId ? "true" : "false");
-    b.innerHTML = PACKS[id].name + (stars[id] ? ' <span class="n">⭐' + stars[id] + "</span>" : "");
+    // 🏫: the school's own list (school = true in its packs file), not one of the app's phonics packs.
+    b.innerHTML = (PACKS[id].school ? '<span class="school" role="img" aria-label="From school">🏫</span> ' : "") +
+      PACKS[id].name + (stars[id] ? ' <span class="n">⭐' + stars[id] + "</span>" : "");
     b.addEventListener("click", function () {
       if (packId === id) return;
       packId = id; store.set("pack", id); recent = [];
