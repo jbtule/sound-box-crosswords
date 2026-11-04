@@ -46,6 +46,39 @@ export function blendsIn(names) {
   return out;
 }
 
+// Where wrong letters fall, for the Stats tab ("where the slips happen"), as counts only.
+// `idxs`: positions in `word` (apostrophes have boxes too; they're skipped) →
+// [{ place, kind }]: place "start" / "middle" / "end" (the first and last third of the
+// letters, rounded up), kind "vowel" / "blend" (a consonant sound next to another, like the
+// t in stop) / "consonant". `segs`: the word's sounds (parseSounds) when its list gives
+// them; otherwise letters are grouped by spelling, so sh, ck or a double letter is one sound.
+var GROUPS = ["tch", "dge", "sh", "ch", "th", "wh", "ph", "ck", "ng", "gh", "kn", "wr", "qu"];
+export function slipSpots(word, segs, idxs) {
+  var letters = String(word).replace(/['’]/g, ""), n = letters.length, k = Math.ceil(n / 3);
+  var units = segs ? segs.map(function (s) { return { at: s.at, len: s.len, vowel: VOWELS.indexOf(s.sound) >= 0 }; }) : [];
+  for (var i = 0; !segs && i < n; ) {
+    var len = GROUPS.indexOf(letters.substr(i, 3)) >= 0 ? 3
+      : GROUPS.indexOf(letters.substr(i, 2)) >= 0 || (letters[i] === letters[i + 1] && "aeiou".indexOf(letters[i]) < 0) ? 2 : 1;
+    var ch = letters[i];
+    units.push({ at: i, len: len, vowel: len === 1 && ("aeiou".indexOf(ch) >= 0 || (ch === "y" && i > 0)) });
+    i += len;
+  }
+  var unitOf = [];
+  units.forEach(function (u, ui) { for (var j = 0; j < u.len; j++) unitOf[u.at + j] = ui; });
+  var out = [], li = -1, letterAt = [];
+  for (var w = 0; w < word.length; w++) letterAt[w] = /['’]/.test(word[w]) ? -1 : ++li;
+  idxs.forEach(function (w) {
+    var l = letterAt[w];
+    if (l == null || l < 0) return;
+    var ui = unitOf[l], u = units[ui];
+    if (!u) return;
+    var near = function (v) { return v && !v.vowel; };
+    var kind = u.vowel ? "vowel" : near(units[ui - 1]) || near(units[ui + 1]) ? "blend" : "consonant";
+    out.push({ place: l < k ? "start" : l >= n - k ? "end" : "middle", kind: kind });
+  });
+  return out;
+}
+
 // The sound a letter group usually makes. Groups that are often more than one sound (ow:
 // cow or snow) aren't here, so the list must say which: `{s n ow=oh}`.
 export var USUAL = {

@@ -49,7 +49,7 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    pause can't sound blended: the held sounds alone run ~650 ms).
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
-7. **A grown-up can tune it** without code, in Settings: syllable colors on/off, auto-speak,
+7. **A grown-up can tune it** without code, in Settings (the ⚙️ More button's first tab): syllable colors on/off, auto-speak,
    QWERTY (default) vs A–Z pad, a Custom pack with their own word list (off by default:
    `settings.custom`, `packIds()` in `app.js`; on where Custom was used before the switch). Nothing in Settings makes the game easier,
    so it needs no lock (Start over, which erases progress, asks for a typed phrase instead).
@@ -215,7 +215,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   check), each letter group's usual sound (`USUAL`: c → k, sh, ee, x → ks, qu → kw), and
   `parseSounds` for a word list's `{c a t}` / `{c=s i t y=ee}` (letters grouped by sound; `=`
   names an unusual sound; groups with no usual sound, like ow, must say which), and `blendsIn`
-  (a word's blends: consonant sounds in pairs, left to right).
+  (a word's blends: consonant sounds in pairs, left to right), and `slipSpots` (where wrong
+  letters fall, for Stats).
 - `js/crossword.js`: no DOM, runs in Node. `parseList` reads word lists. `makePuzzle(pool,
   recent)` builds a crossword: greedy placement with crossing checks, many random attempts,
   keeps the layout with the most words and smallest area, max 11 columns × 12 rows so it
@@ -287,9 +288,18 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     player guess letters until one stuck.)
   - `clap`: the Break it down scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
-  - Settings sheet: `openSheet` / `closeSheet` and the change handlers below them.
+  - The More sheet (⚙️ More button, `#settingsBtn`): tabs Settings, Stats and About (license, Home Screen steps); `openSheet(tab)` opens
+    on Settings or the named tab (`SHEET_TABS`; the Home Screen tip's How? opens About), with
+    `closeSheet` and the change handlers below them. `selectTab` switches tabs here and in 🏆.
+  - Stats (`renderProgressSheet`): practice days, the last 4 weeks (`renderCalendar`); each
+    pack's words done and right on the first try; where the slips happen (`renderSlips`: the
+    wrong letters in try-agains by place, beginning / middle / end, and by kind, vowel / letter
+    in a blend / other consonant, from `slipSpots` in `phonics.js`, counted in `checkWord` into
+    `sbx:slips`; shown from 10); tricky words (`renderTricky`: missed more often than right
+    first try, as pictures or sound stickers to tap and hear); recent puzzles. Like the rest
+    of the sheet it isn't locked, so it never shows a spelling.
   - Start over (Settings): clears this edition's `achievements`, `progress`, `counts`, `days`,
-    `log`, `stars`, `puzzle` and `pending` (`RESET_KEYS`) and the color scheme, once "start over" is
+    `log`, `stars`, `puzzle`, `pending` and `slips` (`RESET_KEYS`) and the color scheme, once "start over" is
     typed. Achievements, stars, pictures and colors are all worked out from progress, so
     clearing only achievements would bring them back. Settings and the Custom list stay.
 

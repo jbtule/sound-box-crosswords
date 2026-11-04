@@ -34,7 +34,7 @@
     <h1>Sound Box <span>Crosswords</span></h1>
     <div class="top-buttons">
       <button class="ghost" id="trophyBtn" type="button" aria-label="Achievements">🏆</button>
-      <button class="ghost" id="settingsBtn" type="button">Settings</button>
+      <button class="ghost" id="settingsBtn" type="button"><span aria-hidden="true">⚙️</span> More</button>
     </div>
   </div>
   <div class="install-nudge" id="installNudge" hidden>
@@ -106,7 +106,7 @@
   <div class="award-card" role="dialog" aria-modal="true" aria-labelledby="gradeTitle" aria-describedby="gradeHelp">
     <div class="award-icon" aria-hidden="true">📚</div>
     <h2 id="gradeTitle">Which grade?</h2>
-    <p id="gradeHelp">Each grade has its own word lists and achievements. You can change it in Settings.</p>
+    <p id="gradeHelp">Each grade has its own word lists and achievements. You can change it under ⚙️ More.</p>
     <div class="grade-choices" id="gradeChoices"></div>
   </div>
 </section>
@@ -155,65 +155,94 @@
 
 <section class="sheet" id="sheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-    <div class="row" style="justify-content:space-between"><h2 id="sheetTitle">Settings</h2><button class="ghost" id="closeBtn" type="button">Done</button></div>
-    <div id="gradeSec" hidden>
-      <h3>Edition</h3>
-      <div class="row"><select id="editionSel" aria-label="Edition"></select></div>
-      <p class="help">Each edition has its own word lists, stars, achievements and letter pad on this device. The chime is the same for all.</p>
+    <div class="row" style="justify-content:space-between"><h2 id="sheetTitle">More</h2><button class="ghost" id="closeBtn" type="button">Done</button></div>
+    <div class="tabs" role="tablist" aria-label="Settings, stats and about">
+      <button type="button" role="tab" id="tabSet" aria-selected="true" aria-controls="setPanel">Settings</button>
+      <button type="button" role="tab" id="tabStats" aria-selected="false" aria-controls="statsPanel">Stats</button>
+      <button type="button" role="tab" id="tabAbout" aria-selected="false" aria-controls="aboutPanel">About</button>
     </div>
-    <div id="installSec" hidden>
-      <h3>Home Screen</h3>
-      <p class="help">Add Sound Box to the Home Screen to keep progress saved (Safari can clear it after a while unused) and play full screen, even offline.</p>
-      <ol class="help steps" id="installIOS" hidden>
-        <li>In Safari, tap Share <svg class="share-ico" viewBox="0 0 16 20" aria-hidden="true"><path d="M8 1v11M4.5 4.5 8 1l3.5 3.5M5 8H2.5v10.5h11V8H11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> (on iPhone it may be under •••).</li>
-        <li>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
-        <li>Open it from the new icon. Stars and pictures saved here don’t carry over; it starts fresh.</li>
-      </ol>
-      <button class="primary" id="installBtn" type="button" hidden>Add to Home Screen</button>
-    </div>
-    <div>
-      <h3>Helpers</h3>
-      <div class="opt">
-        <label><input type="checkbox" id="optSyl"> Color each syllable</label>
-        <label><input type="checkbox" id="optSpeakSel"> Say the word when a picture is chosen</label>
-        <label><input type="checkbox" id="optChime"> Chime when a puzzle is solved</label>
+    <div class="tabpanel" id="setPanel" role="tabpanel" aria-labelledby="tabSet">
+      <div id="gradeSec" hidden>
+        <h3>Edition</h3>
+        <div class="row"><select id="editionSel" aria-label="Edition"></select></div>
+        <p class="help">Each edition has its own word lists, stars, achievements and letter pad on this device. The chime is the same for all.</p>
+      </div>
+      <div>
+        <h3>Helpers</h3>
+        <div class="opt">
+          <label><input type="checkbox" id="optSyl"> Color each syllable</label>
+          <label><input type="checkbox" id="optSpeakSel"> Say the word when a picture is chosen</label>
+          <label><input type="checkbox" id="optChime"> Chime when a puzzle is solved</label>
+        </div>
+      </div>
+      <div>
+        <h3>Letter pad</h3>
+        <div class="opt">
+          <label><input type="radio" name="kb" id="kbQwerty" value="qwerty"> QWERTY (like a keyboard)</label>
+          <label><input type="radio" name="kb" id="kbAbc" value="abc"> A to Z</label>
+        </div>
+      </div>
+      <div>
+        <h3>Custom words</h3>
+        <div class="opt"><label><input type="checkbox" id="optCustom"> Add a Custom pack with your own words</label></div>
+        <div id="customBox" hidden>
+        <textarea id="customText" aria-label="Your word list" spellcheck="false"></textarea>
+        <p class="help">One word per line. Add dashes between syllables (<code>rain-bow</code>) so the colors and “Break it down” work. An emoji after the word becomes the picture; leave it off for words a picture can’t show, and the clue is “listen” only. Add a sentence in quotes to say the word in context: <code>there "Put the box over there."</code> If “Break it down” says a beat wrong, add how it sounds in brackets: <code>pea-nut 🥜 (pee-nut)</code>. The starter list is an example — swap in this week’s school words. Unlike the pack words, custom words aren’t recorded ahead of time: this device’s built-in voice reads them, so they can sound flatter or more robotic.</p>
+        <div class="row" style="margin-top:10px"><button class="primary" id="saveBtn" type="button">Save and play custom words</button><span id="saveMsg" role="status"></span></div>
+        </div>
+      </div>
+      <div>
+        <h3>Start over</h3>
+        <p class="help">Clears <span class="edName">this grade</span>’s achievements, stars, collected pictures, unlocked colors and puzzle history on this device. Settings and Custom words stay.</p>
+        <button class="ghost" id="resetOpen" type="button">Start over…</button>
+        <div id="resetBox" hidden>
+          <label class="help" for="resetText">To confirm, type <b>start over</b></label>
+          <div class="row"><input id="resetText" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"><button class="danger" id="resetGo" type="button" disabled>Erase progress</button></div>
+        </div>
       </div>
     </div>
-    <div>
-      <h3>Progress</h3>
-      <ul class="plain" id="progressPacks"></ul>
-      <h3 class="sub">Recent puzzles</h3>
-      <p class="help" id="progressEmpty">No finished puzzles yet.</p>
-      <ul class="plain log" id="progressLog"></ul>
-    </div>
-    <div>
-      <h3>Letter pad</h3>
-      <div class="opt">
-        <label><input type="radio" name="kb" id="kbQwerty" value="qwerty"> QWERTY (like a keyboard)</label>
-        <label><input type="radio" name="kb" id="kbAbc" value="abc"> A to Z</label>
+    <div class="tabpanel" id="statsPanel" role="tabpanel" aria-labelledby="tabStats" hidden>
+      <div>
+        <h3>Practice days</h3>
+        <div class="cal" id="calendar" role="img"></div>
+        <p class="help" id="calSum"></p>
+      </div>
+      <div>
+        <h3>Packs</h3>
+        <ul class="plain" id="progressPacks"></ul>
+      </div>
+      <div>
+        <h3>Where the slips happen</h3>
+        <p class="help" id="slipNote"></p>
+        <div id="slipBars"></div>
+      </div>
+      <div>
+        <h3>Tricky words</h3>
+        <p class="help" id="trickyNote"></p>
+        <div class="col-grid" id="trickyList"></div>
+      </div>
+      <div>
+        <h3>Recent puzzles</h3>
+        <p class="help" id="progressEmpty">No finished puzzles yet.</p>
+        <ul class="plain log" id="progressLog"></ul>
       </div>
     </div>
-    <div>
-      <h3>Custom words</h3>
-      <div class="opt"><label><input type="checkbox" id="optCustom"> Add a Custom pack with your own words</label></div>
-      <div id="customBox" hidden>
-      <textarea id="customText" aria-label="Your word list" spellcheck="false"></textarea>
-      <p class="help">One word per line. Add dashes between syllables (<code>rain-bow</code>) so the colors and “Break it down” work. An emoji after the word becomes the picture; leave it off for words a picture can’t show, and the clue is “listen” only. Add a sentence in quotes to say the word in context: <code>there "Put the box over there."</code> If “Break it down” says a beat wrong, add how it sounds in brackets: <code>pea-nut 🥜 (pee-nut)</code>. The starter list is an example — swap in this week’s school words. Unlike the pack words, custom words aren’t recorded ahead of time: this device’s built-in voice reads them, so they can sound flatter or more robotic.</p>
-      <div class="row" style="margin-top:10px"><button class="primary" id="saveBtn" type="button">Save and play custom words</button><span id="saveMsg" role="status"></span></div>
+    <div class="tabpanel" id="aboutPanel" role="tabpanel" aria-labelledby="tabAbout" hidden>
+      <div>
+        <h3>About</h3>
+        <p class="help">Sound Box Crosswords © 2026 James Tuley. Free to use, change and share for noncommercial purposes, including at home and in schools, under the <a href="https://github.com/jbtule/sound-box-crosswords/blob/main/LICENSE.md" target="_blank" rel="noopener">PolyForm Noncommercial License 1.0.0</a>.</p>
+        <p class="help">Found a problem, or want a word pack or grade added? <a href="https://github.com/jbtule/sound-box-crosswords/issues/new/choose" target="_blank" rel="noopener">Tell us on GitHub</a>.</p>
       </div>
-    </div>
-    <div>
-      <h3>Start over</h3>
-      <p class="help">Clears <span class="edName">this grade</span>’s achievements, stars, collected pictures, unlocked colors and puzzle history on this device. Settings and Custom words stay.</p>
-      <button class="ghost" id="resetOpen" type="button">Start over…</button>
-      <div id="resetBox" hidden>
-        <label class="help" for="resetText">To confirm, type <b>start over</b></label>
-        <div class="row"><input id="resetText" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"><button class="danger" id="resetGo" type="button" disabled>Erase progress</button></div>
+      <div id="installSec" hidden>
+        <h3>Home Screen</h3>
+        <p class="help">Add Sound Box to the Home Screen to keep progress saved (Safari can clear it after a while unused) and play full screen, even offline.</p>
+        <ol class="help steps" id="installIOS" hidden>
+          <li>In Safari, tap Share <svg class="share-ico" viewBox="0 0 16 20" aria-hidden="true"><path d="M8 1v11M4.5 4.5 8 1l3.5 3.5M5 8H2.5v10.5h11V8H11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> (on iPhone it may be under •••).</li>
+          <li>Tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+          <li>Open it from the new icon. Stars and pictures saved here don’t carry over; it starts fresh.</li>
+        </ol>
+        <button class="primary" id="installBtn" type="button" hidden>Add to Home Screen</button>
       </div>
-    </div>
-    <div>
-      <h3>About</h3>
-      <p class="help">Sound Box Crosswords © 2026 James Tuley. Free to use, change and share for noncommercial purposes, including at home and in schools, under the <a href="https://github.com/jbtule/sound-box-crosswords/blob/main/LICENSE.md" target="_blank" rel="noopener">PolyForm Noncommercial License 1.0.0</a>.</p>
     </div>
   </div>
 </section>
