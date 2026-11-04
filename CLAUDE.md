@@ -43,7 +43,10 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    removed for that reason.) *Sound it out* (editions with `sound_it_out`, e.g. Kindergarten;
    only words that list their sounds, `{c a t}`, not sight words) says each single sound while
    the letters that make it light up, then the word. Lighting a two-letter sound (sh, ee)
-   together shows that it takes two boxes; that's accepted as part of the skill.
+   together shows that it takes two boxes; that's accepted as part of the skill. A blend (fr in
+   frog, st in nest: two consonant sounds in a row) is two sounds, so its boxes light one after
+   the other, but it plays as one recording so the sounds run together (separate clips with a
+   pause can't sound blended: the held sounds alone run ~650 ms).
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
 7. **A grown-up can tune it** without code, in Settings: syllable colors on/off, auto-speak,
@@ -89,7 +92,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `build.mjs`, not a code hash, so the grown-up's listen marks survive unrelated edits: the check
   fails when `picks.json`, `lab.py` or `kokoro_core.py` change, and a change that alters the
   sounds gives just the changed ones a value in `SOUND_RECIPE_FOR` (only they re-record and lose their marks), or all 46 a new
-  `SOUND_RECIPE`; never the device voice, which can't say "k"):
+  `SOUND_RECIPE`; plus a blend clip (`f:f+r`) for each pair of consonant sounds a word uses
+  (`blendsIn` in `phonics.js`), made from the two picked sounds by `blend()` in `lab.py` (a held
+  first sound cut to 220 ms, 30 ms overlap, picked by ear; `BLEND_RECIPE` in `build.mjs`), with
+  `<key>.json` beside it giving where the second sound starts, which `audio.json` carries as
+  `splits` for the app to light that box; never the device voice, which can't say "k"):
   Kokoro (open-source neural TTS, voice `af_heart`), pre-generated at deploy by
   `scripts/audio/build.mjs` and served from Cloudflare Pages
   (`sound-box-crosswords.asset-data.stream`, project `sound-box-crosswords-audio`). Words
@@ -205,7 +212,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `js/phonics.js`: no DOM. Sound it out's sounds (`SOUNDS`, kept equal to `picks.json` by the
   check), each letter group's usual sound (`USUAL`: c → k, sh, ee, x → ks, qu → kw), and
   `parseSounds` for a word list's `{c a t}` / `{c=s i t y=ee}` (letters grouped by sound; `=`
-  names an unusual sound; groups with no usual sound, like ow, must say which).
+  names an unusual sound; groups with no usual sound, like ow, must say which), and `blendsIn`
+  (a word's blends: consonant sounds in pairs, left to right).
 - `js/crossword.js`: no DOM, runs in Node. `parseList` reads word lists. `makePuzzle(pool,
   recent)` builds a crossword: greedy placement with crossing checks, many random attempts,
   keeps the layout with the most words and smallest area, max 11 columns × 12 rows so it
@@ -257,7 +265,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   audio context is unlocked on the first tap for iOS. It doesn't follow the mute switch:
   iOS can only do that for the whole page, which would silence the recorded words too.
 - `js/speech.js`: `say(kind, text, rate, cancel)` (recorded clip or device voice, one
-  queue; kinds `w` word, `s` syllable, `t` sentence, `p` phrase), `stopSpeech`,
+  queue; kinds `w` word, `s` syllable, `t` sentence, `p` phrase), `sayRecorded(kind, text, cues)`
+  (clips only; `cues` call a function at a point in the clip, by its playback position),
+  `splitOf` (a blend's split), `stopSpeech`,
   `speechEpoch`, `speak` (device voice only), `hasSpeech`; device voice ranking (`score`;
   re-picked when Safari loads voices late).
 - `js/app.js`: everything on screen.

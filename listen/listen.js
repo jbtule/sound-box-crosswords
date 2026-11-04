@@ -9,7 +9,7 @@
 // clip alone; their ✓ still counts for any word not marked since (their ✗ doesn't, since
 // it may have been about another word).
 import { readPacks, readEditions } from "../js/words.js";
-import { SOUNDS, EXAMPLE } from "../js/phonics.js";
+import { SOUNDS, EXAMPLE, blendsIn } from "../js/phonics.js";
 import { parseList, clipsFor } from "../js/crossword.js";
 
 var $ = function (s) { return document.querySelector(s); };
@@ -62,9 +62,17 @@ function pages(ed, multi, data, audio) {
   // word brings it back as not heard.
   function soundItOut(e) {
     if (!ed.soundItOut || !e.sounds) return [];
-    var parts = e.sounds.map(function (s) { return audio.clips["f:" + s.sound] || null; }).concat(audio.clips["w:" + e.w] || null);
+    // As the app plays it: a blend with a recording is one clip ("f+r").
+    var names = e.sounds.map(function (s) { return s.sound; }), blend = {};
+    blendsIn(names).forEach(function (b) { if (audio.clips["f:" + b.name]) blend[b.at] = b.name; });
+    var parts = [], label = [];
+    for (var i = 0; i < names.length; i++) {
+      if (blend[i]) { parts.push(audio.clips["f:" + blend[i]]); label.push(blend[i]); i++; }
+      else { parts.push(audio.clips["f:" + names[i]] || null); label.push(names[i]); }
+    }
+    parts.push(audio.clips["w:" + e.w] || null);
     var ok = parts.every(Boolean);
-    return [{ kind: "sio", text: e.sounds.map(function (s) { return s.sound; }).join(" · "), parts: parts, key: ok ? "sio:" + parts.join("+") : null }];
+    return [{ kind: "sio", text: label.join(" · "), parts: parts, key: ok ? "sio:" + parts.join("+") : null }];
   }
   function fromList(id, name, list) {
     out.push({ id: id, edition: ed, short: name, name: (multi ? ed.name + " · " : "") + name,
@@ -142,7 +150,11 @@ function soundsPage(audio) {
     id: "sounds", edition: SOUNDS_ED, short: "Sounds", name: "Sounds",
     words: SOUNDS.map(function (n) {
       return withMarkKeys({ w: n, syll: n + " · as in " + EXAMPLE[n], pic: "", clips: [{ kind: "f", text: n, key: audio.clips["f:" + n] || null }] });
-    })
+    }).concat(Object.keys(audio.clips).filter(function (k) { return k.startsWith("f:") && k.includes("+"); }).sort().map(function (k) {
+      // Blends (two sounds as one recording): only those some word uses.
+      var n = k.slice(2);
+      return withMarkKeys({ w: n, syll: n.replace("+", " + ") + " · blend", pic: "", clips: [{ kind: "f", text: n, key: audio.clips[k] }] });
+    }))
   };
 }
 // Phrases the app says in every grade ("You solved it!", achievement pieces): one card each,
@@ -155,7 +167,7 @@ function phrasesPage(audio) {
   };
 }
 // The cards for pages shared by every grade (Sounds, Phrases).
-var GLOBAL = { sounds: "Sound it out: each single sound, used by every grade", phrases: "What the app says in every grade: \"You solved it!\" and achievement pieces" };
+var GLOBAL = { sounds: "Sound it out: each single sound and blend, used by every grade", phrases: "What the app says in every grade: \"You solved it!\" and achievement pieces" };
 function globalCards(all, ul) {
   Object.keys(GLOBAL).forEach(function (id) {
     var page = all.find(function (p) { return p.id === id; });
