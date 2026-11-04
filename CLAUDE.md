@@ -299,7 +299,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     on Settings or the named tab (`SHEET_TABS`; the Home Screen tip's How? opens About), with
     `closeSheet` and the change handlers below them. `selectTab` switches tabs here and in 🏆.
   - Stats (`renderProgressSheet`): practice days, the last 4 weeks (`renderCalendar`); each
-    pack's words done and right on the first try; where the slips happen (`renderSlips`: the
+    pack's words done and right on the first try; comebacks (`counts.comeback`: words right on
+    the first try after an earlier miss); where the slips happen (`renderSlips`: the
     wrong letters in try-agains by place, beginning / middle / end, and by kind, vowel / letter
     in a blend / other consonant, from `slipSpots` in `phonics.js`, counted in `checkWord` into
     `sbx:slips`; shown from 10); tricky words (`renderTricky`: missed more often than right

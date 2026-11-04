@@ -700,6 +700,12 @@ function renderProgressSheet() {
   });
   renderSlips();
   renderTricky();
+  // Comebacks: words spelled right on the first try after an earlier miss, each counted once
+  // (counts.comeback, the Bounce Back achievements' input).
+  var cb = counts.comeback || 0;
+  $("#comebackNote").textContent = cb
+    ? cb + (cb === 1 ? " word" : " words") + " spelled right on the first try after being missed before."
+    : "None yet: a word spelled right on the first try after being missed before counts here.";
   var list = $("#progressLog"); list.innerHTML = "";
   var fmt = { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
   log.slice(0, 30).forEach(function (e) {
