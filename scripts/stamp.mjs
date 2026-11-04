@@ -3,7 +3,8 @@
 // - Cache busting: styles.css and every js/*.js get ?v=<short sha>. The JS modules are
 //   remapped through the import map, and js/words.js passes the stamp on to editions.toml
 //   and the packs files. The listen check (listen/) is stamped the same way.
-// - The footer's GitHub badge shows the short sha and links to the commit.
+// - The footer's GitHub badge shows the short sha (which version is deployed); it links to
+//   the repo's front page (README), not the commit.
 // - editions/<id>.webmanifest for each edition: manifest.webmanifest opening in that grade
 //   (homeScreenEdition in js/app.js points the page at it, for Add to Home Screen).
 // The source files stay runnable as-is; locally the badge just reads "dev".
@@ -60,8 +61,6 @@ for (const f of readdirSync(join(root, "js")).filter((f) => f.endsWith(".js"))) 
 }
 swap(mapMatch[1], "\n" + JSON.stringify(map, null, 2) + "\n");
 
-const repo = "https://github.com/jbtule/sound-box-crosswords";
-swap(`id="buildLink" href="${repo}"`, `id="buildLink" href="${repo}/commit/${sha}"`);
 swap('<span id="buildSha">dev</span>', `<span id="buildSha">${short}</span>`);
 
 writeFileSync(join(out, "index.html"), html);
@@ -81,7 +80,6 @@ swap('src="listen.js"', `src="listen.js${v}"`);
   }
   swap(m[1], "\n" + JSON.stringify(lmap, null, 2) + "\n");
 }
-swap(`id="buildLink" href="${repo}"`, `id="buildLink" href="${repo}/commit/${sha}"`);
 swap('<span id="buildSha">dev</span>', `<span id="buildSha">${short}</span>`);
 writeFileSync(join(out, "listen", "index.html"), html);
 console.log(`✓ _site/ stamped with ${short}`);
