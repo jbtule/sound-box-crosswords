@@ -233,10 +233,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `js/entrances.js`: new-puzzle entrances, how a fresh puzzle's boxes arrive (designed in the
   Board Entrances spike). `ENTRANCES` (each a `plan` of keyframes per box plus timed sounds;
   `premium` ones are the showpieces), `geometry` (where each box is), `playEntrance` (`{ done,
-  skip }`; skip jumps to the finished board and silences its sounds) and `nextEntrance`: every
-  everyday one once, shuffled, then each premium one once, then again, never the same twice
-  in a row (saved per edition as `entrances`). In `app.js`, `runEntrance` plays one for a new
+  skip }`; skip jumps to the finished board and silences its sounds) and `nextEntrance`: every 5th
+  turn a premium one (`PREMIUM_EVERY`), otherwise an everyday one, each kind from its own
+  shuffled queue, never the same twice in a row (saved per edition as `entrances`). In `app.js`, `runEntrance` plays one for a new
   puzzle (not one restored at launch; at launch it waits for the Start tap, `.board.waiting`),
+  but only Next puzzle after finishing one moves the cycle on; otherwise the same one replays. The
+  selection is off while one plays (`.board.entering`), so the premium ones can deliver the highlight;
   skipped with reduced motion; any tap or key skips it and still acts. Its sounds are
   `js/sfx.js` (`makeSfx`, Web Audio like the chime, through `audioOut()` in `chime.js`) and
   follow the Sound effects setting.

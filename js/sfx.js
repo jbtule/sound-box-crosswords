@@ -88,6 +88,46 @@ export function makeSfx(ac, dest) {
       g2.gain.setValueAtTime(0.0001, t); g2.gain.exponentialRampToValueAtTime(0.05, t + dur * 0.3); g2.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.8);
       s.connect(f); f.connect(g); g.connect(dest); s.connect(hp); hp.connect(g2); g2.connect(dest); s.start(t); s.stop(t + dur + 0.1);
     },
+    // Roller coaster: clacks up the lift, a wheee round the loop, an air-brake hiss, cars clunking in.
+    wheee: function (t, dur) {
+      var o = ac.createOscillator(), g = ac.createGain(); o.type = "sine";
+      o.frequency.setValueAtTime(500, t); o.frequency.exponentialRampToValueAtTime(1100, t + dur * 0.45); o.frequency.exponentialRampToValueAtTime(420, t + dur);
+      env(g, t, 0.16, dur * 0.3, dur * 0.7); o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + 0.05);
+    },
+    brake: function (t, dur) { noise(t, dur, "highpass", 5200, 1800, 0.22, 0.6); },
+    clunk: function (t, i) { var f = 95 + (i % 3) * 18; osc(t, f, "triangle", 0.3, 0.004, 0.12, f * 0.7); noise(t, 0.04, "lowpass", 700, 0, 0.12, 0.8); },
+    // Billiards (and the coaster's lift): ball clacks, the break, cushion thuds.
+    clack: function (t, i) { var f = 1900 + (i % 5) * 140; osc(t, f, "sine", 0.16, 0.001, 0.035); osc(t, f * 1.63, "sine", 0.07, 0.001, 0.025); },
+    crack: function (t) { noise(t, 0.09, "highpass", 1200, 0, 0.7, 0.7); osc(t, 220, "triangle", 0.35, 0.002, 0.08, 120); },
+    cushion: function (t, g) { osc(t, 120, "sine", 0.22 * g, 0.003, 0.1, 80); noise(t, 0.05, "lowpass", 600, 0, 0.1 * g, 0.7); },
+    // The highlight clicking into place (Billiards, Flying saucer).
+    clickin: function (t) { noise(t, 0.02, "bandpass", 2600, 0, 0.3, 4); osc(t + 0.01, 880, "triangle", 0.12, 0.002, 0.12); osc(t + 0.01, 1320, "triangle", 0.06, 0.002, 0.1); },
+    // Kaiju: a growl, stomps, uh-oh, the crash, wooden knocks, a rumble.
+    stomp: function (t, i) { var f = i % 2 ? 52 : 60; osc(t, f * 1.8, "triangle", 0.7, 0.003, 0.4, f * 0.8); noise(t, 0.18, "lowpass", 500, 90, 0.42, 0.7); },
+    growl: function (t, dur) {
+      var o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
+      o.type = "sawtooth"; o.frequency.setValueAtTime(70, t); o.frequency.linearRampToValueAtTime(95, t + dur * 0.4); o.frequency.linearRampToValueAtTime(60, t + dur);
+      f.type = "lowpass"; f.frequency.value = 520; lfo.frequency.value = 11; lg.gain.value = 0.07;
+      env(g, t, 0.16, dur * 0.25, dur * 0.75); lfo.connect(lg); lg.connect(g.gain); o.connect(f); f.connect(g); g.connect(dest);
+      o.start(t); lfo.start(t); o.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
+    },
+    uhoh: function (t) { osc(t, 520, "triangle", 0.2, 0.02, 0.16, 500); osc(t + 0.2, 400, "triangle", 0.2, 0.02, 0.32, 360); },
+    crash: function (t) { noise(t, 0.5, "lowpass", 2600, 300, 0.75, 0.6); osc(t, 95, "sine", 0.6, 0.004, 0.45, 40); },
+    knock: function (t, i) { var f = 620 + (i % 6) * 70; osc(t, f, "triangle", 0.16, 0.002, 0.06, f * 0.85); noise(t, 0.03, "bandpass", 1300 + (i % 3) * 300, 0, 0.09, 2); },
+    rumble: function (t, dur) { noise(t, dur, "lowpass", 380, 160, 0.3, 0.8); },
+    // Flying saucer: a warbly hum, pews, a boom, and a zwoop as the blaster's blocks fly off.
+    hum: function (t, dur) {
+      [180, 183.5].forEach(function (f0) {
+        var o = ac.createOscillator(), g = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
+        o.type = "sine"; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * 1.3, t + dur * 0.5); o.frequency.linearRampToValueAtTime(f0 * 1.1, t + dur);
+        lfo.frequency.value = 6.5; lg.gain.value = 22; lfo.connect(lg); lg.connect(o.frequency);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.09, t + 0.4); g.gain.setValueAtTime(0.09, t + dur - 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(dest); o.start(t); lfo.start(t); o.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
+      });
+    },
+    pew: function (t) { osc(t, 1700, "square", 0.1, 0.003, 0.2, 260); osc(t, 1300, "sawtooth", 0.05, 0.003, 0.18, 200); },
+    boom: function (t) { noise(t, 0.8, "lowpass", 3200, 160, 0.8, 0.6); osc(t, 80, "sine", 0.7, 0.004, 0.7, 32); for (var j = 0; j < 9; j++) noise(t + 0.08 + Math.random() * 0.5, 0.03, "bandpass", 1500 + Math.random() * 3000, 0, 0.12, 2); },
+    zwoop: function (t, dur) { osc(t, 280, "sine", 0.14, dur * 0.4, dur * 0.6, 1150); noise(t, dur, "bandpass", 600, 2400, 0.05, 3); },
     rustle: function (t) { for (var j = 0; j < 3; j++) noise(t + j * 0.025 + Math.random() * 0.02, 0.03, "bandpass", 3200 + Math.random() * 2500, 0, 0.07, 1.5); }
   };
 }
