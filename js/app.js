@@ -783,7 +783,7 @@ function renderTricky() {
     list.appendChild(b);
   });
 }
-// Settings → Edition: a dropdown of editions; switching reloads into that edition's own
+// More → Edition, above the tabs (Settings and Stats are per edition): a dropdown of editions; switching reloads into that edition's own
 // lists, progress and settings. Hidden when there's only one.
 function renderGrades() {
   var sel = $("#editionSel"); sel.innerHTML = "";
