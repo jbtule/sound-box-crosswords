@@ -70,8 +70,11 @@ async function savedFirst(e, key) {
   }
 }
 
+// "no-cache": always check with the server (an unchanged file is a short 304). Plain fetch
+// would take the browser's own copy, which GitHub Pages lets it keep for 10 minutes, so a
+// page opened again soon after a deploy came back as the old one.
 async function networkFirst(e, key) {
-  const net = fetch(e.request).then((res) => {
+  const net = fetch(e.request, { cache: "no-cache" }).then((res) => {
     e.waitUntil(save(key, res.clone()));
     return res;
   });

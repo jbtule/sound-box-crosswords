@@ -798,7 +798,10 @@ function renderGrades() {
 $("#editionSel").addEventListener("change", function (e) {
   if (e.target.value === EDITION.id) return;
   device.set("edition", e.target.value);
-  location.replace(location.pathname);
+  // Drop ?edition= (it would pick the old one again), then reload: a reload checks the server
+  // for the page, where going to the address could show the browser's older copy.
+  history.replaceState(null, "", location.pathname);
+  location.reload();
 });
 // Start over: clears this edition's progress and everything earned from it. Achievements,
 // stars, pictures and colors are all worked out from progress, so clearing only the
@@ -816,7 +819,7 @@ $("#resetGo").addEventListener("click", function () {
   if (!resetMatches()) return;
   RESET_KEYS.forEach(function (k) { try { localStorage.removeItem(PREFIX + k); } catch (e) {} });
   delete settings.palette; saveSettings();
-  location.replace(location.pathname + location.search);
+  location.reload();
 });
 function closeReset() { $("#resetText").value = ""; $("#resetGo").disabled = true; $("#resetBox").hidden = true; $("#resetOpen").hidden = false; }
 // The More sheet (the gear "More" button): Settings, Stats and About tabs. Opens on Settings, or `tab`.
