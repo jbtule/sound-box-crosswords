@@ -70,7 +70,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   loaded straight from `index.html`; the source runs as-is with any static server. The
   deploy only runs `scripts/stamp.mjs`, which copies `index.html`, `styles.css`,
   `packs.toml` and `js/` to `_site/`, writes each edition's manifest (`editions/<id>.webmanifest`), and stamps the commit: `?v=<sha>` cache busting (JS
-  modules via the import map, `packs.toml` via `words.js`) and the footer GitHub badge, on the app and the listen check
+  modules via the import map, `packs.toml` via `words.js`; the icons too, favicon, apple-touch-icon and
+  the manifests' icons, since Safari keeps an old icon for weeks) and the footer GitHub badge, on the app and the listen check
   (`listen.js` passes the stamp to the word lists and `audio.json`).
   New top-level site files must be added to `SITE` in `stamp.mjs`.
 - **Dependencies are fine** when they earn their place. Browser deps load from a CDN via
