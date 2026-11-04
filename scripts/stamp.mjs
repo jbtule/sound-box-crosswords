@@ -2,7 +2,9 @@
 //   node scripts/stamp.mjs <full-commit-sha>
 // - Cache busting: styles.css and every js/*.js get ?v=<short sha>. The JS modules are
 //   remapped through the import map, and js/words.js passes the stamp on to editions.toml
-//   and the packs files. The listen check (listen/) is stamped the same way.
+//   and the packs files. The listen check (listen/) is stamped the same way. So are the icons
+//   (favicon, apple-touch-icon, the manifests' icons): browsers, Safari most of all, keep an
+//   icon long after it changes, but a new address is fetched at once.
 // - The footer's GitHub badge shows the short sha (which version is deployed); it links to
 //   the repo's front page (README), not the commit.
 // - editions/<id>.webmanifest for each edition: manifest.webmanifest opening in that grade
@@ -37,6 +39,8 @@ for (const f of OPTIONAL) if (existsSync(join(root, f))) cpSync(join(root, f), j
 // job doesn't install packages (the check compares the two).
 const editionIds = (toml) => [...toml.matchAll(/^\s*id\s*=\s*"([^"]+)"/gm)].map((m) => m[1]);
 const manifest = JSON.parse(readFileSync(join(root, "manifest.webmanifest"), "utf8"));
+manifest.icons = manifest.icons.map((i) => ({ ...i, src: i.src + v }));
+writeFileSync(join(out, "manifest.webmanifest"), JSON.stringify(manifest, null, 2) + "\n");
 for (const id of editionIds(readFileSync(join(root, "editions.toml"), "utf8"))) {
   const m = { ...manifest, start_url: `../?start=${id}`, scope: "../", icons: manifest.icons.map((i) => ({ ...i, src: "../" + i.src })) };
   writeFileSync(join(out, "editions", id + ".webmanifest"), JSON.stringify(m, null, 2) + "\n");
@@ -52,6 +56,8 @@ function swap(from, to) {
 
 swap('href="styles.css"', `href="styles.css${v}"`);
 swap('src="js/app.js"', `src="js/app.js${v}"`);
+swap('href="favicon.svg"', `href="favicon.svg${v}"`);
+swap('href="apple-touch-icon.png"', `href="apple-touch-icon.png${v}"`);
 
 const mapMatch = html.match(/<script type="importmap">([\s\S]*?)<\/script>/);
 if (!mapMatch) throw new Error("stamp: no import map in index.html");
@@ -70,6 +76,7 @@ writeFileSync(join(out, "index.html"), html);
 // and the badge.
 html = readFileSync(join(root, "listen", "index.html"), "utf8");
 swap('href="../styles.css"', `href="../styles.css${v}"`);
+swap('href="../favicon.svg"', `href="../favicon.svg${v}"`);
 swap('src="listen.js"', `src="listen.js${v}"`);
 {
   const m = html.match(/<script type="importmap">([\s\S]*?)<\/script>/);
