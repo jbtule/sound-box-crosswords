@@ -7,7 +7,7 @@ import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
 import { catalog, award, dayKey, daysThisWeek, spokenParts } from "./achievements.js";
 import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle } from "./crossword.js";
 import { speak, say, sayAfter, sayRecorded, hasClip, splitOf, onClips, stopSpeech, speechEpoch, hasSpeech } from "./speech.js";
-import { blendsIn } from "./phonics.js";
+import { blendsIn, slipSpots } from "./phonics.js";
 
 var $ = function (s) { return document.querySelector(s); };
 
@@ -157,6 +157,9 @@ var counts = store.get("counts", null), days = store.get("days", null);
 if (!counts) counts = { clean: log.filter(function (e) { return e.m === 0; }).length, comeback: 0 };
 if (!days) days = log.map(function (e) { return dayKey(e.t); }).filter(function (d, i, a) { return a.indexOf(d) === i; });
 var earned = store.get("achievements", {});
+// Where wrong letters fall in try-agains (phonics.js slipSpots), counts only, for Stats.
+var SLIPS0 = { place: { start: 0, middle: 0, end: 0 }, kind: { vowel: 0, blend: 0, consonant: 0 } };
+var slips = store.get("slips", null) || JSON.parse(JSON.stringify(SLIPS0));
 // Color schemes (palettes.js): Classic, plus one more per pack finished. Cosmetic only.
 // Earned achievements are never taken away, so neither are unlocked colors.
 var paletteStyle = document.createElement("style");
@@ -400,13 +403,16 @@ function checkWord(i) {
   var st = wordStats(W.w);
   st.miss++;
   store.set("progress", progress);
-  var firstWrong = -1;
+  var firstWrong = -1, wrong = [];
   W.cells.forEach(function (c, j) {
     if (fill[c] !== W.w[j]) {
       if (firstWrong < 0) firstWrong = j;
+      wrong.push(j);
       flash(c, "wrong", 700); flash(c, "wiggle");
     }
   });
+  slipSpots(W.w, W.sounds, wrong).forEach(function (s) { slips.place[s.place]++; slips.kind[s.kind]++; });
+  store.set("slips", slips);
   update();
   setTimeout(function () {
     W.cells.forEach(function (c, j) { if (fill[c] !== W.w[j] && !locked[c]) delete fill[c]; });
@@ -669,16 +675,24 @@ function renderProgress() {
   el.querySelector(".txt").textContent = c.done + " of " + c.total + " words done";
 }
 // Settings: per-pack coverage and the puzzle log.
+// Packs shown in Stats: the ones on offer, and Custom while off only once it was played.
+function statsPacks() {
+  return Object.keys(PACKS).filter(function (id) { var c = coverage(id); return c.total && (packIds().indexOf(id) >= 0 || c.done); });
+}
 function renderProgressSheet() {
+  renderCalendar();
   var rows = $("#progressPacks"); rows.innerHTML = "";
-  Object.keys(PACKS).forEach(function (id) {
-    var c = coverage(id);
-    if (!c.total || (packIds().indexOf(id) < 0 && !c.done)) return;
-    var li = document.createElement("li");
-    li.textContent = PACKS[id].name + ": " + Math.round(100 * c.done / c.total) + "% of words (" + c.done + "/" + c.total + ")" +
-      " · " + (stars[id] || 0) + (stars[id] === 1 ? " puzzle" : " puzzles");
+  statsPacks().forEach(function (id) {
+    var c = coverage(id), stats = packProgress(id).stats;
+    var firsts = entries(id).filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
+    var li = document.createElement("li"), name = document.createElement("b");
+    name.textContent = PACKS[id].name;
+    li.append(name, ": " + c.done + " of " + c.total + " words · " + firsts + " right on the first try · " +
+      (stars[id] || 0) + (stars[id] === 1 ? " puzzle" : " puzzles"));
     rows.appendChild(li);
   });
+  renderSlips();
+  renderTricky();
   var list = $("#progressLog"); list.innerHTML = "";
   var fmt = { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
   log.slice(0, 30).forEach(function (e) {
@@ -688,6 +702,86 @@ function renderProgressSheet() {
     list.appendChild(li);
   });
   $("#progressEmpty").hidden = log.length > 0;
+}
+// Practice days: the last 4 weeks, Sunday first, a filled dot per day with a finished puzzle.
+function renderCalendar() {
+  var cal = $("#calendar"); cal.innerHTML = "";
+  var today = new Date(), start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() - 21);
+  for (var w = 0; w < 7; w++) {
+    var h = document.createElement("span"); h.className = "wd"; h.setAttribute("aria-hidden", "true");
+    h.textContent = new Date(2024, 0, 7 + w).toLocaleDateString(undefined, { weekday: "narrow" }); // Jan 7 2024 was a Sunday
+    cal.appendChild(h);
+  }
+  var practiced = 0;
+  for (var i = 0; i < 28; i++) {
+    var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = dayKey(d.getTime());
+    var on = days.indexOf(k) >= 0, cell = document.createElement("span");
+    cell.className = "day" + (on ? " on" : "") + (k === dayKey(today.getTime()) ? " today" : "") + (d > today ? " later" : "");
+    cell.title = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + (on ? ": practiced" : "");
+    if (on && d <= today) practiced++;
+    cal.appendChild(cell);
+  }
+  var sum = practiced + (practiced === 1 ? " day" : " days") + " practiced in the last 4 weeks · " + days.length + " in all";
+  cal.setAttribute("aria-label", sum);
+  $("#calSum").textContent = sum;
+}
+// Where the slips happen: shares of the wrong letters in try-agains, by place in the word and
+// by kind of sound, once there are enough to mean something.
+var SLIP_MIN = 10;
+function renderSlips() {
+  var total = slips.place.start + slips.place.middle + slips.place.end, wrap = $("#slipBars");
+  wrap.innerHTML = "";
+  $("#slipNote").textContent = total < SLIP_MIN
+    ? "Shows once there are " + SLIP_MIN + " wrong letters in try-agains (" + total + " so far)."
+    : "From " + total + " wrong letters in try-agains.";
+  if (total < SLIP_MIN) return;
+  var bars = document.createElement("div"); bars.className = "bars";
+  [["Where in the word", slips.place, [["start", "Beginning"], ["middle", "Middle"], ["end", "End"]]],
+   ["Which sounds", slips.kind, [["vowel", "Vowels"], ["blend", "Letters in blends"], ["consonant", "Other consonants"]]]
+  ].forEach(function (g) {
+    var sub = document.createElement("span"); sub.className = "sub"; sub.textContent = g[0];
+    bars.appendChild(sub);
+    g[2].forEach(function (row) {
+      var pct = Math.round(100 * g[1][row[0]] / total);
+      var lbl = document.createElement("span"), track = document.createElement("span"), fill = document.createElement("span"), val = document.createElement("span");
+      lbl.className = "lbl"; lbl.textContent = row[1];
+      track.className = "track"; track.setAttribute("aria-hidden", "true");
+      fill.className = "fill"; fill.style.width = pct + "%";
+      val.className = "val"; val.textContent = pct + "%";
+      track.appendChild(fill);
+      bars.append(lbl, track, val);
+    });
+  });
+  wrap.appendChild(bars);
+}
+// Tricky words: missed more often than spelled right on the first try, as pictures (or
+// their sound stickers) to tap and hear; never the spelling, since this sheet isn't locked.
+var TRICKY_MAX = 12;
+function renderTricky() {
+  var found = {}, list = $("#trickyList");
+  statsPacks().forEach(function (id) {
+    var words = entries(id), stats = packProgress(id).stats, stickers = listenStickers(words);
+    words.forEach(function (e) {
+      var st = stats[e.w];
+      if (!st || !st.miss || st.miss <= st.ok) return;
+      var score = st.miss - st.ok, have = found[e.w];
+      if (!have || score > have.score) found[e.w] = { e: e, score: score, miss: st.miss, sticker: stickers[e.w] };
+    });
+  });
+  var top = Object.keys(found).map(function (w) { return found[w]; })
+    .sort(function (a, b) { return b.score - a.score || b.miss - a.miss; }).slice(0, TRICKY_MAX);
+  list.innerHTML = "";
+  $("#trickyNote").textContent = top.length
+    ? "Missed more often than spelled right the first time. Tap a picture to hear the word."
+    : "None yet: words missed more often than spelled right will show here.";
+  top.forEach(function (t) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "col-slot got";
+    b.setAttribute("aria-label", "Tricky word, hear it");
+    if (t.e.pic) b.textContent = t.e.pic; else b.innerHTML = t.sticker;
+    b.addEventListener("click", function () { say("w", t.e.w, 0.85, true); });
+    list.appendChild(b);
+  });
 }
 // Settings → Edition: a dropdown of editions; switching reloads into that edition's own
 // lists, progress and settings. Hidden when there's only one.
@@ -711,7 +805,7 @@ $("#editionSel").addEventListener("change", function (e) {
 // achievements would bring them straight back. Typing the phrase keeps it from happening
 // by accident.
 var RESET_PHRASE = "start over";
-var RESET_KEYS = ["achievements", "progress", "counts", "days", "log", "stars", "puzzle", "pending"];
+var RESET_KEYS = ["achievements", "progress", "counts", "days", "log", "stars", "puzzle", "pending", "slips"];
 function resetMatches() { return $("#resetText").value.trim().toLowerCase() === RESET_PHRASE; }
 $("#resetOpen").addEventListener("click", function () {
   $("#resetOpen").hidden = true; $("#resetBox").hidden = false; $("#resetText").focus();

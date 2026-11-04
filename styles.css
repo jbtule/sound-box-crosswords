@@ -243,6 +243,20 @@ html.standalone { touch-action: pan-x pan-y; }
 .sheet { position: fixed; inset: 0; background: var(--scrim); z-index: 20; display: flex; align-items: flex-end; justify-content: center; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); }
 .panel { background: var(--card); width: 100%; max-width: 560px; max-height: 92%; overflow-y: auto; border-radius: 20px 20px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 16px; }
 .panel h2 { font-family: var(--display); margin: 0; font-size: 1.35rem; }
+/* Stats: practice calendar (4 weeks, a filled dot per day practiced) and slip bars (one
+   series in the accent, every bar labeled with its share). */
+.cal { display: grid; grid-template-columns: repeat(7, 32px); gap: 6px; margin: 4px 0 6px; }
+.cal .wd { font-size: 0.72rem; color: var(--muted); text-align: center; font-weight: 600; }
+.cal .day { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--key-edge); background: transparent; }
+.cal .day.on { background: var(--accent); border-color: var(--accent); }
+.cal .day.today { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--ink); }
+.cal .day.later { visibility: hidden; }
+.bars { display: grid; grid-template-columns: max-content 1fr 3.2em; gap: 6px 10px; align-items: center; margin: 4px 0 12px; }
+.bars .sub { grid-column: 1 / -1; font-size: 0.8rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
+.bars .lbl { font-size: 0.9rem; }
+.bars .track { height: 10px; border-radius: 999px; background: var(--key); overflow: hidden; }
+.bars .fill { display: block; height: 100%; border-radius: 999px; background: var(--accent); min-width: 2px; }
+.bars .val { font-size: 0.9rem; font-variant-numeric: tabular-nums; text-align: right; }
 /* The More sheet's tabs: each panel spaces its sections like the sheet does. */
 .tabpanel { display: flex; flex-direction: column; gap: 16px; }
 .tabpanel[hidden] { display: none; }
