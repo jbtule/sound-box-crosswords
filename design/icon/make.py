@@ -1,6 +1,6 @@
 # Draws the app icon as flat SVG layers for Apple's Icon Composer, which adds the glass,
 # highlights, shadows and corner mask itself:  python3 design/icon/make.py
-# Same idea as the Image Playground icon (apple-touch-icon.png): a crossword crossing whose
+# Same idea as the first icon (an Image Playground render): a crossword crossing whose
 # empty box is outlined in orange, with sound waves coming off it, on graph paper.
 # Writes, back to front: 1-background.svg, 2-boxes.svg, 3-empty-box.svg, 4-waves.svg, plus
 # icon-all-layers.svg (all four, for previewing). Colors are the app's (styles.css).

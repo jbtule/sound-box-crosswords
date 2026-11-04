@@ -1,8 +1,8 @@
 # App icon source
 
-Flat SVG layers of the app icon, for Apple's Icon Composer. Same idea as the Image
-Playground render the site uses now (`apple-touch-icon.png`, `icon-192.png`, `icon-512.png`):
-a crossword crossing whose empty box is outlined in orange, with sound waves, on graph paper.
+The app icon's source: flat SVG layers for Apple's Icon Composer, and the Icon Composer design
+made from them. A crossword crossing whose empty box is outlined in orange, with sound waves,
+on graph paper (the idea of the first icon, an Image Playground render).
 
 | File | Layer (back to front) |
 | --- | --- |
@@ -21,4 +21,7 @@ All are 1024 × 1024 with no shading or rounded corners: Icon Composer adds the 
 highlights, shadows and mask. Colors are the app's (`styles.css`). The layers are made by
 `make.py` (`python3 design/icon/make.py`); change it and rerun rather than editing the SVGs.
 
-Not part of the site: nothing here is deployed. Exported icons replace the PNGs at the root.
+Nothing here is deployed. `site.py` makes the site's icons from `full.icon` (macOS, with Icon
+Composer and Pillow: `python3 design/icon/site.py`): `icon-512.png` and `icon-192.png`
+(rounded, see-through corners) and `apple-touch-icon.png` (180 px, square and opaque, since iOS
+rounds it and shows see-through corners as black), converted from Display P3 to sRGB.
