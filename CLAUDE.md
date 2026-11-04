@@ -239,7 +239,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   puzzle (not one restored at launch; at launch it waits for the Start tap, `.board.waiting`),
   but only Next puzzle after finishing one moves the cycle on; otherwise the same one replays. The
   selection is off while one plays (`.board.entering`), so the premium ones can deliver the highlight;
-  skipped with reduced motion; any tap or key skips it and still acts. Its sounds are
+  skipped with reduced motion; taps and keys work during it but don't cut it short. Its sounds are
   `js/sfx.js` (`makeSfx`, Web Audio like the chime, through `audioOut()` in `chime.js`) and
   follow the Sound effects setting.
 - `js/achievements.js`: no DOM. `catalog(state)` lists achievements (pack champion, then once that's reached a pack

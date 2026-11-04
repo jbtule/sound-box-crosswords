@@ -224,7 +224,8 @@ function newPuzzle(solved) {
 // New-puzzle entrances (entrances.js): the boxes arrive in one of several ways, with sounds
 // (the Sound effects setting covers them). Every new puzzle gets one (not one restored at launch),
 // but the cycle only moves on after a finished puzzle (Next puzzle); otherwise the same one
-// plays again. Skipped with reduced motion. A tap or key skips to the finished board and still does what it does.
+// plays again. Skipped with reduced motion. Taps and keys work during it (typing fills the boxes
+// as they arrive) but don't cut it short; a new puzzle does.
 var entrance = null, waitTurn = false;
 function runEntrance(turn, after) {
   board.classList.remove("waiting");
@@ -233,15 +234,10 @@ function runEntrance(turn, after) {
   var saved = store.get("entrances", null), id = saved && saved.last;
   if (turn || !id) { var pick = nextEntrance(saved); store.set("entrances", pick.state); id = pick.id; }
   var run = playEntrance(id, geometry(P, board, order()), { audio: settings.chime ? audioOut() : null });
-  run.at = performance.now();
   entrance = run;
   run.done.then(function () { if (entrance === run) entrance = null; if (after) after(); });
 }
 function skipEntrance() { if (entrance) entrance.skip(); }
-// The tap or key that started an entrance (Start, Next puzzle) doesn't skip it.
-function skipOnInput() { if (entrance && performance.now() - entrance.at > 200) skipEntrance(); }
-document.addEventListener("pointerdown", skipOnInput, true);
-document.addEventListener("keydown", skipOnInput, true);
 // Word indexes in clue order: by number, across before down.
 function order() {
   return P.words.map(function (_, i) { return i; }).sort(function (a, b) {
