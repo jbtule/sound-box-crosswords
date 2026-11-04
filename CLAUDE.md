@@ -188,7 +188,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   with that `start_url`) carry the grade in use (`homeScreenEdition` in `app.js`); `?start=` only
   applies when the device hasn't picked one. Each
   edition keeps its own progress, achievements, collection, colors, Custom list and settings
-  (letter pad, syllable colors, auto-speak, chime, Custom pack on/off); an edition
+  (letter pad, syllable colors, auto-speak, sound effects, Custom pack on/off); an edition
   can set the letter pad default (`keyboard = "abc"`) and turn on Sound it out
   (`sound_it_out = true`). The check, the audio build and the
   listen check cover every edition. Never change an edition's `id` once in use.
@@ -239,7 +239,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   puzzle (not one restored at launch; at launch it waits for the Start tap, `.board.waiting`),
   skipped with reduced motion; any tap or key skips it and still acts. Its sounds are
   `js/sfx.js` (`makeSfx`, Web Audio like the chime, through `audioOut()` in `chime.js`) and
-  follow the Chime setting.
+  follow the Sound effects setting.
 - `js/achievements.js`: no DOM. `catalog(state)` lists achievements (pack champion, then once that's reached a pack
   Legend, every word right on the first try, not for Custom, and unlocking no colors; tiered
   clean solves, comeback words, practice days, showing only the next unmet tier), `award`
@@ -280,7 +280,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   file sharing isn't supported. The big award card shows Share; earned achievements in the
   🏆 sheet reopen in it. The PNG is made when the card shows, since iPad Safari only opens
   the share sheet straight from a tap.
-- `js/chime.js`: Web Audio reward sounds, picked by ear (Settings → Chime): `chime()` on solve
+- `js/chime.js`: Web Audio reward sounds, picked by ear (Settings → Sound effects): `chime()` on solve
   (a quick glitter run of high bells), `sparkle()` before "New achievement!" (a climb into a chord). The
   audio context is unlocked on the first tap for iOS. It doesn't follow the mute switch:
   iOS can only do that for the whole page, which would silence the recorded words too.
