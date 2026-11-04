@@ -30,6 +30,136 @@ export var ENTRANCES = [
       });
       return a;
     } },
+  { id: "stamp", name: "Stamp", premium: false,
+    // Boxes come down from above the page, big as if close, and press onto the paper a few at
+    // a time, each batch with a rubber-stamp thump; now and then the board gives a tiny shake.
+    plan: function (g, sfx) {
+      var a = {}, keys = shuffle(g.order), t = 0, i = 0, batch = 0, DROP = 0.36;
+      while (i < keys.length) {
+        var size = 2 + Math.floor(Math.random() * 3), group = keys.slice(i, i + size), land = t + DROP * 0.8;
+        group.forEach(function (k, n) {
+          var tilt = Math.round(Math.random() * 16 - 8);
+          a[k] = { kf: [
+              { transform: "scale(2.7) rotate(" + tilt + "deg)", opacity: 0, zIndex: 2, boxShadow: "0 18px 30px rgba(0,0,0,.25)", offset: 0 },
+              { opacity: 0.9, offset: 0.3 },
+              { transform: "scale(.9) rotate(0)", opacity: 1, zIndex: 2, boxShadow: "0 0 0 rgba(0,0,0,0)", offset: 0.8 },
+              { transform: "scale(1)", opacity: 1, zIndex: 1, boxShadow: "0 0 0 rgba(0,0,0,0)", offset: 1 }],
+            delay: t + n * 0.03, dur: DROP, ease: "cubic-bezier(.55,0,.9,.45)" };
+        });
+        sfx(land, function (at, S) { S.thump(at); });
+        if (batch % 3 === 2) g.at(land, function () { return shake(g.board, 2); });
+        i += size; batch++; t += 0.24 + Math.random() * 0.12;
+      }
+      return a;
+    } },
+  { id: "raindrops", name: "Raindrops", premium: false,
+    // Boxes drop in at random spots like rain, getting busier as it goes. Each landing sends a
+    // ring spreading out in its syllable color, with a water-drop plip.
+    plan: function (g, sfx) {
+      var a = {}, keys = shuffle(g.order), n = keys.length, FALL = 0.32;
+      keys.forEach(function (k, i) {
+        var o = g.cells[k], p = i / Math.max(1, n - 1), at = Math.pow(p, 0.7) * 2.1 + Math.random() * 0.12;
+        a[k] = { kf: [{ transform: "translateY(-28px) scale(.35)", opacity: 0, offset: 0 }, { transform: "translateY(0) scale(1.08, .9)", opacity: 1, offset: 0.7 }, { transform: "scale(1)", opacity: 1 }], delay: at, dur: FALL, ease: "ease-in" };
+        var land = at + FALL * 0.7, f = 520 + Math.random() * 380;
+        sfx(land, function (when, S) { S.plip(when, f); });
+        g.at(land, function () {
+          var r = document.createElement("div");
+          r.className = "entrance-ring " + o.band;
+          r.style.width = o.el.offsetWidth + "px"; r.style.height = o.el.offsetHeight + "px";
+          r.style.left = o.el.offsetLeft + "px"; r.style.top = o.el.offsetTop + "px";
+          g.board.appendChild(r);
+          var an = r.animate([{ transform: "scale(1)", opacity: 0.8 }, { transform: "scale(2.1)", opacity: 0 }], { duration: 700, easing: "ease-out" });
+          an.onfinish = an.oncancel = function () { r.remove(); };
+          return an;
+        });
+      });
+      return a;
+    } },
+  { id: "converge", name: "Converge", premium: false,
+    // Boxes start scattered across the board and glide into the grid, over a rising swoosh
+    // that resolves into a chord as everything snaps into place.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step, H = g.rows * step, end = 0;
+      g.order.forEach(function (k) {
+        var o = g.cells[k], tx = Math.random() * W - o.c * step - g.size / 2, ty = Math.random() * H - o.r * step - g.size / 2;
+        var rot = Math.round(Math.random() * 120 - 60), at = Math.random() * 0.25, dur = 0.9 + Math.random() * 0.3;
+        a[k] = { kf: [{ transform: "translate(" + tx + "px," + ty + "px) rotate(" + rot + "deg) scale(.55)", opacity: 0 }, { opacity: 1, offset: 0.25 }, { transform: "translate(0,0) rotate(0) scale(1)", opacity: 1 }], delay: at, dur: dur, ease: "cubic-bezier(.3,.7,.2,1.08)" };
+        end = Math.max(end, at + dur);
+      });
+      sfx(0, function (at, S) { S.glide(at, end * 0.85); });
+      sfx(end * 0.9, function (at, S) { S.chord(at, [523.25, 659.25, 783.99, 1046.5], 0.14); });
+      return a;
+    } },
+  { id: "sweep", name: "Sweep", premium: false,
+    // A left-to-right wave, column by column, like a scanner passing over the paper. One note
+    // per column, climbing.
+    plan: function (g, sfx) {
+      var a = {}, seen = {};
+      g.order.forEach(function (k) {
+        var o = g.cells[k], at = o.c * 0.13 + o.r * 0.012;
+        a[k] = { kf: [{ transform: "translateY(22px) scaleY(.4)", opacity: 0 }, { transform: "translateY(-3px) scaleY(1.05)", opacity: 1, offset: 0.7 }, { transform: "translateY(0) scaleY(1)", opacity: 1 }], delay: at, dur: 0.42, ease: "ease-out" };
+        if (!seen[o.c]) { seen[o.c] = 1; sfx(o.c * 0.13, function (when, S) { S.run(when, o.c + 1); }); }
+      });
+      return a;
+    } },
+  { id: "flip", name: "Flip", premium: false,
+    // Boxes flip over in place one after another, in reading order, like cards turning face
+    // up, each with a card-flip click.
+    plan: function (g, sfx) {
+      var a = {};
+      readingOrder(g).forEach(function (k, i) {
+        var at = i * 0.05;
+        a[k] = { kf: [{ transform: "rotateY(-180deg)", opacity: 0, offset: 0 }, { opacity: 1, offset: 0.35 }, { transform: "rotateY(12deg)", offset: 0.8 }, { transform: "rotateY(0)", opacity: 1 }], delay: at, dur: 0.6, ease: "ease-out" };
+        sfx(at + 0.2, function (when, S) { S.click(when, i); });
+      });
+      return a;
+    } },
+  { id: "spin", name: "Spin in", premium: false,
+    // Boxes come spinning in from every side, spiraling as they shrink into place, over a
+    // rising whirr; they settle with a little rattle, like a coin wobbling to a stop.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, D = (g.cols + g.rows) * step * 0.62, end = 0;
+      shuffle(g.order).forEach(function (k, i) {
+        var th = Math.random() * Math.PI * 2, dir = Math.random() < 0.5 ? -1 : 1, at = i * 0.045, dur = 1.0;
+        var sx = Math.cos(th) * D, sy = Math.sin(th) * D, mx = Math.cos(th + dir * 1.1) * D * 0.38, my = Math.sin(th + dir * 1.1) * D * 0.38;
+        a[k] = { kf: [
+            { transform: "translate(" + sx + "px," + sy + "px) rotate(" + (dir * 900) + "deg) scale(.35)", opacity: 0, offset: 0 },
+            { opacity: 1, offset: 0.2 },
+            { transform: "translate(" + mx + "px," + my + "px) rotate(" + (dir * 320) + "deg) scale(1.15)", opacity: 1, offset: 0.65 },
+            { transform: "translate(0,0) rotate(0) scale(1)", opacity: 1, offset: 1 }],
+          delay: at, dur: dur, ease: "cubic-bezier(.3,.6,.35,1)" };
+        if (i % 3 === 0) sfx(at + dur * 0.9, function (when, S) { S.settle(when, i / 3); });
+        end = Math.max(end, at + dur);
+      });
+      sfx(0, function (at, S) { S.whirr(at, end); });
+      return a;
+    } },
+  { id: "leaves", name: "Leaves in the wind", premium: false,
+    // A gust sweeps in from the left and the boxes ride it like leaves, tumbling and
+    // fluttering, slowing as the wind dies, then rocking gently to rest. Wind and rustles.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step, H = g.rows * step, end = 0;
+      shuffle(g.order).forEach(function (k) {
+        var o = g.cells[k], at = Math.pow(Math.random(), 1.4) * 1.3, dur = 2.6 + Math.random() * 0.8;
+        var x0 = -(W * 0.55 + o.c * step + Math.random() * W * 0.3), y0 = (Math.random() - 0.5) * H * 0.9;
+        var amp = g.size * (1.2 + Math.random()), ph = Math.random() * Math.PI * 2, rock = 50 + Math.random() * 40, flip = Math.random() < 0.5 ? 360 : -360;
+        var kf = [], N = 7;
+        for (var j = 0; j <= N; j++) {
+          var p = j / N, ease = 1 - Math.pow(1 - p, 2.2), damp = Math.pow(1 - p, 1.3);
+          var x = x0 * (1 - ease), y = y0 * (1 - ease) + amp * damp * Math.sin(ph + p * Math.PI * 3.2);
+          var rz = rock * damp * Math.sin(ph * 1.7 + p * Math.PI * 4), ry = flip * (1 - ease);
+          kf.push({ transform: "translate(" + x + "px," + y + "px) rotate(" + rz + "deg) rotateY(" + ry + "deg)", opacity: j === 0 ? 0 : 1, offset: p * 0.86 });
+        }
+        kf.push({ transform: "rotate(-5deg)", opacity: 1, offset: 0.92 });
+        kf.push({ transform: "rotate(2.5deg)", opacity: 1, offset: 0.96 });
+        kf.push({ transform: "rotate(0)", opacity: 1, offset: 1 });
+        a[k] = { kf: kf, delay: at, dur: dur, ease: "linear" };
+        end = Math.max(end, at + dur);
+      });
+      sfx(0, function (at, S) { S.wind(at, end * 0.95); });
+      for (var r = 0; r < 14; r++) sfx(Math.pow(Math.random(), 1.2) * end * 0.8, function (at, S) { S.rustle(at); });
+      return a;
+    } },
   { id: "zoom", name: "Zoom", premium: false,
     // Boxes grow outward from the crossings, past their size, then settle. A pop as each
     // ring grows, a soft tap as it settles.
@@ -104,6 +234,11 @@ export var ENTRANCES = [
     } }
 ];
 
+function readingOrder(g) { return g.order.slice().sort(function (a, b) { return g.cells[a].r - g.cells[b].r || g.cells[a].c - g.cells[b].c; }); }
+// A small jolt of the whole board, as if something landed hard.
+function shake(el, px) {
+  return el.animate([{ transform: "translate(0,0)" }, { transform: "translate(" + -px + "px," + px + "px)" }, { transform: "translate(" + px + "px," + -px / 2 + "px)" }, { transform: "translate(" + -px / 2 + "px," + px / 2 + "px)" }, { transform: "translate(0,0)" }], { duration: 180, easing: "ease-out" });
+}
 function shuffle(list) {
   var a = list.slice();
   for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; }
