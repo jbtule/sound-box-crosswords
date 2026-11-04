@@ -142,11 +142,15 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
   const picks = Object.keys(JSON.parse(readFileSync(join(root, "scripts/audio/sounds/picks.json"), "utf8")));
   for (const n of names) if (!picks.includes(n)) errors.push(`scripts/audio/sounds/picks.json: no pick for the sound "${n}" (js/phonics.js)`);
   for (const n of picks) if (!names.includes(n)) errors.push(`js/phonics.js: SOUNDS is missing "${n}" (scripts/audio/sounds/picks.json)`);
+  // Stops, as phonics.js lists them (blend names) and lab.py makes them.
+  const { STOPS } = await import("../js/phonics.js");
+  const labStops = [...readFileSync(join(root, "scripts/audio/sounds/lab.py"), "utf8").matchAll(/\("([a-z]+)", "[a-z]+", "[^"]+", "stop"\)/g)].map((m) => m[1]);
+  if (!labStops.length || labStops.sort().join() !== [...STOPS].sort().join()) errors.push(`js/phonics.js: STOPS (${STOPS.join(" ")}) should be the sounds lab.py marks "stop" (${labStops.join(" ")})`);
   // The sounds' clip names don't follow their code on their own (see SOUND_RECIPE).
   const { SOUND_INPUTS, SOUND_FILES, soundInputs } = await import("./audio/build.mjs");
   const now = soundInputs();
   if (now !== SOUND_INPUTS) errors.push(`scripts/audio/build.mjs: ${SOUND_FILES.join(", ")} changed (SOUND_INPUTS is ${SOUND_INPUTS}, now ${now}). ` +
-    `If the Sound it out clips will sound different, give those sounds a new value in SOUND_RECIPE_FOR (only they re-record and lose their listen marks), or SOUND_RECIPE for all 46; if blend() changed, bump BLEND_RECIPE (re-records the blends). Either way, set SOUND_INPUTS to "${now}".`);
+    `If the Sound it out clips will sound different, give those sounds a new value in SOUND_RECIPE_FOR (only they re-record and lose their listen marks), or SOUND_RECIPE for all 46; if blend() changed, bump BLEND_RECIPE or BLEND_STOP_RECIPE (re-records those blends). Either way, set SOUND_INPUTS to "${now}".`);
 }
 
 // Achievement cards are read aloud line by line (spokenParts); spokenLines() must list

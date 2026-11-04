@@ -94,7 +94,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   sounds gives just the changed ones a value in `SOUND_RECIPE_FOR` (only they re-record and lose their marks), or all 46 a new
   `SOUND_RECIPE`; plus a blend clip (`f:f+r`) for each pair of consonant sounds a word uses
   (`blendsIn` in `phonics.js`), made from the two picked sounds by `blend()` in `lab.py` (a held
-  first sound cut to 220 ms, 30 ms overlap, picked by ear; `BLEND_RECIPE` in `build.mjs`), with
+  first sound cut to 220 ms, 30 ms overlap; a stop second, as in n+d, comes after a 90 ms gap
+  instead, since overlapping hid its burst; picked by ear; `BLEND_RECIPE` / `BLEND_STOP_RECIPE`
+  in `build.mjs`, `STOPS` in `phonics.js`), with
   `<key>.json` beside it giving where the second sound starts, which `audio.json` carries as
   `splits` for the app to light that box; never the device voice, which can't say "k"):
   Kokoro (open-source neural TTS, voice `af_heart`), pre-generated at deploy by

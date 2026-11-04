@@ -33,6 +33,9 @@ export var EXAMPLE = {
 // in one blend at most: s t r → s+t, then r.
 var VOWELS = ["a", "e", "i", "o", "u", "ay", "ee", "igh", "oh", "oo", "uu", "ow", "oy", "aw", "uh",
   "ar", "or", "er", "air", "ear"];
+// Stops: sounds said as a short burst, not held (scripts/audio/sounds/lab.py marks the same
+// ones "stop"; the check keeps them equal). A blend ending in one is made differently.
+export var STOPS = ["b", "d", "g", "k", "p", "t", "ch", "j", "ks", "kw"];
 // `names`: a word's sounds in order ("f", "r", "o", "g") → [{ at: 0, name: "f+r" }], `at`
 // being the index of the blend's first sound.
 export function blendsIn(names) {
