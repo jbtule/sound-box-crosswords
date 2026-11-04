@@ -289,6 +289,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   - Saved progress (`sbx:progress`, per pack): `done`, `round` (coverage), and
     `stats[word]` = `{ n, ok, miss }` (typed completions, first-try right, wrong tries);
     words finished by a crossing word don't count as typed. `sbx:log`: finished puzzles.
+  - Start / Continue (`showStart` / `start`): one big button over the board at launch, since
+    iOS plays recorded words, the device voice and the chime only after a tap; tapping it (or
+    any key, which isn't typed) dismisses it and says the current word if auto-speak is on.
+    Skipped after the first-visit grade question (a tap already). On return from the
+    background, Continue shows only if `audioAwake()` (`chime.js`) can't wake the sound.
+    Its text color is navy or white, whichever stands out more on the scheme's accent (`onAccent`).
   - `input` / `checkWord` / `complete` / `settleCrossings`: whole-word checking only. Letters
     are accepted until the word is full; then wrong letters flash and clear. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck

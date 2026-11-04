@@ -1,6 +1,6 @@
 // Game state, play logic, rendering, and the settings sheet.
 import { confetti } from "./confetti.js";
-import { chime, sparkle } from "./chime.js";
+import { chime, sparkle, audioAwake } from "./chime.js";
 import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
@@ -58,6 +58,7 @@ if ("serviceWorker" in navigator && !/^(localhost|127\.0\.0\.1)$/.test(location.
 // the one picked before, a ?start= address (below), the original edition for anyone with
 // progress from before there were editions, the only one, or else ask once ("Which
 // grade?"), before the first puzzle.
+var gradeTapped = false;
 async function pickEdition(eds) {
   var e = await chooseEdition(eds);
   homeScreenEdition(e);
@@ -75,6 +76,7 @@ async function chooseEdition(eds) {
   var original = eds.find(function (e) { return e.file === "packs.toml"; });
   if (before && original) { device.set("edition", original.id); return original; }
   if (eds.length === 1) return eds[0];
+  gradeTapped = true; // that tap also lets sound play, so no Start button after it
   var chosen = await new Promise(function (resolve) {
     var box = $("#gradeChoices"); box.innerHTML = "";
     eds.forEach(function (e) {
@@ -1304,6 +1306,45 @@ if (window.IntersectionObserver) new IntersectionObserver(function (es) {
 }).observe($("#kbEnd"));
 if (!hasSpeech) { ["hearBtn", "clapBtn", "soundBtn"].forEach(function (id) { $("#" + id).title = "Sound isn't available in this browser"; }); }
 
+// Start / Continue: iOS plays recorded words, the device voice and the chime only after a tap,
+// and nothing on screen asks for one at launch. One big button does (speech.js and chime.js
+// unlock on that first tap); it then says the current word, if that setting is on. Skipped
+// after the first-visit grade question, which is a tap already. On return from the background,
+// Continue shows only if the sound can't wake without a tap.
+var started = false;
+// Navy or white, whichever stands out more on the accent (color schemes change it).
+function onAccent() {
+  var lum = function (hex) {
+    var c = [1, 3, 5].map(function (i) { var v = parseInt(hex.slice(i, i + 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  };
+  var acc = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+  if (!/^#[0-9a-f]{6}$/i.test(acc)) return;
+  var a = lum(acc), navy = (a + 0.05) / (lum("#1b2a41") + 0.05), white = 1.05 / (a + 0.05);
+  document.documentElement.style.setProperty("--on-accent", navy >= white ? "#1b2a41" : "#ffffff");
+}
+function showStart(continuing) {
+  onAccent();
+  $("#startLabel").textContent = continuing ? "Continue" : "Start";
+  $("#startOverlay").hidden = false;
+  $("#startBtn").focus();
+}
+function start() {
+  if ($("#startOverlay").hidden) return;
+  $("#startOverlay").hidden = true;
+  started = true;
+  if (P && !finished && settings.speakSel) sayWord(P.words[cur], 0.85);
+}
+$("#startOverlay").addEventListener("click", start);
+document.addEventListener("keydown", function (e) { // a physical key starts too, and isn't typed into the puzzle
+  if ($("#startOverlay").hidden) return;
+  e.preventDefault(); e.stopPropagation(); start();
+}, true);
+document.addEventListener("visibilitychange", function () {
+  if (document.visibilityState !== "visible" || !$("#startOverlay").hidden || (!started && !gradeTapped)) return;
+  audioAwake().then(function (ok) { if (!ok && document.visibilityState === "visible") showStart(true); });
+});
+
 // A home-screen app usually resumes instead of relaunching, so it would keep running an
 // old deploy. Each time it comes back on screen, compare this build's ?v= stamp with the
 // live page's. If it changed, reload now (the puzzle in progress is saved and comes back)
@@ -1333,4 +1374,6 @@ store.set("pending", pending);
 refreshPill();
 renderPacks();
 renderKeyboard();
-if (!loadPuzzle()) newPuzzle();
+var resumed = loadPuzzle();
+if (!resumed) newPuzzle();
+if (!gradeTapped) showStart(resumed);

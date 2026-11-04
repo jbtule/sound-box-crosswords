@@ -27,6 +27,15 @@ function unlock() {
 document.addEventListener("pointerdown", unlock, true);
 document.addEventListener("keydown", unlock, true);
 
+// Whether sound can play now. After the app was in the background, iOS may have paused the
+// audio; try to wake it, and if that needs a tap, say so (app.js then shows Continue).
+export function audioAwake() {
+  if (!ctx) return Promise.resolve(false);
+  if (ctx.state === "running") return Promise.resolve(true);
+  try { return ctx.resume().then(function () { return ctx.state === "running"; }, function () { return false; }); }
+  catch (e) { return Promise.resolve(false); }
+}
+
 // A solved puzzle: "glitter", a fast run of eight high bells up a pentatonic scale
 // (G5 to C7) with an echo, about a second.
 export function chime() {
