@@ -195,9 +195,12 @@
     </div>
     <div>
       <h3>Custom words</h3>
+      <div class="opt"><label><input type="checkbox" id="optCustom"> Add a Custom pack with your own words</label></div>
+      <div id="customBox" hidden>
       <textarea id="customText" aria-label="Your word list" spellcheck="false"></textarea>
       <p class="help">One word per line. Add dashes between syllables (<code>rain-bow</code>) so the colors and “Break it down” work. An emoji after the word becomes the picture; leave it off for words a picture can’t show, and the clue is “listen” only. Add a sentence in quotes to say the word in context: <code>there "Put the box over there."</code> If “Break it down” says a beat wrong, add how it sounds in brackets: <code>pea-nut 🥜 (pee-nut)</code>. The starter list is an example — swap in this week’s school words. Unlike the pack words, custom words aren’t recorded ahead of time: this device’s built-in voice reads them, so they can sound flatter or more robotic.</p>
       <div class="row" style="margin-top:10px"><button class="primary" id="saveBtn" type="button">Save and play custom words</button><span id="saveMsg" role="status"></span></div>
+      </div>
     </div>
     <div>
       <h3>Start over</h3>
