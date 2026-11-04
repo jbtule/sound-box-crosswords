@@ -23,7 +23,7 @@ import { join } from "node:path";
 import { readPacks, readEditions } from "../../js/words.js";
 import { spokenLines } from "../../js/achievements.js";
 import { parseList, clipsFor } from "../../js/crossword.js";
-import { blendsIn } from "../../js/phonics.js";
+import { blendsIn, STOPS } from "../../js/phonics.js";
 
 export const MODEL = "kokoro-v1.0";
 export const VOICE = "af_heart";
@@ -64,10 +64,12 @@ export const SOUND_RECIPE = "007b92ef43eb";
 // Sounds re-picked since SOUND_RECIPE: name -> its own recipe value.
 export const SOUND_RECIPE_FOR = { i: "core70-kid-slow" };
 // Blends ("f+r") are made from two picked sounds (lab.py, blend()), so their names follow
-// both sounds' recipes and BLEND_RECIPE: bump it when blend() changes.
+// both sounds' recipes and BLEND_RECIPE (BLEND_STOP_RECIPE when the second is a stop, which
+// joins on after a gap instead): bump the one whose blends blend() now makes differently.
 export const BLEND_RECIPE = "hold220-xf30";
+export const BLEND_STOP_RECIPE = "hold220-gap90";
 const recipeOf = (name) => SOUND_RECIPE_FOR[name] ?? SOUND_RECIPE;
-export const SOUND_INPUTS = "0ee101fb4ad4";
+export const SOUND_INPUTS = "85ab609680c9";
 export const SOUND_FILES = ["sounds/picks.json", "sounds/lab.py", "kokoro_core.py"];
 export function soundInputs() {
   return createHash("sha256")
@@ -78,7 +80,7 @@ export function soundInputs() {
 export function keyFor(kind, text) {
   if (kind === "f" && text.includes("+")) {
     const [a, b] = text.split("+");
-    return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "blend", BLEND_RECIPE, recipeOf(a), recipeOf(b), text])).digest("hex").slice(0, 20);
+    return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "blend", STOPS.includes(b) ? BLEND_STOP_RECIPE : BLEND_RECIPE, recipeOf(a), recipeOf(b), text])).digest("hex").slice(0, 20);
   }
   if (kind === "f") return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "sound", recipeOf(text), text])).digest("hex").slice(0, 20);
   const parts = [MODEL, VOICE, speedOf(kind, text), ENCODING];

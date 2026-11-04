@@ -169,8 +169,10 @@ def render(name):
 # Blends (js/phonics.js, blendsIn): the two picked sounds, the first cut to BLEND_HOLD_MS
 # when it's one you can hold (f, s, l…; a stop is short already), overlapped by
 # BLEND_OVERLAP_MS. Picked by ear ("f220+r-xf30") from 150/220 ms, 0/30 ms, the second
-# shortened or not, and the pair cut from a word.
-BLEND_HOLD_MS, BLEND_OVERLAP_MS = 220, 30
+# shortened or not, and the pair cut from a word. When the second is a stop (n+d in hand),
+# overlapping fades out its burst, so it comes BLEND_STOP_GAP_MS after the first instead, the
+# way a stop starts with a moment's closure (picked by ear from overlap 30, 0, gap 30/60/90).
+BLEND_HOLD_MS, BLEND_OVERLAP_MS, BLEND_STOP_GAP_MS = 220, 30, 90
 
 
 def blend(name):
@@ -179,8 +181,12 @@ def blend(name):
     hold = next(r for r in SOUNDS if r[0] == a)[3] == "hold"
     x = part(a, PICKS[a], BLEND_HOLD_MS if hold else 0)
     y = part(b, PICKS[b])
-    audio = join(x, y, -BLEND_OVERLAP_MS)
-    split = len(x) - BLEND_OVERLAP_MS * g.SR // 1000 // 2  # the middle of the overlap
+    if next(r for r in SOUNDS if r[0] == b)[3] == "stop":
+        audio = join(x, y, BLEND_STOP_GAP_MS)
+        split = len(x) + BLEND_STOP_GAP_MS * g.SR // 1000  # where the stop starts
+    else:
+        audio = join(x, y, -BLEND_OVERLAP_MS)
+        split = len(x) - BLEND_OVERLAP_MS * g.SR // 1000 // 2  # the middle of the overlap
     # finish() trims leading quiet (keeping 20 ms); move the split with it.
     loud = np.flatnonzero(np.abs(audio) > 0.004)
     cut = max(0, loud[0] - int(0.02 * g.SR)) if len(loud) else 0
