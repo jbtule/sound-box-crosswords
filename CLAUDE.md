@@ -140,6 +140,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `favicon.svg` (hand-drawn, simple enough for 16px) and `apple-touch-icon.png` (180px
   home-screen icon, from an Image Playground render): the same idea, a crossing of sound
   boxes with the empty orange box and sound waves.
+  `design/icon/`: the same idea as flat SVG layers for Apple's Icon Composer (made by
+  `make.py`; not deployed), the source for a nicer icon to replace those PNGs.
 - `manifest.webmanifest`, `icon-192.png`, `icon-512.png`: the home-screen / install
   manifest (short name "Sound Box"). Icons are the same render as `apple-touch-icon.png`.
 - Share sheet (footer link; `openShare` / `renderShare` in `app.js`): a QR code drawn by
