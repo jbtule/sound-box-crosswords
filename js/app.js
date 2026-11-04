@@ -221,21 +221,29 @@ function newPuzzle(solved) {
   var turn = solved === true; // only finishing a puzzle moves on to the next entrance
   if (started || gradeTapped) runEntrance(turn); else { board.classList.add("waiting"); waitTurn = turn; } // the Start tap plays it
 }
+// The first word, said as the new puzzle's boxes land (with auto-speak on), unless the player has
+// already moved on: picked another word or typed.
+function sayFirstWord(p) {
+  if (P !== p || finished || !settings.speakSel || cur !== order()[0] || Object.keys(fill).length) return;
+  sayWord(P.words[cur], 0.85);
+}
 // New-puzzle entrances (entrances.js): the boxes arrive in one of several ways, with sounds
 // (the Sound effects setting covers them). Every new puzzle gets one (not one restored at launch),
 // but the cycle only moves on after a finished puzzle (Next puzzle); otherwise the same one
 // plays again. Skipped with reduced motion. Taps and keys work during it (typing fills the boxes
 // as they arrive) but don't cut it short; a new puzzle does.
 var entrance = null, waitTurn = false;
-function runEntrance(turn, after) {
+function runEntrance(turn) {
   board.classList.remove("waiting");
   skipEntrance();
-  if (!P || reducedMotion() || document.hidden) { if (after) after(); return; }
+  var p = P, after = function () { sayFirstWord(p); };
+  if (!P || document.hidden) return;
+  if (reducedMotion()) { after(); return; }
   var saved = store.get("entrances", null), id = saved && saved.last;
   if (turn || !id) { var pick = nextEntrance(saved); store.set("entrances", pick.state); id = pick.id; }
   var run = playEntrance(id, geometry(P, board, order()), { audio: settings.chime ? audioOut() : null });
   entrance = run;
-  run.done.then(function () { if (entrance === run) entrance = null; if (after) after(); });
+  run.done.then(function (skipped) { if (entrance === run) entrance = null; if (!skipped) after(); });
 }
 function skipEntrance() { if (entrance) entrance.skip(); }
 // Word indexes in clue order: by number, across before down.
@@ -1354,8 +1362,8 @@ function start() {
   if ($("#startOverlay").hidden) return;
   $("#startOverlay").hidden = true;
   started = true;
-  var say = function () { if (P && !finished && settings.speakSel) sayWord(P.words[cur], 0.85); };
-  if (board.classList.contains("waiting")) runEntrance(waitTurn, say); else say();
+  if (board.classList.contains("waiting")) runEntrance(waitTurn); // says the first word as it ends
+  else if (P && !finished && settings.speakSel) sayWord(P.words[cur], 0.85);
 }
 $("#startOverlay").addEventListener("click", start);
 document.addEventListener("keydown", function (e) { // a physical key starts too, and isn't typed into the puzzle

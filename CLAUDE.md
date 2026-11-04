@@ -237,7 +237,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   turn a premium one (`PREMIUM_EVERY`), otherwise an everyday one, each kind from its own
   shuffled queue, never the same twice in a row (saved per edition as `entrances`). In `app.js`, `runEntrance` plays one for a new
   puzzle (not one restored at launch; at launch it waits for the Start tap, `.board.waiting`),
-  but only Next puzzle after finishing one moves the cycle on; otherwise the same one replays. The
+  but only Next puzzle after finishing one moves the cycle on; otherwise the same one replays. As it ends, the first word is said (with auto-speak on;
+  `sayFirstWord`), unless the player already picked another word or typed. The
   selection is off while one plays (`.board.entering`), so the premium ones can deliver the highlight;
   skipped with reduced motion; taps and keys work during it but don't cut it short. Its sounds are
   `js/sfx.js` (`makeSfx`, Web Audio like the chime, through `audioOut()` in `chime.js`) and
