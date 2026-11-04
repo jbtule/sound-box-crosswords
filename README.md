@@ -62,6 +62,7 @@ own licenses:
   Google Fonts.
 - The recorded voice is generated with [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M)
   (Apache 2.0), voice `af_heart`, run with [kokoro-onnx](https://github.com/thewh1teagle/kokoro-onnx).
+  [MODELS.md](MODELS.md) lists everything that makes the recordings, with licenses.
 - Pictures are emoji drawn by each device's own font; none are bundled.
 - Build-time tools (Playwright, the speech runtime) are under their own licenses and
   aren't part of the site.

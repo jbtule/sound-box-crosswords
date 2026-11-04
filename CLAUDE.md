@@ -336,5 +336,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `Required Notice:` copyright that must travel with copies). The README lists the
   third-party parts; add any new dependency, font or asset there with its license, and
   name it in About's Credits line (`index.html`), which links to the README's License section.
+  `MODELS.md` describes the models and tools that make the recordings (About's "Kokoro" links
+  there, not to the model's own page); update it when the audio build changes.
 - This repo is public. Keep it about the general learner profile; don't add personal details
   about any specific child (name, school, diagnoses).
