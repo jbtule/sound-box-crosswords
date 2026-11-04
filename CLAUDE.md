@@ -47,7 +47,8 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
 7. **A grown-up can tune it** without code, in Settings: syllable colors on/off, auto-speak,
-   QWERTY (default) vs A–Z pad, custom word list. Nothing in Settings makes the game easier,
+   QWERTY (default) vs A–Z pad, a Custom pack with their own word list (off by default:
+   `settings.custom`, `packIds()` in `app.js`; on where Custom was used before the switch). Nothing in Settings makes the game easier,
    so it needs no lock (Start over, which erases progress, asks for a typed phrase instead).
    Keep it that way: don't add settings that weaken recall.
 
@@ -171,7 +172,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   with that `start_url`) carry the grade in use (`homeScreenEdition` in `app.js`); `?start=` only
   applies when the device hasn't picked one. Each
   edition keeps its own progress, achievements, collection, colors, Custom list and settings
-  (letter pad, syllable colors, auto-speak); the chime is the device's; an edition
+  (letter pad, syllable colors, auto-speak, Custom pack on/off); the chime is the device's; an edition
   can set the letter pad default (`keyboard = "abc"`) and turn on Sound it out
   (`sound_it_out = true`). The check, the audio build and the
   listen check cover every edition. Never change an edition's `id` once in use.

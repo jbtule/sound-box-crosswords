@@ -132,7 +132,15 @@ var settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, 
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
 var packId = store.get("pack", "");
-if (!PACKS[packId]) packId = Object.keys(PACKS)[0];
+// The Custom pack ("mine") is off until a grown-up turns it on in Settings, except where it
+// was already in use before the switch existed (a saved list, picked, or played).
+if (settings.custom === undefined) {
+  var oldProg = store.get("progress", {}).mine;
+  settings.custom = store.get("custom", null) !== null || packId === "mine" || !!(oldProg && oldProg.done && Object.keys(oldProg.done).length);
+}
+// Packs to offer: every pack, and Custom when it's on.
+function packIds() { return Object.keys(PACKS).filter(function (id) { return id !== "mine" || settings.custom; }); }
+if (!PACKS[packId] || packIds().indexOf(packId) < 0) packId = packIds()[0];
 var recent = []; // words from recent puzzles, avoided in the next one
 // Per pack: `done` = words completed at least once (the % shown); `round` = words completed
 // since the pack was last fully covered, so new puzzles bring in the rest first;
@@ -617,7 +625,7 @@ board.addEventListener("click", function (e) {
 /* ---------- packs + settings ---------- */
 function renderPacks() {
   var wrap = $("#packs"); wrap.innerHTML = "";
-  Object.keys(PACKS).forEach(function (id) {
+  packIds().forEach(function (id) {
     var b = document.createElement("button");
     b.type = "button"; b.className = "chip";
     b.setAttribute("aria-pressed", id === packId ? "true" : "false");
@@ -648,7 +656,7 @@ function renderProgressSheet() {
   var rows = $("#progressPacks"); rows.innerHTML = "";
   Object.keys(PACKS).forEach(function (id) {
     var c = coverage(id);
-    if (!c.total) return;
+    if (!c.total || (packIds().indexOf(id) < 0 && !c.done)) return;
     var li = document.createElement("li");
     li.textContent = PACKS[id].name + ": " + Math.round(100 * c.done / c.total) + "% of words (" + c.done + "/" + c.total + ")" +
       " · " + (stars[id] || 0) + (stars[id] === 1 ? " puzzle" : " puzzles");
@@ -710,6 +718,8 @@ function openSheet() {
   $("#kbAbc").checked = settings.kb === "abc";
   $("#kbQwerty").checked = settings.kb === "qwerty";
   $("#customText").value = customText;
+  $("#optCustom").checked = settings.custom;
+  $("#customBox").hidden = !settings.custom;
   renderProgressSheet();
   $("#saveMsg").textContent = "";
   $("#sheet").hidden = false;
@@ -718,7 +728,9 @@ function openSheet() {
 /* ---------- achievements ---------- */
 function achState() {
   return {
-    packs: Object.keys(PACKS).map(function (id) {
+    packs: Object.keys(PACKS).filter(function (id) {
+      return packIds().indexOf(id) >= 0 || coverage(id).done > 0; // Custom while off: only once played
+    }).map(function (id) {
       var c = coverage(id), stats = packProgress(id).stats;
       var firsts = entries(id).filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
       return { id: id, name: PACKS[id].name, done: c.done, total: c.total, firsts: firsts };
@@ -1013,6 +1025,12 @@ $("#sheet").addEventListener("click", function (e) { if (e.target === $("#sheet"
 $("#optSyl").addEventListener("change", function (e) { settings.syl = e.target.checked; saveSettings(); update(); });
 $("#optSpeakSel").addEventListener("change", function (e) { settings.speakSel = e.target.checked; saveSettings(); });
 $("#optChime").addEventListener("change", function (e) { settings.chime = e.target.checked; saveSettings(); if (settings.chime) chime(); });
+$("#optCustom").addEventListener("change", function (e) {
+  settings.custom = e.target.checked; saveSettings();
+  $("#customBox").hidden = !settings.custom;
+  if (!settings.custom && packId === "mine") { packId = packIds()[0]; store.set("pack", packId); recent = []; newPuzzle(); }
+  renderPacks(); renderProgressSheet();
+});
 ["kbAbc", "kbQwerty"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.kb = e.target.value; saveSettings(); renderKeyboard(); sizeBoard(); }); });
 $("#saveBtn").addEventListener("click", function () {
   var txt = $("#customText").value, n = parseList(txt).length;
