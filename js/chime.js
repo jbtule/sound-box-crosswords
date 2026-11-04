@@ -36,6 +36,10 @@ export function audioAwake() {
   catch (e) { return Promise.resolve(false); }
 }
 
+// The audio context and output, for other synthesized sounds (the new-puzzle entrances), once
+// the first tap has made them; null before that.
+export function audioOut() { return ctx ? { ctx: ctx, out: out } : null; }
+
 // A solved puzzle: "glitter", a fast run of eight high bells up a pentatonic scale
 // (G5 to C7) with an echo, about a second.
 export function chime() {

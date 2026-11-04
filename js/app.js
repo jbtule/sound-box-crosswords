@@ -1,6 +1,7 @@
 // Game state, play logic, rendering, and the settings sheet.
 import { confetti } from "./confetti.js";
-import { chime, sparkle, audioAwake } from "./chime.js";
+import { chime, sparkle, audioAwake, audioOut } from "./chime.js";
+import { geometry, playEntrance, nextEntrance } from "./entrances.js";
 import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
@@ -204,6 +205,7 @@ var pz = { helped: {}, crossed: {}, twofer: false, keys: false };
 
 function newPuzzle() {
   if (updateReady) { location.reload(); return; }
+  skipEntrance();
   $("#done").hidden = true;
   finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {}; newPics = 0; pz = { helped: {}, crossed: {}, twofer: false, keys: false };
   var pool = entries(packId);
@@ -216,7 +218,28 @@ function newPuzzle() {
   renderBoard();
   renderClues();
   select(order()[0], null, false);
+  if (started || gradeTapped) runEntrance(); else board.classList.add("waiting"); // the Start tap plays it
 }
+// New-puzzle entrances (entrances.js): the boxes arrive in one of several ways, with sounds
+// (the Chime setting covers them). Only for a new puzzle, not one restored at launch; skipped
+// with reduced motion. A tap or key skips to the finished board and still does what it does.
+var entrance = null;
+function runEntrance(after) {
+  board.classList.remove("waiting");
+  skipEntrance();
+  if (!P || reducedMotion() || document.hidden) { if (after) after(); return; }
+  var pick = nextEntrance(store.get("entrances", null));
+  store.set("entrances", pick.state);
+  var run = playEntrance(pick.id, geometry(P, board, order()), { audio: settings.chime ? audioOut() : null });
+  run.at = performance.now();
+  entrance = run;
+  run.done.then(function () { if (entrance === run) entrance = null; if (after) after(); });
+}
+function skipEntrance() { if (entrance) entrance.skip(); }
+// The tap or key that started an entrance (Start, Next puzzle) doesn't skip it.
+function skipOnInput() { if (entrance && performance.now() - entrance.at > 200) skipEntrance(); }
+document.addEventListener("pointerdown", skipOnInput, true);
+document.addEventListener("keydown", skipOnInput, true);
 // Word indexes in clue order: by number, across before down.
 function order() {
   return P.words.map(function (_, i) { return i; }).sort(function (a, b) {
@@ -1333,7 +1356,8 @@ function start() {
   if ($("#startOverlay").hidden) return;
   $("#startOverlay").hidden = true;
   started = true;
-  if (P && !finished && settings.speakSel) sayWord(P.words[cur], 0.85);
+  var say = function () { if (P && !finished && settings.speakSel) sayWord(P.words[cur], 0.85); };
+  if (board.classList.contains("waiting")) runEntrance(say); else say();
 }
 $("#startOverlay").addEventListener("click", start);
 document.addEventListener("keydown", function (e) { // a physical key starts too, and isn't typed into the puzzle

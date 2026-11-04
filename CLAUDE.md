@@ -230,6 +230,16 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   fits a phone, avoids `recent` words. Returns `P` (`words`, `cells`, `rows`, `cols`); each
   word has `cells`, `chunks` (syllables) and `sylOf` (syllable index per letter).
 - `js/confetti.js`: `confetti(host)`, the solve celebration (skipped with reduced motion).
+- `js/entrances.js`: new-puzzle entrances, how a fresh puzzle's boxes arrive (designed in the
+  Board Entrances spike). `ENTRANCES` (each a `plan` of keyframes per box plus timed sounds;
+  `premium` ones are the showpieces), `geometry` (where each box is), `playEntrance` (`{ done,
+  skip }`; skip jumps to the finished board and silences its sounds) and `nextEntrance`: every
+  everyday one once, shuffled, then each premium one once, then again, never the same twice
+  in a row (saved per edition as `entrances`). In `app.js`, `runEntrance` plays one for a new
+  puzzle (not one restored at launch; at launch it waits for the Start tap, `.board.waiting`),
+  skipped with reduced motion; any tap or key skips it and still acts. Its sounds are
+  `js/sfx.js` (`makeSfx`, Web Audio like the chime, through `audioOut()` in `chime.js`) and
+  follow the Chime setting.
 - `js/achievements.js`: no DOM. `catalog(state)` lists achievements (pack champion, then once that's reached a pack
   Legend, every word right on the first try, not for Custom, and unlocking no colors; tiered
   clean solves, comeback words, practice days, showing only the next unmet tier), `award`
