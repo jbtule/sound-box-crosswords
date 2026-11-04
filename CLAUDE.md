@@ -137,11 +137,14 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 ## Code map
 
 - `index.html`: markup only (board, clue bar, letter pad, settings sheet).
-- `favicon.svg` (hand-drawn, simple enough for 16px) and `apple-touch-icon.png` (180px
-  home-screen icon, from an Image Playground render): the same idea, a crossing of sound
-  boxes with the empty orange box and sound waves.
-- `manifest.webmanifest`, `icon-192.png`, `icon-512.png`: the home-screen / install
-  manifest (short name "Sound Box"). Icons are the same render as `apple-touch-icon.png`.
+- The app icon: a crossing of sound boxes with the empty orange box and sound waves.
+  `design/icon/` holds its source (not deployed): flat SVG layers made by `make.py`, and
+  `full.icon`, the Icon Composer design (blue, with dark and tinted versions).
+  `design/icon/site.py` renders it into `apple-touch-icon.png` (180px, square and opaque, as
+  iOS needs), `icon-192.png` and `icon-512.png` (rounded, see-through corners), in sRGB;
+  rerun it after changing `full.icon`. `favicon.svg` is hand-drawn, simple enough for 16px.
+- `manifest.webmanifest`: the home-screen / install manifest (short name "Sound Box"),
+  with `icon-192.png` and `icon-512.png`.
 - Share sheet (footer link; `openShare` / `renderShare` in `app.js`): a QR code drawn by
   `qrcode` for the site's fixed address, or with `?edition=<id>` when sharing just this
   grade (the default when there's more than one), plus the link, the share sheet or Copy link.

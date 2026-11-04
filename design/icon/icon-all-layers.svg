@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" fill="#e9f0f7"/>
+  <line x1="0" y1="32" x2="1024" y2="32" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="72" y1="0" x2="72" y2="1024" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="0" y1="120" x2="1024" y2="120" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="160" y1="0" x2="160" y2="1024" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="0" y1="208" x2="1024" y2="208" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="248" y1="0" x2="248" y2="1024" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="0" y1="296" x2="1024" y2="296" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="336" y1="0" x2="336" y2="1024" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="0" y1="384" x2="1024" y2="384" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="424" y1="0" x2="424" y2="1024" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="0" y1="472" x2="1024" y2="472" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="512" y1="0" x2="512" y2="1024" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="0" y1="560" x2="1024" y2="560" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="600" y1="0" x2="600" y2="1024" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="0" y1="648" x2="1024" y2="648" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="688" y1="0" x2="688" y2="1024" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="0" y1="736" x2="1024" y2="736" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="776" y1="0" x2="776" y2="1024" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="0" y1="824" x2="1024" y2="824" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="864" y1="0" x2="864" y2="1024" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="0" y1="912" x2="1024" y2="912" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="952" y1="0" x2="952" y2="1024" stroke="#cfdcea" stroke-width="3"/>
+  <line x1="0" y1="1000" x2="1024" y2="1000" stroke="#cfdcea" stroke-width="3"/>
+  <rect x="-94" y="482" width="156" height="156" rx="30" fill="#9fdcbf"/>
+  <rect x="82" y="482" width="156" height="156" rx="30" fill="#c9b6f5"/>
+  <rect x="258" y="482" width="156" height="156" rx="30" fill="#c9b6f5"/>
+  <rect x="434" y="-46" width="156" height="156" rx="30" fill="#9fdcbf"/>
+  <rect x="434" y="130" width="156" height="156" rx="30" fill="#c9b6f5"/>
+  <rect x="434" y="306" width="156" height="156" rx="30" fill="#ffffff" stroke="#b4c4d7" stroke-width="6"/>
+  <rect x="434" y="658" width="156" height="156" rx="30" fill="#ffffff" stroke="#b4c4d7" stroke-width="6"/>
+  <rect x="434" y="834" width="156" height="156" rx="30" fill="#ffffff" stroke="#b4c4d7" stroke-width="6"/>
+  <rect x="430" y="478" width="164" height="164" rx="30" fill="#ffffff" stroke="#ef7d22" stroke-width="26"/>
+  <path d="M652.9 464.9 A170 170 0 0 1 652.9 655.1" fill="none" stroke="#ef7d22" stroke-width="40" stroke-linecap="round"/>
+  <path d="M707.3 396.1 A255 255 0 0 1 707.3 723.9" fill="none" stroke="#ef7d22" stroke-width="40" stroke-linecap="round"/>
+  <path d="M756.6 323.8 A340 340 0 0 1 756.6 796.2" fill="none" stroke="#ef7d22" stroke-width="40" stroke-linecap="round"/>
+</svg>
