@@ -203,7 +203,7 @@ var newPics = 0;  // pictures added to the collection in this puzzle
 // word that finished a crossing word too (`twofer`), and letters typed on real keys (`keys`).
 var pz = { helped: {}, crossed: {}, twofer: false, keys: false };
 
-function newPuzzle(celebrate) {
+function newPuzzle(solved) {
   if (updateReady) { location.reload(); return; }
   skipEntrance();
   $("#done").hidden = true;
@@ -218,24 +218,27 @@ function newPuzzle(celebrate) {
   renderBoard();
   renderClues();
   select(order()[0], null, false);
-  if (celebrate === true) runEntrance();
+  var turn = solved === true; // only finishing a puzzle moves on to the next entrance
+  if (started || gradeTapped) runEntrance(turn); else { board.classList.add("waiting"); waitTurn = turn; } // the Start tap plays it
 }
 // New-puzzle entrances (entrances.js): the boxes arrive in one of several ways, with sounds
-// (the Sound effects setting covers them). Only for Next puzzle after finishing one (a reward,
-// not every new board: not at launch, a pack switch or New puzzle); skipped with reduced motion. A tap or key skips to the finished board and still does what it does.
-var entrance = null;
-function runEntrance() {
+// (the Sound effects setting covers them). Every new puzzle gets one (not one restored at launch),
+// but the cycle only moves on after a finished puzzle (Next puzzle); otherwise the same one
+// plays again. Skipped with reduced motion. A tap or key skips to the finished board and still does what it does.
+var entrance = null, waitTurn = false;
+function runEntrance(turn, after) {
+  board.classList.remove("waiting");
   skipEntrance();
-  if (!P || reducedMotion() || document.hidden) return;
-  var pick = nextEntrance(store.get("entrances", null));
-  store.set("entrances", pick.state);
-  var run = playEntrance(pick.id, geometry(P, board, order()), { audio: settings.chime ? audioOut() : null });
+  if (!P || reducedMotion() || document.hidden) { if (after) after(); return; }
+  var saved = store.get("entrances", null), id = saved && saved.last;
+  if (turn || !id) { var pick = nextEntrance(saved); store.set("entrances", pick.state); id = pick.id; }
+  var run = playEntrance(id, geometry(P, board, order()), { audio: settings.chime ? audioOut() : null });
   run.at = performance.now();
   entrance = run;
-  run.done.then(function () { if (entrance === run) entrance = null; });
+  run.done.then(function () { if (entrance === run) entrance = null; if (after) after(); });
 }
 function skipEntrance() { if (entrance) entrance.skip(); }
-// The tap or key on Next puzzle that started an entrance doesn't skip it.
+// The tap or key that started an entrance (Start, Next puzzle) doesn't skip it.
 function skipOnInput() { if (entrance && performance.now() - entrance.at > 200) skipEntrance(); }
 document.addEventListener("pointerdown", skipOnInput, true);
 document.addEventListener("keydown", skipOnInput, true);
@@ -1355,7 +1358,8 @@ function start() {
   if ($("#startOverlay").hidden) return;
   $("#startOverlay").hidden = true;
   started = true;
-  if (P && !finished && settings.speakSel) sayWord(P.words[cur], 0.85);
+  var say = function () { if (P && !finished && settings.speakSel) sayWord(P.words[cur], 0.85); };
+  if (board.classList.contains("waiting")) runEntrance(waitTurn, say); else say();
 }
 $("#startOverlay").addEventListener("click", start);
 document.addEventListener("keydown", function (e) { // a physical key starts too, and isn't typed into the puzzle

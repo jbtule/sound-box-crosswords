@@ -235,9 +235,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `premium` ones are the showpieces), `geometry` (where each box is), `playEntrance` (`{ done,
   skip }`; skip jumps to the finished board and silences its sounds) and `nextEntrance`: every
   everyday one once, shuffled, then each premium one once, then again, never the same twice
-  in a row (saved per edition as `entrances`). In `app.js`, `runEntrance` plays one as a reward, only
-  for Next puzzle after finishing one (not at launch, a pack switch or New puzzle); the selection
-  is off while one plays, `.board.entering`, so the premium ones can deliver the highlight;
+  in a row (saved per edition as `entrances`). In `app.js`, `runEntrance` plays one for a new
+  puzzle (not one restored at launch; at launch it waits for the Start tap, `.board.waiting`),
+  but only Next puzzle after finishing one moves the cycle on; otherwise the same one replays. The
+  selection is off while one plays (`.board.entering`), so the premium ones can deliver the highlight;
   skipped with reduced motion; any tap or key skips it and still acts. Its sounds are
   `js/sfx.js` (`makeSfx`, Web Audio like the chime, through `audioOut()` in `chime.js`) and
   follow the Sound effects setting.
