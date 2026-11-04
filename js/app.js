@@ -822,7 +822,8 @@ function closeReset() { $("#resetText").value = ""; $("#resetGo").disabled = tru
 // The More sheet (⚙️ More): Settings, Stats and About tabs. Opens on Settings, or `tab`.
 var SHEET_TABS = { set: ["#tabSet", "#setPanel"], stats: ["#tabStats", "#statsPanel"], about: ["#tabAbout", "#aboutPanel"] };
 function openSheet(tab) {
-  selectTab(SHEET_TABS, SHEET_TABS[tab] ? tab : "set");
+  var first = SHEET_TABS[tab] ? tab : "set";
+  selectTab(SHEET_TABS, first);
   renderGrades();
   closeReset();
   document.querySelectorAll(".edName").forEach(function (el) { el.textContent = EDITIONS.length > 1 ? EDITION.name : "this grade"; });
@@ -837,6 +838,7 @@ function openSheet(tab) {
   renderProgressSheet();
   $("#saveMsg").textContent = "";
   $("#sheet").hidden = false;
+  steadyHeight(SHEET_TABS, first);
   $("#closeBtn").focus();
 }
 /* ---------- achievements ---------- */
@@ -1072,6 +1074,19 @@ function selectTab(tabs, name) {
     $(tabs[k][1]).hidden = k !== name;
   });
 }
+// A sheet sits at the bottom of the screen and fits its content, so a shorter tab would drop
+// its top edge (a jump on a desktop). Once it's showing, this sizes it for its tallest tab, so
+// switching tabs never moves it; the next open measures again.
+function steadyHeight(tabs, name) {
+  var panel = $(tabs[name][1]).closest(".panel"), tallest = 0;
+  panel.style.minHeight = "";
+  Object.keys(tabs).forEach(function (k) {
+    Object.keys(tabs).forEach(function (j) { $(tabs[j][1]).hidden = j !== k; });
+    tallest = Math.max(tallest, panel.offsetHeight);
+  });
+  selectTab(tabs, name);
+  panel.style.minHeight = tallest + "px";
+}
 var TABS = { ach: ["#tabAch", "#achPanel"], col: ["#tabCol", "#colPanel"], pal: ["#tabPal", "#palPanel"] };
 function showTab(name) {
   selectTab(TABS, name);
@@ -1107,6 +1122,8 @@ function openAchievements() {
   });
   showTab("ach");
   $("#achSheet").hidden = false;
+  renderCollection(); renderColors(); // measured below, so draw them now
+  steadyHeight(TABS, "ach");
   $("#achClose").focus();
 }
 function closeAchievements() { $("#achSheet").hidden = true; $("#trophyBtn").focus(); refreshPill(); }
