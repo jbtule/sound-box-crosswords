@@ -13,6 +13,7 @@
 #   stretch (holds only) "word", with its steady middle repeated to about HOLD_MS
 #   burst  (stops) just the release from the start of the example word, before the vowel
 #   final  (stops) the stop at the end of a word (FINAL), released into silence
+#   core   (EXTRA, vowels) a vowel's steady middle cut from a word, both ends trimmed
 # Every candidate is scaled to the same peak so they compare fairly.
 import html
 import json
@@ -62,6 +63,10 @@ FINAL = {"b": ("cab", "kˈæ[b]"), "d": ("bed", "bˈɛ[d]"), "g": ("dog", "dˈɔ
 # "final", "mid" (between vowels), "onset" (plus ms of the next vowel) or "burst", speed,
 # and ms (burst length, or how much vowel for onset).
 EXTRA = {
+    # Short i said alone starts breathy, and cut from a word it keeps a trace of the
+    # consonants around it, so: the vowel's steady middle, 70 ms trimmed off each end (core).
+    # Picked by ear from it, in, sit, fish and kid, 40 or 70 ms, held or not.
+    "i": [("core70-kid-slow", "k[ˈɪ]d", "core", SLOW, 70)],
     "g": [(f"final-{w}{'-slow' if sp < SPEED else ''}", ps, "final", sp, 0)
           for w, ps in [("bag", "bˈæ[ɡ]"), ("big", "bˈɪ[ɡ]"), ("leg", "lˈɛ[ɡ]"), ("egg", "ˈɛ[ɡ]")] for sp in (SPEED, SLOW)]
          + [(f"burst{ms}-{w}", ps, "burst", SPEED, ms) for w, ps in [("go", "[ɡ]ˈO"), ("get", "[ɡ]ˈɛt"), ("gum", "[ɡ]ˈʌm")] for ms in (40, 50)],
@@ -122,6 +127,8 @@ def candidates(name, word_ps, kind, combos=True, only=None):
             out[label] = g.cut_phonemes(plain, VOICE, sp, xa, xb, 0, 150)
         elif mode == "mid":  # between vowels: stop where the next vowel starts
             out[label] = g.cut_phonemes(plain, VOICE, sp, xa, xb, 0, 0)
+        elif mode == "core":  # a vowel's steady middle: ms cut off each end
+            out[label] = g.cut_phonemes(plain, VOICE, sp, xa, xb, -ms, -ms)
         elif mode == "onset":  # the sound and the first ms of the vowel after it
             out[label] = g.cut_phonemes(plain, VOICE, sp, xa, xb, 10, ms)
         else:
@@ -198,10 +205,13 @@ def stretch(audio, ms):
 
 def main():
     model_dir, out_dir = sys.argv[1:3]
+    only = set(sys.argv[3].split(",")) if len(sys.argv) > 3 else None  # e.g. "i,e": just those sounds
     g.load(model_dir)
     os.makedirs(out_dir, exist_ok=True)
     rows = []
     for name, word, word_ps, kind in SOUNDS:
+        if only and name not in only:
+            continue
         cells = []
         for method, audio in candidates(name, word_ps, kind).items():
             audio = finish(audio)

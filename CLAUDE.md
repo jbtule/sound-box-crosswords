@@ -85,10 +85,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `achievements.js`, which the check keeps in step with `catalog`),
   and the 46 single sounds for Sound it out (kind `f`; each made the way
   `scripts/audio/sounds/picks.json` says, picked by ear from the candidates
-  `scripts/audio/sounds/run.sh` makes with `lab.py`; their clip names use `SOUND_RECIPE` in
+  `scripts/audio/sounds/run.sh` makes with `lab.py` (a third argument, e.g. `"i,e"`, makes just those); their clip names use `SOUND_RECIPE` in
   `build.mjs`, not a code hash, so the grown-up's listen marks survive unrelated edits: the check
   fails when `picks.json`, `lab.py` or `kokoro_core.py` change, and a change that alters the
-  sounds gets a new `SOUND_RECIPE` (re-records just the 46 sounds, resetting their marks); never the device voice, which can't say "k"):
+  sounds gives just the changed ones a value in `SOUND_RECIPE_FOR` (only they re-record and lose their marks), or all 46 a new
+  `SOUND_RECIPE`; never the device voice, which can't say "k"):
   Kokoro (open-source neural TTS, voice `af_heart`), pre-generated at deploy by
   `scripts/audio/build.mjs` and served from Cloudflare Pages
   (`sound-box-crosswords.asset-data.stream`, project `sound-box-crosswords-audio`). Words
