@@ -221,7 +221,7 @@ function newPuzzle() {
   if (started || gradeTapped) runEntrance(); else board.classList.add("waiting"); // the Start tap plays it
 }
 // New-puzzle entrances (entrances.js): the boxes arrive in one of several ways, with sounds
-// (the Chime setting covers them). Only for a new puzzle, not one restored at launch; skipped
+// (the Sound effects setting covers them). Only for a new puzzle, not one restored at launch; skipped
 // with reduced motion. A tap or key skips to the finished board and still does what it does.
 var entrance = null;
 function runEntrance(after) {
@@ -997,7 +997,7 @@ function prepareShare(a) {
 }
 function showAward(first) {
   var a = awardQueue[awardIndex], n = awardQueue.length, last = awardIndex === n - 1;
-  // A new one gets a sparkle (with the Chime setting) and is read aloud: "New achievement!",
+  // A new one gets a sparkle (with the Sound effects setting) and is read aloud: "New achievement!",
   // its name, what it took. The first waits for "You solved it!"; moving to another card
   // replaces what's being said.
   var kicker = awardFrom ? "Achievement" : a.secret ? "Secret achievement!" : "New achievement!";
