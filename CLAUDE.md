@@ -142,7 +142,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `full.icon`, the Icon Composer design (blue, with dark and tinted versions).
   `design/icon/site.py` renders it into `apple-touch-icon.png` (180px, square and opaque, as
   iOS needs), `icon-192.png` and `icon-512.png` (rounded, see-through corners), in sRGB;
-  rerun it after changing `full.icon`. `favicon.svg` is hand-drawn, simple enough for 16px.
+  rerun it after changing `full.icon`. `favicon.svg` is hand-drawn, simple enough for 16px, in the icon's
+  colors (blue `#2da5ff`, the icon's sRGB blue).
 - `manifest.webmanifest`: the home-screen / install manifest (short name "Sound Box"),
   with `icon-192.png` and `icon-512.png`.
 - Share sheet (footer link; `openShare` / `renderShare` in `app.js`): a QR code drawn by
