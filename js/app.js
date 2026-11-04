@@ -227,7 +227,7 @@ function sizeBoard() {
 }
 function renderEmpty() {
   board.style.gridTemplateColumns = "";
-  board.innerHTML = '<p class="empty-msg">This pack needs at least 3 words. Open <b>Settings</b> and add words under “Custom words”.</p>';
+  board.innerHTML = '<p class="empty-msg">This pack needs at least 3 words. Open <b>⚙️ More</b> and add words under “Custom words”.</p>';
   $("#clueList").innerHTML = "";
   $("#pic").textContent = "✏️"; $("#clueLabel").textContent = "No puzzle yet"; $("#clueSub").textContent = "";
   $("#clueSent").hidden = true;
@@ -725,7 +725,10 @@ $("#resetGo").addEventListener("click", function () {
   location.replace(location.pathname + location.search);
 });
 function closeReset() { $("#resetText").value = ""; $("#resetGo").disabled = true; $("#resetBox").hidden = true; $("#resetOpen").hidden = false; }
-function openSheet() {
+// The More sheet (⚙️ More): Settings, Stats and About tabs. Opens on Settings, or `tab`.
+var SHEET_TABS = { set: ["#tabSet", "#setPanel"], stats: ["#tabStats", "#statsPanel"], about: ["#tabAbout", "#aboutPanel"] };
+function openSheet(tab) {
+  selectTab(SHEET_TABS, SHEET_TABS[tab] ? tab : "set");
   renderGrades();
   closeReset();
   document.querySelectorAll(".edName").forEach(function (el) { el.textContent = EDITIONS.length > 1 ? EDITION.name : "this grade"; });
@@ -968,12 +971,16 @@ function renderColors() {
     wrap.appendChild(b);
   });
 }
+// Tabs: { name: [tab button, panel] }; shows one, hides the rest.
+function selectTab(tabs, name) {
+  Object.keys(tabs).forEach(function (k) {
+    $(tabs[k][0]).setAttribute("aria-selected", String(k === name));
+    $(tabs[k][1]).hidden = k !== name;
+  });
+}
 var TABS = { ach: ["#tabAch", "#achPanel"], col: ["#tabCol", "#colPanel"], pal: ["#tabPal", "#palPanel"] };
 function showTab(name) {
-  Object.keys(TABS).forEach(function (k) {
-    $(TABS[k][0]).setAttribute("aria-selected", String(k === name));
-    $(TABS[k][1]).hidden = k !== name;
-  });
+  selectTab(TABS, name);
   if (name === "col") renderCollection();
   if (name === "pal") renderColors();
 }
@@ -1016,10 +1023,11 @@ function saveSettings() {
   store.set("settings", own);
   device.set("shared", shared);
 }
-$("#settingsBtn").addEventListener("click", openSheet);
+$("#settingsBtn").addEventListener("click", function () { openSheet(); });
 $("#trophyBtn").addEventListener("click", openAchievements);
 $("#awardNext").addEventListener("click", nextAward);
 Object.keys(TABS).forEach(function (k) { $(TABS[k][0]).addEventListener("click", function () { showTab(k); }); });
+Object.keys(SHEET_TABS).forEach(function (k) { $(SHEET_TABS[k][0]).addEventListener("click", function () { selectTab(SHEET_TABS, k); }); });
 $("#awardPrev").addEventListener("click", prevAward);
 $("#awardHear").addEventListener("click", hearAward);
 $("#awardClose").addEventListener("click", closeAwards);
@@ -1062,7 +1070,7 @@ $("#saveBtn").addEventListener("click", function () {
 /* ---------- add to Home Screen ---------- */
 // Full screen, offline (sw.js), and Safari can clear a site's saved data after weeks
 // unused, which it doesn't do for Home Screen apps. iPad/iPhone have no install prompt, so
-// Settings shows the Share steps; browsers that fire beforeinstallprompt get a button.
+// More → About shows the Share steps; browsers that fire beforeinstallprompt get a button.
 // Hidden once running from the Home Screen.
 var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 var installEvt = null;
@@ -1092,7 +1100,7 @@ $("#installNo").addEventListener("click", function () {
 });
 $("#installHow").addEventListener("click", function () {
   if (installEvt) { installNow(); return; }
-  openSheet();
+  openSheet("about");
   $("#installSec").scrollIntoView({ block: "start" });
 });
 renderInstall();

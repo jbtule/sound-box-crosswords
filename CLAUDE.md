@@ -49,7 +49,7 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    pause can't sound blended: the held sounds alone run ~650 ms).
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
-7. **A grown-up can tune it** without code, in Settings: syllable colors on/off, auto-speak,
+7. **A grown-up can tune it** without code, in Settings (the ⚙️ More button's first tab): syllable colors on/off, auto-speak,
    QWERTY (default) vs A–Z pad, a Custom pack with their own word list (off by default:
    `settings.custom`, `packIds()` in `app.js`; on where Custom was used before the switch). Nothing in Settings makes the game easier,
    so it needs no lock (Start over, which erases progress, asks for a typed phrase instead).
@@ -287,7 +287,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     player guess letters until one stuck.)
   - `clap`: the Break it down scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
-  - Settings sheet: `openSheet` / `closeSheet` and the change handlers below them.
+  - The More sheet (⚙️ More button, `#settingsBtn`): tabs Settings, Stats (each pack's
+    progress, recent puzzles) and About (license, Home Screen steps); `openSheet(tab)` opens
+    on Settings or the named tab (`SHEET_TABS`; the Home Screen tip's How? opens About), with
+    `closeSheet` and the change handlers below them. `selectTab` switches tabs here and in 🏆.
   - Start over (Settings): clears this edition's `achievements`, `progress`, `counts`, `days`,
     `log`, `stars`, `puzzle` and `pending` (`RESET_KEYS`) and the color scheme, once "start over" is
     typed. Achievements, stars, pictures and colors are all worked out from progress, so

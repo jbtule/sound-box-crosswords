@@ -111,7 +111,8 @@ html.standalone { touch-action: pan-x pan-y; }
 .done { position: absolute; inset: 0; border-radius: 18px; background: color-mix(in srgb, var(--card) 92%, transparent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 16px; }
 .done .big { font-size: 3rem; line-height: 1; }
 .done-new { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 0.95rem; }
-.top-buttons { display: flex; gap: 8px; }
+.top-buttons { display: flex; gap: 8px; flex-shrink: 0; }
+.top-buttons .ghost { white-space: nowrap; }
 .toast { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 4; background: var(--ink); color: var(--card); border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: 0.92rem; pointer-events: none; white-space: nowrap; }
 .toast.show { animation: toast 1.8s ease both; }
 @keyframes toast { 0% { opacity: 0; transform: translate(-50%, -6px); } 12%, 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
@@ -242,6 +243,9 @@ html.standalone { touch-action: pan-x pan-y; }
 .sheet { position: fixed; inset: 0; background: var(--scrim); z-index: 20; display: flex; align-items: flex-end; justify-content: center; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); }
 .panel { background: var(--card); width: 100%; max-width: 560px; max-height: 92%; overflow-y: auto; border-radius: 20px 20px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 16px; }
 .panel h2 { font-family: var(--display); margin: 0; font-size: 1.35rem; }
+/* The More sheet's tabs: each panel spaces its sections like the sheet does. */
+.tabpanel { display: flex; flex-direction: column; gap: 16px; }
+.tabpanel[hidden] { display: none; }
 .panel h3 { margin: 0 0 6px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .opt { display: flex; gap: 8px; flex-wrap: wrap; }
 .opt label { display: flex; align-items: center; gap: 6px; border: 1.5px solid var(--key-edge); border-radius: 12px; padding: 8px 12px; font-size: 0.92rem; }
