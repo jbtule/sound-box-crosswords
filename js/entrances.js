@@ -233,7 +233,7 @@ export var ENTRANCES = [
       sfx(0, function (at, S) { S.buzz(at, end + 0.4); });
       return a;
     } },
-  // The premium ones: showpieces, each played once after every everyday one has had a turn.
+  // The premium ones: showpieces, every 5th turn (nextEntrance).
   { id: "coaster", name: "Roller coaster", premium: true,
     // The boxes ride in as one long train: a slow climb up the left, a drop, a loop-the-loop,
     // then each car peels off to its spot. Clack-clack up the lift, a whoosh down, a wheee
@@ -597,21 +597,24 @@ export function playEntrance(id, g, opts) {
   return { id: e.id, done: done, skip: function () { stop(true); } };
 }
 
-// Which entrance next. The everyday ones play once each, shuffled; then each premium one once,
-// shuffled; then it starts over. Never the same one twice in a row. `state` is what the last
-// call returned ({ cycle, at, last }, saved per edition); entrances added or removed in an
-// update are handled when the cycle is read.
+// Which entrance next. Every 5th is a premium one; the rest are everyday ones. Each kind plays
+// from its own shuffled queue, every one once before any repeats, never the same twice in a
+// row. `state` is what the last call returned ({ every, premium, n, last }, saved per edition);
+// entrances added or removed in an update are handled when the queues are read.
+export var PREMIUM_EVERY = 5;
 export function nextEntrance(state) {
-  var ids = ENTRANCES.map(function (e) { return e.id; });
-  var s = { cycle: ((state && state.cycle) || []).filter(function (id) { return ids.indexOf(id) >= 0; }), at: (state && state.at) || 0, last: (state && state.last) || null };
-  if (s.at >= s.cycle.length) {
-    var every = ENTRANCES.filter(function (e) { return !e.premium; }).map(function (e) { return e.id; });
-    var cycle;
-    do { cycle = shuffle(every); } while (every.length > 1 && cycle[0] === s.last);
-    s.cycle = cycle.concat(shuffle(ENTRANCES.filter(function (e) { return e.premium; }).map(function (e) { return e.id; })));
-    s.at = 0;
-  }
-  var id = s.cycle[s.at++];
+  var st = state || {}, s = { n: (st.n || 0) + 1, last: st.last || null };
+  var premium = s.n % PREMIUM_EVERY === 0, kinds = { every: false, premium: true };
+  Object.keys(kinds).forEach(function (kind) {
+    var ids = ENTRANCES.filter(function (e) { return e.premium === kinds[kind]; }).map(function (e) { return e.id; });
+    s[kind] = (st[kind] || []).filter(function (id) { return ids.indexOf(id) >= 0; }); // what's left to play
+    if (!s[kind].length && (kind === "premium") === premium) {
+      var q;
+      do { q = shuffle(ids); } while (ids.length > 1 && q[0] === s.last);
+      s[kind] = q;
+    }
+  });
+  var id = s[premium ? "premium" : "every"].shift();
   s.last = id;
   return { id: id, state: s };
 }
