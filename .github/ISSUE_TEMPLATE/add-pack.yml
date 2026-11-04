@@ -14,7 +14,7 @@ body:
     id: edition
     attributes:
       label: Edition
-      description: The edition that gets the pack, as it's named in the app's Settings → Edition. For one that doesn't exist yet, use "Add an edition" instead.
+      description: The edition that gets the pack, as it's named in the app's More → Edition. For one that doesn't exist yet, use "Add an edition" instead.
     validations:
       required: true
   - type: markdown
