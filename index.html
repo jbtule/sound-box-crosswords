@@ -34,7 +34,7 @@
     <h1>Sound Box <span>Crosswords</span></h1>
     <div class="top-buttons">
       <button class="ghost" id="trophyBtn" type="button" aria-label="Achievements">🏆</button>
-      <button class="ghost" id="settingsBtn" type="button"><span aria-hidden="true">⚙️</span> More</button>
+      <button class="quiet-btn" id="settingsBtn" type="button"><svg class="gear" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="label">More</span></button>
     </div>
   </div>
   <div class="install-nudge" id="installNudge" hidden>
@@ -106,7 +106,7 @@
   <div class="award-card" role="dialog" aria-modal="true" aria-labelledby="gradeTitle" aria-describedby="gradeHelp">
     <div class="award-icon" aria-hidden="true">📚</div>
     <h2 id="gradeTitle">Which grade?</h2>
-    <p id="gradeHelp">Each grade has its own word lists and achievements. You can change it under ⚙️ More.</p>
+    <p id="gradeHelp">Each grade has its own word lists and achievements. You can change it under More (the gear, top right).</p>
     <div class="grade-choices" id="gradeChoices"></div>
   </div>
 </section>
@@ -156,17 +156,17 @@
 <section class="sheet" id="sheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <div class="row" style="justify-content:space-between"><h2 id="sheetTitle">More</h2><button class="ghost" id="closeBtn" type="button">Done</button></div>
+    <div id="gradeSec" hidden>
+      <h3>Edition</h3>
+      <div class="row"><select id="editionSel" aria-label="Edition"></select></div>
+      <p class="help">Each edition keeps its own words, progress, achievements and settings on this device; only the chime is shared.</p>
+    </div>
     <div class="tabs" role="tablist" aria-label="Settings, stats and about">
       <button type="button" role="tab" id="tabSet" aria-selected="true" aria-controls="setPanel">Settings</button>
       <button type="button" role="tab" id="tabStats" aria-selected="false" aria-controls="statsPanel">Stats</button>
       <button type="button" role="tab" id="tabAbout" aria-selected="false" aria-controls="aboutPanel">About</button>
     </div>
     <div class="tabpanel" id="setPanel" role="tabpanel" aria-labelledby="tabSet">
-      <div id="gradeSec" hidden>
-        <h3>Edition</h3>
-        <div class="row"><select id="editionSel" aria-label="Edition"></select></div>
-        <p class="help">Each edition has its own word lists, stars, achievements and letter pad on this device. The chime is the same for all.</p>
-      </div>
       <div>
         <h3>Helpers</h3>
         <div class="opt">
@@ -231,6 +231,9 @@
       <div>
         <h3>About</h3>
         <p class="help">Sound Box Crosswords © 2026 James Tuley. Free to use, change and share for noncommercial purposes, including at home and in schools, under the <a href="https://github.com/jbtule/sound-box-crosswords/blob/main/LICENSE.md" target="_blank" rel="noopener">PolyForm Noncommercial License 1.0.0</a>.</p>
+      </div>
+      <div>
+        <h3>Feedback</h3>
         <p class="help">Found a problem, or want a word pack or grade added? <a href="https://github.com/jbtule/sound-box-crosswords/issues/new/choose" target="_blank" rel="noopener">Tell us on GitHub</a>.</p>
       </div>
       <div id="installSec" hidden>

@@ -49,7 +49,7 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    pause can't sound blended: the held sounds alone run ~650 ms).
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
-7. **A grown-up can tune it** without code, in Settings (the ⚙️ More button's first tab): syllable colors on/off, auto-speak,
+7. **A grown-up can tune it** without code, in Settings (the More button's first tab): syllable colors on/off, auto-speak,
    QWERTY (default) vs A–Z pad, a Custom pack with their own word list (off by default:
    `settings.custom`, `packIds()` in `app.js`; on where Custom was used before the switch). Nothing in Settings makes the game easier,
    so it needs no lock (Start over, which erases progress, asks for a typed phrase instead).
@@ -176,7 +176,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - **Editions** (`editions.toml`): one packs file per grade, e.g. Kindergarten
   (`editions/kindergarten.toml`) and 3rd grade (`packs.toml`). Each has a `name` (the grade question and Settings; can be long, e.g. a classroom) and a `short` (achievement cards, shared cards, the 🏆 sheet; up to 16 characters, unique). The first visit asks "Which
   grade?" (`pickEdition` in `app.js`), unless there's progress from before editions (then
-  `packs.toml`'s) or a `?edition=<id>` link; Settings → Edition (a dropdown) switches. A Home Screen
+  `packs.toml`'s) or a `?edition=<id>` link; More → Edition (a dropdown above the tabs, since Settings and Stats are per edition) switches. A Home Screen
   app starts with empty storage, so the page's address (`?start=<id>`) and manifest
   (`editions/<id>.webmanifest`, written at deploy by `stamp.mjs` from `manifest.webmanifest`
   with that `start_url`) carry the grade in use (`homeScreenEdition` in `app.js`); `?start=` only
@@ -288,7 +288,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     player guess letters until one stuck.)
   - `clap`: the Break it down scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
-  - The More sheet (⚙️ More button, `#settingsBtn`): tabs Settings, Stats and About (license, Home Screen steps); `openSheet(tab)` opens
+  - The More sheet (`#settingsBtn`, a quiet line gear + "More" in the muted color, no pill, so it
+    reads as the grown-ups' door beside the 🏆): tabs Settings, Stats and About (license, Home Screen steps); `openSheet(tab)` opens
     on Settings or the named tab (`SHEET_TABS`; the Home Screen tip's How? opens About), with
     `closeSheet` and the change handlers below them. `selectTab` switches tabs here and in 🏆.
   - Stats (`renderProgressSheet`): practice days, the last 4 weeks (`renderCalendar`); each
