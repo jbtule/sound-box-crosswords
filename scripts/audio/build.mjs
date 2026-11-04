@@ -5,10 +5,12 @@
 // Writes:
 //   _audio/a/<key>.mp3  one clip each; <key> hashes everything that affects the sound
 //                       (model, voice, speed, text), so a clip never changes once made
+//   _audio/a/<key>.json a blend's ("f:f+r") { split_ms }: where its second sound starts
 //   _audio/index.json   every key in this deploy; the next deploy reads it from the live
 //                       site to know which clips already exist
 //   _audio/_headers     long-lived caching for clips
-//   audio.json          { base, clips: { "w:volcano": key, ... } }, shipped with the app
+//   audio.json          { base, clips: { "w:volcano": key, ... }, splits: { "f:f+r": ms } },
+//                       shipped with the app
 //
 // Only missing clips are generated: existing ones are downloaded from the live site
 // (Cloudflare bandwidth is free), so most deploys never install Kokoro at all.
@@ -21,6 +23,7 @@ import { join } from "node:path";
 import { readPacks, readEditions } from "../../js/words.js";
 import { spokenLines } from "../../js/achievements.js";
 import { parseList, clipsFor } from "../../js/crossword.js";
+import { blendsIn } from "../../js/phonics.js";
 
 export const MODEL = "kokoro-v1.0";
 export const VOICE = "af_heart";
@@ -60,7 +63,11 @@ const methodOf = (kind, text) => METHOD_FOR[kind + ":" + text] ?? METHOD[kind];
 export const SOUND_RECIPE = "007b92ef43eb";
 // Sounds re-picked since SOUND_RECIPE: name -> its own recipe value.
 export const SOUND_RECIPE_FOR = { i: "core70-kid-slow" };
-export const SOUND_INPUTS = "c5c642e75270";
+// Blends ("f+r") are made from two picked sounds (lab.py, blend()), so their names follow
+// both sounds' recipes and BLEND_RECIPE: bump it when blend() changes.
+export const BLEND_RECIPE = "hold220-xf30";
+const recipeOf = (name) => SOUND_RECIPE_FOR[name] ?? SOUND_RECIPE;
+export const SOUND_INPUTS = "0ee101fb4ad4";
 export const SOUND_FILES = ["sounds/picks.json", "sounds/lab.py", "kokoro_core.py"];
 export function soundInputs() {
   return createHash("sha256")
@@ -69,7 +76,11 @@ export function soundInputs() {
 }
 
 export function keyFor(kind, text) {
-  if (kind === "f") return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "sound", SOUND_RECIPE_FOR[text] ?? SOUND_RECIPE, text])).digest("hex").slice(0, 20);
+  if (kind === "f" && text.includes("+")) {
+    const [a, b] = text.split("+");
+    return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "blend", BLEND_RECIPE, recipeOf(a), recipeOf(b), text])).digest("hex").slice(0, 20);
+  }
+  if (kind === "f") return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "sound", recipeOf(text), text])).digest("hex").slice(0, 20);
   const parts = [MODEL, VOICE, speedOf(kind, text), ENCODING];
   const method = methodOf(kind, text);
   if (method === "cut") parts.push(CUT); // "text" clips keep their original keys
@@ -79,6 +90,8 @@ export function keyFor(kind, text) {
 }
 
 // Every clip the packs (and each starter Custom list) need, across all editions: [{ id: "w:volcano", key, kind, text, speed, voice, method }].
+const isBlend = (c) => c.kind === "f" && c.text.includes("+");
+
 export function planClips() {
   // Every edition's packs file (editions.toml), each with its starter Custom list.
   const lists = [];
@@ -92,7 +105,11 @@ export function planClips() {
     if (!clips.has(id)) clips.set(id, { id, key: keyFor(kind, text), kind, text, speed: speedOf(kind, text), voice: VOICE, method: methodOf(kind, text) });
   };
   for (const list of lists) {
-    for (const e of parseList(list)) for (const c of clipsFor(e)) add(c.kind, c.text);
+    for (const e of parseList(list)) {
+      for (const c of clipsFor(e)) add(c.kind, c.text);
+      // Each blend in a word with its sounds listed (Sound it out).
+      if (e.sounds) blendsIn(e.sounds.map((s) => s.sound)).forEach((b) => add("f", b.name));
+    }
   }
   PHRASES.forEach((p) => add("p", p));
   // What achievement cards say aloud: "New achievement!", titles and details, for every
@@ -133,7 +150,13 @@ async function main() {
       if (live.has(c.key)) {
         try {
           const res = await fetch(`${base}a/${c.key}.mp3`);
-          if (res.ok) { writeFileSync(join(out, "a", c.key + ".mp3"), Buffer.from(await res.arrayBuffer())); continue; }
+          // A blend comes with where its second sound starts.
+          const side = isBlend(c) ? await fetch(`${base}a/${c.key}.json`) : null;
+          if (res.ok && (!side || side.ok)) {
+            writeFileSync(join(out, "a", c.key + ".mp3"), Buffer.from(await res.arrayBuffer()));
+            if (side) writeFileSync(join(out, "a", c.key + ".json"), await side.text());
+            continue;
+          }
         } catch (e) { /* regenerate below */ }
       }
       missing.push(c);
@@ -148,8 +171,14 @@ async function main() {
     execFileSync("sh", [join(root, "scripts/audio/kokoro.sh"), missingPath, join(out, "a")], { stdio: "inherit" });
     rmSync(missingPath);
   }
+  const splits = {};
   for (const c of plan) {
     if (!existsSync(join(out, "a", c.key + ".mp3"))) throw new Error(`clip not produced: ${c.id}`);
+    if (isBlend(c)) {
+      const side = join(out, "a", c.key + ".json");
+      if (!existsSync(side)) throw new Error(`blend has no split: ${c.id}`);
+      splits[c.id] = JSON.parse(readFileSync(side, "utf8")).split_ms;
+    }
   }
 
   writeFileSync(join(out, "index.json"), JSON.stringify(plan.map((c) => c.key)));
@@ -160,7 +189,7 @@ async function main() {
     "",
   ].join("\n"));
   const clips = Object.fromEntries(plan.map((c) => [c.id, c.key]));
-  writeFileSync(join(root, "audio.json"), JSON.stringify({ base: base + "a/", voice: VOICE, clips }));
+  writeFileSync(join(root, "audio.json"), JSON.stringify({ base: base + "a/", voice: VOICE, clips, splits }));
   console.log("✓ _audio/ and audio.json ready");
 }
 

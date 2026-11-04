@@ -166,6 +166,27 @@ def render(name):
     return finish(candidates(row[0], row[2], row[3], only=method)[method])
 
 
+# Blends (js/phonics.js, blendsIn): the two picked sounds, the first cut to BLEND_HOLD_MS
+# when it's one you can hold (f, s, l…; a stop is short already), overlapped by
+# BLEND_OVERLAP_MS. Picked by ear ("f220+r-xf30") from 150/220 ms, 0/30 ms, the second
+# shortened or not, and the pair cut from a word.
+BLEND_HOLD_MS, BLEND_OVERLAP_MS = 220, 30
+
+
+def blend(name):
+    """A blend ("f+r") and where its second sound starts, in samples from the start."""
+    a, b = name.split("+")
+    hold = next(r for r in SOUNDS if r[0] == a)[3] == "hold"
+    x = part(a, PICKS[a], BLEND_HOLD_MS if hold else 0)
+    y = part(b, PICKS[b])
+    audio = join(x, y, -BLEND_OVERLAP_MS)
+    split = len(x) - BLEND_OVERLAP_MS * g.SR // 1000 // 2  # the middle of the overlap
+    # finish() trims leading quiet (keeping 20 ms); move the split with it.
+    loud = np.flatnonzero(np.abs(audio) > 0.004)
+    cut = max(0, loud[0] - int(0.02 * g.SR)) if len(loud) else 0
+    return finish(audio), split - cut
+
+
 def part(name, method, length_ms=0):
     """One sound's candidate, trimmed, cut to length_ms (with a fade) and at the common peak."""
     row = next(r for r in SOUNDS if r[0] == name)

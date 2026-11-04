@@ -5,7 +5,8 @@
 # Methods:
 #   text  kokoro.create(text): sentences and phrases.
 #   sound a single sound for Sound it out (text = its name, e.g. "sh"), made the way
-#         sounds/picks.json says by sounds/lab.py, where the methods were tried by ear.
+#         sounds/picks.json says by sounds/lab.py, where the methods were tried by ear; or a
+#         blend of two ("f+r", lab.blend), with <key>.json saying where the second starts.
 #   cut   words and Break it down syllables. Said alone, a short word gains sounds ("pub" ->
 #         "pubby", "stomp" -> "istampy"), so the target is said at the end of a phrase
 #         ("and next, pub.") and cut out using the model's own per-phoneme durations.
@@ -36,14 +37,18 @@ def lively(text, voice, speed):
 _lab = None
 
 
-def sound(name):
-    """One Sound it out sound, already trimmed and leveled (sounds/lab.py)."""
+def lab():
     global _lab
     if _lab is None:
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds"))
-        import lab
-        _lab = lab
-    return _lab.render(name)
+        import lab as module
+        _lab = module
+    return _lab
+
+
+def sound(name):
+    """One Sound it out sound, already trimmed and leveled (sounds/lab.py)."""
+    return lab().render(name)
 
 
 def main():
@@ -51,7 +56,14 @@ def main():
     core.load(model_dir)
     items = json.load(open(plan_path))
     for i, item in enumerate(items, 1):
-        if item.get("method") == "sound":
+        if item.get("method") == "sound" and "+" in item["text"]:
+            # A blend ("f+r"): also say where its second sound starts, for the app to light
+            # that box (build.mjs puts it in audio.json).
+            audio, split = lab().blend(item["text"])
+            sr = SR
+            with open(os.path.join(out_dir, item["key"] + ".json"), "w") as f:
+                json.dump({"split_ms": round(1000 * split / SR)}, f)
+        elif item.get("method") == "sound":
             audio, sr = sound(item["text"]), SR  # trimmed and leveled already
         elif item.get("method") == "cut":
             audio, sr = trim(cut(item["text"], item["voice"], item["speed"]), SR), SR

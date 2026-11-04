@@ -60,7 +60,7 @@ export function speak(text, rate, cancel) {
    Pack words, Break it down syllables, and sentences are pre-recorded (Kokoro, built by
    scripts/audio/build.mjs at deploy). audio.json maps "kind:text" to a clip on the audio
    host; anything without a clip (Custom words, local dev) uses the device voice. */
-var clips = {}, clipBase = "", player = null, finishClip = null;
+var clips = {}, splits = {}, clipBase = "", player = null, finishClip = null;
 var queue = Promise.resolve(), epoch = 0;
 // The device-voice rate each kind's recording corresponds to. A slower requested rate
 // (Hear it) plays the clip slightly slower; never faster than recorded.
@@ -71,7 +71,7 @@ var clipsReady = [];
   var url = new URL("../audio.json", import.meta.url);
   url.search = new URL(import.meta.url).search; // same ?v= cache-busting stamp
   fetch(url).then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (m) { if (m && m.clips) { clips = m.clips; clipBase = m.base; } })
+    .then(function (m) { if (m && m.clips) { clips = m.clips; splits = m.splits || {}; clipBase = m.base; } })
     .catch(function () {})
     .then(function () { clipsReady.forEach(function (f) { f(); }); clipsReady = null; });
 })();
@@ -93,15 +93,28 @@ document.addEventListener("pointerdown", unlock, true);
 document.addEventListener("keydown", unlock, true);
 
 // Resolves true when the clip ends, false if it fails (the caller then uses the device voice).
-function playClip(url, rate) {
+// `cues`: [{ ms, fn }], each fn called once playback reaches ms into the clip. Checked
+// against the clip's own position every frame, since Safari can take a while to start
+// playing; any not reached by the end are called then.
+function playClip(url, rate, cues) {
   return new Promise(function (resolve) {
-    var a = getPlayer(), done = false;
+    var a = getPlayer(), done = false, left = (cues || []).slice(), frame = 0;
+    function fire(upto) {
+      left = left.filter(function (c) { if (c.ms <= upto) { c.fn(); return false; } return true; });
+    }
+    function watch() {
+      if (done) return;
+      fire(a.currentTime * 1000);
+      if (left.length) frame = requestAnimationFrame(watch);
+    }
     function end(ok) {
       if (done) return;
-      done = true; finishClip = null; clearTimeout(t);
+      done = true; finishClip = null; clearTimeout(t); cancelAnimationFrame(frame);
       a.onended = a.onerror = null;
+      fire(Infinity);
       resolve(ok);
     }
+    if (left.length) frame = requestAnimationFrame(watch);
     var t = setTimeout(function () { end(true); }, 15000);
     finishClip = end;
     a.onended = function () { end(true); };
@@ -136,16 +149,18 @@ export function hasClip(kind, text) { return !!clips[kind + ":" + text]; }
 // Runs once audio.json has loaded (or failed), so recorded-only features can show then.
 export function onClips(f) { if (clipsReady) clipsReady.push(f); else f(); }
 // Plays a recording only, never the device voice, which can't say a single sound ("k");
-// with no recording it just resolves. Same queue as say().
-export function sayRecorded(kind, text) {
+// with no recording it just resolves. Same queue as say(). `cues`: see playClip.
+export function sayRecorded(kind, text, cues) {
   var my = epoch;
   queue = queue.then(function () {
     var key = clips[kind + ":" + text];
     if (my !== epoch || !key) return;
-    return playClip(clipBase + key + ".mp3", 1);
+    return playClip(clipBase + key + ".mp3", 1, cues);
   });
   return queue;
 }
+// Where a blend's second sound starts (ms), or undefined: audio.json "splits".
+export function splitOf(kind, text) { return splits[kind + ":" + text]; }
 
 // Runs fn (which may return a promise) in turn in the same queue as say(), e.g. a sound
 // effect between two spoken lines. Skipped if speech is stopped before its turn.

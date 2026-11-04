@@ -26,6 +26,23 @@ export var EXAMPLE = {
   y: "yes", ks: "box", kw: "queen"
 };
 
+// Blends: two consonant sounds in a row (f r in frog, s t in nest) play as one recording,
+// the sounds running together, while each still lights its own box (a blend is two
+// sounds; sh, one sound, lights its two boxes at once). The recording is "f+r", made from
+// the two single sounds (scripts/audio/sounds/lab.py, blend()). Left to right, a sound is
+// in one blend at most: s t r → s+t, then r.
+var VOWELS = ["a", "e", "i", "o", "u", "ay", "ee", "igh", "oh", "oo", "uu", "ow", "oy", "aw", "uh",
+  "ar", "or", "er", "air", "ear"];
+// `names`: a word's sounds in order ("f", "r", "o", "g") → [{ at: 0, name: "f+r" }], `at`
+// being the index of the blend's first sound.
+export function blendsIn(names) {
+  var out = [];
+  for (var i = 0; i + 1 < names.length; i++) {
+    if (VOWELS.indexOf(names[i]) < 0 && VOWELS.indexOf(names[i + 1]) < 0) { out.push({ at: i, name: names[i] + "+" + names[i + 1] }); i++; }
+  }
+  return out;
+}
+
 // The sound a letter group usually makes. Groups that are often more than one sound (ow:
 // cow or snow) aren't here, so the list must say which: `{s n ow=oh}`.
 export var USUAL = {

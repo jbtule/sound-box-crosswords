@@ -6,7 +6,8 @@ import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
 import { catalog, award, dayKey, daysThisWeek, spokenParts } from "./achievements.js";
 import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle } from "./crossword.js";
-import { speak, say, sayAfter, sayRecorded, hasClip, onClips, stopSpeech, speechEpoch, hasSpeech } from "./speech.js";
+import { speak, say, sayAfter, sayRecorded, hasClip, splitOf, onClips, stopSpeech, speechEpoch, hasSpeech } from "./speech.js";
+import { blendsIn } from "./phonics.js";
 
 var $ = function (s) { return document.querySelector(s); };
 
@@ -529,7 +530,9 @@ async function clap() {
 
 /* ---------- scaffold: Sound it out ---------- */
 // Says each sound of the word (phonics.js) while the letters that make it light up, then the
-// whole word: c-a-t, sh-i-p. Only in editions that turn it on, for words whose sounds are
+// whole word: c-a-t, sh-i-p. A blend (fr in frog) plays as one recording: its first
+// sound's boxes light, then its second's join them where that sound starts. Only in
+// editions that turn it on, for words whose sounds are
 // listed (not sight words), and only with the recordings: a device voice can't say "k".
 function canSoundOut(W) {
   return !!(EDITION.soundItOut && W.sounds && W.sounds.every(function (s) { return hasClip("f", s.sound); }));
@@ -546,12 +549,26 @@ async function soundOut() {
   // Box index for each letter that makes a sound (an apostrophe has a box but no sound).
   var letterBox = [];
   for (var i = 0; i < W.w.length; i++) if (W.w[i] !== "'") letterBox.push(W.cells[i]);
+  function boxes(seg) { return letterBox.slice(seg.at, seg.at + seg.len); }
+  function light(ks, on) { ks.forEach(function (c) { var el = cellEl(c); el && el.classList.toggle("beat", on); }); }
+  // Blends with a recording (and where its second sound starts), by their first sound.
+  var blendAt = {};
+  blendsIn(W.sounds.map(function (s) { return s.sound; })).forEach(function (b) {
+    if (hasClip("f", b.name) && splitOf("f", b.name) != null) blendAt[b.at] = b.name;
+  });
   for (var si = 0; si < W.sounds.length && speechEpoch() === my; si++) {
-    var seg = W.sounds[si], ks = letterBox.slice(seg.at, seg.at + seg.len);
-    ks.forEach(function (c) { var el = cellEl(c); el && el.classList.add("beat"); });
-    await sayRecorded("f", seg.sound);
+    var ks = boxes(W.sounds[si]);
+    light(ks, true);
+    if (blendAt[si]) {
+      var second = boxes(W.sounds[si + 1]);
+      await sayRecorded("f", blendAt[si], [{ ms: splitOf("f", blendAt[si]), fn: function () { if (speechEpoch() === my) light(second, true); } }]);
+      ks = ks.concat(second);
+      si++;
+    } else {
+      await sayRecorded("f", W.sounds[si].sound);
+    }
     await new Promise(function (r) { setTimeout(r, 300); });
-    ks.forEach(function (c) { var el = cellEl(c); el && el.classList.remove("beat"); });
+    light(ks, false);
   }
   if (speechEpoch() === my) await say("w", W.w, 0.8);
   clapping = false;
