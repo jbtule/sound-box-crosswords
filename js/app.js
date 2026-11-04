@@ -230,7 +230,7 @@ function sizeBoard() {
 }
 function renderEmpty() {
   board.style.gridTemplateColumns = "";
-  board.innerHTML = '<p class="empty-msg">This pack needs at least 3 words. Open <b>⚙️ More</b> and add words under “Custom words”.</p>';
+  board.innerHTML = '<p class="empty-msg">This pack needs at least 3 words. Open <b>More</b> (the gear, top right) and add words under “Custom words”.</p>';
   $("#clueList").innerHTML = "";
   $("#pic").textContent = "✏️"; $("#clueLabel").textContent = "No puzzle yet"; $("#clueSub").textContent = "";
   $("#clueSent").hidden = true;
@@ -819,7 +819,7 @@ $("#resetGo").addEventListener("click", function () {
   location.replace(location.pathname + location.search);
 });
 function closeReset() { $("#resetText").value = ""; $("#resetGo").disabled = true; $("#resetBox").hidden = true; $("#resetOpen").hidden = false; }
-// The More sheet (⚙️ More): Settings, Stats and About tabs. Opens on Settings, or `tab`.
+// The More sheet (the gear "More" button): Settings, Stats and About tabs. Opens on Settings, or `tab`.
 var SHEET_TABS = { set: ["#tabSet", "#setPanel"], stats: ["#tabStats", "#statsPanel"], about: ["#tabAbout", "#aboutPanel"] };
 function openSheet(tab) {
   var first = SHEET_TABS[tab] ? tab : "set";
