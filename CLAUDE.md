@@ -127,8 +127,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   wrapped in try/catch. It's per device; no accounts or server. Each edition's data is under
   its own prefix (`storagePrefix` in `words.js`: plain `sbx:` for `packs.toml`'s edition,
   `sbx:<id>:` for others), through `store` in `app.js`; `device` (plain `sbx:`) holds
-  what's shared: the chosen edition, the Home Screen tip, and the chime
-  (`shared`; `SHARED` in `app.js`).
+  what's shared: the chosen edition and the Home Screen tip. (The chime was the device's until
+  it became each edition's; `moveChime` in `app.js` copied the device's choice into every
+  edition once.)
 - Light and dark themes via CSS custom properties on `:root`, with
   `prefers-color-scheme` and `[data-theme]` overrides. Define new colors as tokens.
 - Respect `prefers-reduced-motion`.
@@ -182,7 +183,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   with that `start_url`) carry the grade in use (`homeScreenEdition` in `app.js`); `?start=` only
   applies when the device hasn't picked one. Each
   edition keeps its own progress, achievements, collection, colors, Custom list and settings
-  (letter pad, syllable colors, auto-speak, Custom pack on/off); the chime is the device's; an edition
+  (letter pad, syllable colors, auto-speak, chime, Custom pack on/off); an edition
   can set the letter pad default (`keyboard = "abc"`) and turn on Sound it out
   (`sound_it_out = true`). The check, the audio build and the
   listen check cover every edition. Never change an edition's `id` once in use.
