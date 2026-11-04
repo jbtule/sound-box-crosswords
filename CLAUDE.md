@@ -194,7 +194,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   (spelling-test style; `sayWord` in `app.js`). **Required for pack words with no emoji**,
   and it tells homophones apart (their/there). Also shown under the clue with the word as a blank of small boxes, one per letter like the grid (`blankSentence` in
   `crossword.js`), so it must not use another word from the same pack; the check enforces this. Syllable splits should match how a
-  teacher would clap the word.
+  teacher would clap the word. A word in more than one list (another pack or edition) matches
+  everywhere (syllables, emoji, hint, sentence, and sounds between Sound it out editions), so
+  one recording and one listen mark cover it; the check enforces this unless the line above
+  it says `# differs: <why>` (the app skips `#` lines).
 - `js/words.js`: `loadPacks` fetches and parses `packs.toml`; `readPacks` turns TOML text
   into `{ packs, starter }` and appends the built-in `mine` pack.
 - `js/phonics.js`: no DOM. Sound it out's sounds (`SOUNDS`, kept equal to `picks.json` by the

@@ -73,6 +73,12 @@ words = """
 One line: `syl-la-bles emoji (how-it-sounds) "Sentence that uses it."` Only the word is
 always required; the check enforces the rest.
 
+**Already in another pack?** Search every packs file (`editions.toml` lists them) for the
+word. Reuse its line as is, so it keeps its recordings and listen marks; the check fails on
+a difference. Change it only for a reason (a sentence that would give away a word in this
+unit, one too hard for this grade, a sight word with no sounds): then put
+`# differs: <why>` on the line above it and say why in the **Check** column.
+
 **Syllables.** Split the way a teacher would clap the word, by sound:
 
 - Compounds split between their parts: `sun-shine`, `cow-boy`.
