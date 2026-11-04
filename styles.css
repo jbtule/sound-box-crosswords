@@ -88,6 +88,10 @@ h1 span { color: var(--accent); }
 .board { display: grid; gap: 4px; --cell-size: 40px; position: relative; perspective: 700px; }
 .entrance-ring { position: absolute; border-radius: 7px; border: 2px solid var(--sylA-edge); pointer-events: none; } /* Raindrops (entrances.js) */
 .entrance-ring.b { border-color: var(--sylB-edge); }
+.entrance-blk, .entrance-shot { position: absolute; border-radius: 5px; border: 2px solid var(--accent); background: var(--accent-soft); pointer-events: none; } /* Billiards' cue ball, the saucer's blaster */
+.entrance-shot { box-shadow: 0 0 8px var(--accent); }
+.entrance-cannon { position: absolute; pointer-events: none; }
+.entrance-flash { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, var(--card) 0%, var(--accent) 38%, transparent 70%); }
 .board.waiting .cell { visibility: hidden; } /* a new puzzle's boxes wait for the Start tap to make their entrance */
 .cell { width: var(--cell-size); height: var(--cell-size); background: var(--cell); border: 2px solid var(--cell-edge); border-radius: 7px; position: relative; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: calc(var(--cell-size) * 0.56); text-transform: lowercase; user-select: none; transition: background 0.15s, border-color 0.15s; }
 .void { width: var(--cell-size); height: var(--cell-size); }
@@ -96,6 +100,8 @@ h1 span { color: var(--accent); }
 .cell.sel.syl-a { background: var(--sylA); border-color: var(--sylA-edge); }
 .cell.sel.syl-b { background: var(--sylB); border-color: var(--sylB-edge); }
 .cell.cursor { box-shadow: 0 0 0 3px var(--accent); z-index: 1; }
+/* During a new puzzle's entrance the selection is off, and turns on as it ends (Billiards' cue ball becomes the highlight). */
+.board.entering .cell.sel, .board.entering .cell.cursor { background: var(--cell); border-color: var(--cell-edge); box-shadow: none; }
 .cell.locked { color: var(--ok); }
 .cell.beat { transform: scale(1.12); box-shadow: 0 0 0 3px var(--ink); z-index: 2; }
 .cell.wiggle { animation: wiggle 0.4s; border-color: var(--bad); }

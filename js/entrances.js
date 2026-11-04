@@ -9,7 +9,8 @@ import { makeSfx } from "./sfx.js";
 var BOUNCE = "cubic-bezier(.25,1.45,.45,1)";
 
 // Each plan(g, sfx) returns { keyframes for each box key: { kf, delay, dur, ease } } and may add
-// timed extras with g.at(seconds, fn). Times are in seconds; sfx(at, function (when) {...})
+// timed extras with g.at(seconds, fn); fn returns the animation(s) it started (page pieces such
+// as Billiards' cue ball remove themselves when theirs ends or is cancelled). Times are in seconds; sfx(at, function (when) {...})
 // schedules a sound at `at` seconds in.
 export var ENTRANCES = [
   { id: "slide", name: "Slide in", premium: false,
@@ -231,6 +232,285 @@ export var ENTRANCES = [
       });
       sfx(0, function (at, S) { S.buzz(at, end + 0.4); });
       return a;
+    } },
+  // The premium ones: showpieces, each played once after every everyday one has had a turn.
+  { id: "coaster", name: "Roller coaster", premium: true,
+    // The boxes ride in as one long train: a slow climb up the left, a drop, a loop-the-loop,
+    // then each car peels off to its spot. Clack-clack up the lift, a whoosh down, a wheee
+    // round the loop, then an air-brake hiss and cars clunking into place.
+    plan: function (g, sfx) {
+      var a = {}, W = g.cols * (g.size + g.gap) - g.gap, H = g.rows * (g.size + g.gap) - g.gap, half = g.size / 2;
+      var cx = W * 0.62, cy = H * 0.45, R = H * 0.3, pts = [];
+      pts.push({ x: -3 * g.size, y: H * 0.78, t: 0 });
+      pts.push({ x: W * 0.05, y: H * 0.5, t: 0.17 });
+      pts.push({ x: W * 0.22, y: -g.size * 0.6, t: 0.34 });
+      pts.push({ x: W * 0.36, y: H * 0.35, t: 0.42 });
+      pts.push({ x: cx, y: cy + R, t: 0.5 });
+      for (var s = 1; s <= 8; s++) { var ang = Math.PI / 2 - s * Math.PI / 4; pts.push({ x: cx + R * Math.cos(ang) * 1.05, y: cy + R * Math.sin(ang), t: 0.5 + s * 0.03 }); }
+      pts.push({ x: W * 0.9, y: H * 0.95, t: 0.82 });
+      var ang0 = [], prev = 0;
+      pts.forEach(function (p, i) {
+        var q = pts[Math.min(i + 1, pts.length - 1)], r0 = pts[Math.max(i - 1, 0)], dx = q.x - r0.x, dy = q.y - r0.y;
+        var deg = Math.atan2(dy, dx) * 180 / Math.PI;
+        while (deg - prev > 180) deg -= 360; while (deg - prev < -180) deg += 360;
+        ang0.push(deg); prev = deg;
+      });
+      var DUR = 2.6, STAGGER = 0.075, last = Math.round(prev / 360) * 360;
+      readingOrder(g).forEach(function (k, i) {
+        var o = g.cells[k], fx0 = o.c * (g.size + g.gap), fy0 = o.r * (g.size + g.gap);
+        var kf = pts.map(function (p, j) { return { transform: "translate(" + (p.x - half - fx0) + "px," + (p.y - half - fy0) + "px) rotate(" + ang0[j] + "deg) scale(.8)", opacity: j === 0 ? 0 : 1, offset: p.t }; });
+        kf.push({ transform: "translate(0,0) rotate(" + last + "deg) scale(1)", opacity: 1, offset: 1 });
+        a[k] = { kf: kf, delay: i * STAGGER, dur: DUR, ease: "linear" };
+        if (i % 4 === 0) sfx(i * STAGGER + DUR * 0.98, function (when, S) { S.clunk(when, i / 4); });
+      });
+      for (var c = 0; c < 10; c++) (function (c) { sfx(DUR * 0.17 + c * DUR * 0.017, function (when, S) { S.clack(when, c); }); })(c);
+      sfx(DUR * 0.34, function (when, S) { S.whoosh(when, DUR * 0.16); });
+      sfx(DUR * 0.48, function (when, S) { S.wheee(when, DUR * 0.3); });
+      sfx(DUR * 0.86, function (when, S) { S.brake(when, 0.7); });
+      return a;
+    } },
+  { id: "billiards", name: "Billiards", premium: true,
+    // The boxes appear racked in a triangle, a cue ball breaks them, and they scatter,
+    // spinning, bounce off the board's edges, and roll to a stop in their places. Racking
+    // clicks, a sharp break, clacks and cushion thuds.
+    plan: function (g, sfx) {
+      var a = {}, W = g.cols * (g.size + g.gap) - g.gap, H = g.rows * (g.size + g.gap) - g.gap, sp = g.size * 0.66;
+      var keys = g.order.slice().sort(function () { return Math.random() - 0.5; }), slots = [];
+      var ax = W * 0.36, ay = H * 0.5 - g.size / 2;
+      for (var row = 0; slots.length < keys.length; row++) for (var j = 0; j <= row && slots.length < keys.length; j++) slots.push({ x: ax + row * sp * 0.87, y: ay + (j - row / 2) * sp });
+      var DUR = 5.2, BREAK = 0.15, maxX = W - g.size, maxY = H - g.size;
+      function wall(skip) { var w; do { w = Math.floor(Math.random() * 4); } while (w === skip); return w; }
+      function onWall(w) { return w === 0 ? { x: 0, y: Math.random() * maxY } : w === 1 ? { x: maxX, y: Math.random() * maxY } : w === 2 ? { x: Math.random() * maxX, y: 0 } : { x: Math.random() * maxX, y: maxY }; }
+      keys.forEach(function (k, i) {
+        var o = g.cells[k], fx0 = o.c * (g.size + g.gap), fy0 = o.r * (g.size + g.gap), s = slots[i];
+        var spin = (Math.random() < 0.5 ? -1 : 1) * (720 + Math.random() * 720);
+        function T(x, y, rot, sc) { return "translate(" + (x - fx0) + "px," + (y - fy0) + "px) rotate(" + rot + "deg) scale(" + sc + ")"; }
+        var appear = (i / keys.length) * 0.11;
+        var kf = [
+            { transform: T(s.x, s.y, 0, 0.3), opacity: 0, offset: 0 },
+            { transform: T(s.x, s.y, 0, 0.62), opacity: 1, offset: appear + 0.03 },
+            { transform: T(s.x, s.y, 0, 0.62), opacity: 1, offset: BREAK, easing: "linear" }];
+        // 4 to 6 cushion bounces, each leg a little longer than the last, as the ball slows.
+        var nb = 4 + Math.floor(Math.random() * 3), legs = [], grow = 1, sum = 0, END = 0.64 + Math.random() * 0.06, w = -1; // then a slow roll home in the last third
+        for (var b = 0; b < nb; b++) { legs.push(grow); sum += grow; grow *= 1.22 + Math.random() * 0.1; }
+        var at = BREAK + Math.random() * 0.02;
+        legs.forEach(function (leg, b) {
+          at += leg / sum * (END - BREAK - 0.02);
+          w = wall(w); var p = onWall(w), f = (b + 1) / (nb + 1);
+          kf.push({ transform: T(p.x, p.y, spin * f, 0.62 + 0.3 * f), opacity: 1, offset: Math.min(at, 0.97), easing: b === nb - 1 ? "cubic-bezier(.3,.5,.4,1)" : "linear" });
+          if ((i + b) % 3 === 0) { var hit = at, loud = Math.pow(0.78, b); sfx(DUR * hit, function (when, S) { S.cushion(when, loud); }); }
+        });
+        kf.push({ transform: "translate(0,0) rotate(" + (Math.round(spin / 360) * 360) + "deg) scale(1)", opacity: 1, offset: 1 });
+        a[k] = { kf: kf, delay: 0, dur: DUR, ease: "linear" };
+        sfx(DUR * (appear + 0.03), function (when, S) { S.clack(when, i); });
+      });
+      for (var c = 0; c < 14; c++) (function (c) { sfx(DUR * (BREAK + 0.01 + Math.pow(Math.random(), 1.6) * 0.5), function (when, S) { S.clack(when, c + 3); }); })(c);
+      sfx(DUR * BREAK, function (when, S) { S.crack(when); });
+      // The cue ball is the orange highlight box: it breaks the rack, bounces around with the
+      // others, and rolls home onto word 1's first box, becoming its highlight.
+      var T0 = BREAK - 0.18 * 0.55;
+      g.at(DUR * T0, function () { // reaches the rack at the break
+        var cue = document.createElement("div"), d = g.size * 0.62, x0 = -d * 1.5, y0 = H / 2; // its center at the start
+        cue.className = "entrance-blk"; cue.style.width = cue.style.height = d + "px"; cue.style.zIndex = 4;
+        cue.style.left = (x0 - d / 2) + "px"; cue.style.top = (y0 - d / 2) + "px";
+        g.board.appendChild(cue);
+        var tgt = g.cells[g.words[0].cells[0]], tx = tgt.c * (g.size + g.gap) + g.size / 2, ty = tgt.r * (g.size + g.gap) + g.size / 2;
+        var hitX = ax - d * 0.4, wx1 = Math.random() * (W - d) + d / 2, wx2 = d / 2 + Math.random() * (W - d);
+        function O(f) { return (f - T0) / (1 - T0); }
+        function C(x, y, rot, sc) { return "translate(" + (x - x0) + "px," + (y - y0) + "px) rotate(" + rot + "deg) scale(" + sc + ")"; }
+        var an = cue.animate([
+          { transform: C(x0, y0, 0, 1), opacity: 0, offset: 0 },
+          { transform: C(x0 + d, y0, 0, 1), opacity: 1, offset: O(T0 + 0.04) },
+          { transform: C(hitX, y0, 0, 1), opacity: 1, offset: O(BREAK), easing: "cubic-bezier(.1,.7,.4,1)" },
+          { transform: C(Math.max(d / 2, hitX - d * 2.2), y0 + d * 0.6, -120, 1), opacity: 1, offset: O(BREAK + 0.07), easing: "linear" },
+          { transform: C(wx1, H - d / 2, -300, 1), opacity: 1, offset: O(0.42), easing: "linear" },
+          { transform: C(wx2, d / 2, -480, 1), opacity: 1, offset: O(0.62), easing: "cubic-bezier(.3,.5,.4,1)" },
+          { transform: C(tx, ty, -720, g.size / d), opacity: 1, offset: 1 }], { duration: DUR * (1 - T0) * 1000, easing: "linear" });
+        an.onfinish = an.oncancel = function () { cue.remove(); };
+        return an;
+      });
+      sfx(DUR - 0.02, function (when, S) { S.clickin(when); });
+      return a;
+    } },
+  { id: "kaiju", name: "Kaiju", premium: true,
+    // The boxes stack into a kaiju that lurches in from the left, rearing up and slamming down
+    // each step so the board shakes, then trips, teeters (uh-oh), topples, and shatters; the
+    // boxes roll slowly into place. A growl, heavy stomps, a crash, wooden knocks, a rumble.
+    plan: function (g, sfx) {
+      var a = {}, W = g.cols * (g.size + g.gap) - g.gap, H = g.rows * (g.size + g.gap) - g.gap, sp = g.size * 0.64, DUR = 6.8, half = g.size / 2;
+      var slots = [];
+      [-1, 1].forEach(function (c) { for (var r = 1; r <= 3; r++) slots.push({ c: c, r: r, part: c < 0 ? "legL" : "legR" }); });
+      for (var r = 4; r <= 7; r++) for (var c = -1; c <= 1; c++) slots.push({ c: c, r: r, part: "body" });
+      [-2, 2].forEach(function (c) { for (var r = 5; r <= 7; r++) slots.push({ c: c, r: r, part: c < 0 ? "armL" : "armR" }); });
+      [-0.5, 0.5].forEach(function (c) { for (var r = 8; r <= 9; r++) slots.push({ c: c, r: r, part: "head" }); });
+      slots.push({ c: 0.5, r: 10, part: "head" });
+      var keys = g.order.slice().sort(function () { return Math.random() - 0.5; });
+      while (slots.length < keys.length) slots.push({ c: (slots.length % 3) - 1, r: 4 + (slots.length % 4), part: "body" });
+      var WALK = 0.46, STEPS = 5, FALL = 0.64, LAND = 0.82, gy = H, ox0 = -6 * sp - g.size, ox1 = W * 0.16; // lurches in from off the left edge
+      var TIP = [[WALK, 0], [WALK + 0.03, 16], [WALK + 0.06, 4], [WALK + 0.1, 19], [WALK + 0.13, 15]];
+      function tilt(t) {
+        if (t <= WALK) return 0;
+        for (var i = 1; i < TIP.length; i++) if (t <= TIP[i][0]) { var q = (t - TIP[i - 1][0]) / (TIP[i][0] - TIP[i - 1][0]); return TIP[i - 1][1] + (TIP[i][1] - TIP[i - 1][1]) * q; }
+        var u = Math.min((t - TIP[TIP.length - 1][0]) / (FALL - TIP[TIP.length - 1][0]), 1); return 15 + 75 * u * u;
+      }
+      // A lurching step: the leg lifts slowly while the body rears and sways over the planted
+      // foot (u 0 to .55), slams down (.55 to .68), then everything holds still (.68 to 1).
+      function lift(u) { return u < 0.55 ? Math.sin(u / 0.55 * Math.PI / 2) : u < 0.68 ? 1 - (u - 0.55) / 0.13 : 0; }
+      function travel(u) { var v = Math.min(u / 0.68, 1); return v * v * (3 - 2 * v); }
+      function turn(x, y, px, py, deg) { var r = deg * Math.PI / 180; return { x: px + (x - px) * Math.cos(r) - (y - py) * Math.sin(r), y: py + (x - px) * Math.sin(r) + (y - py) * Math.cos(r) }; }
+      function figure(s, t) { // the box's center on the board, and its turn
+        var walking = t < WALK, w = Math.min(t / WALK, 1), n = Math.min(Math.floor(w * STEPS), STEPS - 1), u = walking ? w * STEPS - n : 1;
+        var ox = ox0 + (ox1 - ox0) * ((n + travel(u)) / STEPS), L = walking ? lift(u) : 0, left = n % 2 === 0;
+        var dx = 0, dy = -0.26 * sp * L, swing = 0.42 * sp * L * (left ? 1 : -1);
+        if (s.part === (left ? "legL" : "legR")) { dx = 0.42 * sp * L; dy = -0.62 * sp * L; }
+        if (s.part === (left ? "legR" : "legL")) { dx = 0; dy = 0; }
+        if (s.part === "armL") dx += swing;
+        if (s.part === "armR") dx -= swing;
+        var p = { x: ox + s.c * sp + dx, y: gy - (s.r - 0.5) * sp + dy }, lurch = walking ? (left ? 14 : -14) * L + 3 * L : 0; // sway over the planted foot, a little forward lean
+        if (lurch) p = turn(p.x, p.y, ox + (left ? 1 : -1) * sp, gy, lurch); // sway over the planted foot
+        var th = tilt(t), q = turn(p.x, p.y, ox + 1.5 * sp, gy, th);
+        return { x: q.x, y: q.y, rot: th + lurch };
+      }
+      // The topple speeds up like a falling tower (tilt grows with time squared), so at impact each
+      // box is moving along its arc, the head end fastest. From there each box carries that motion:
+      // gravity, low bounces off the ground, friction, the board's sides; then it rolls home.
+      var T0 = TIP[TIP.length - 1][0], OMEGA = (150 / (FALL - T0)) / DUR, WR = OMEGA * Math.PI / 180; // deg/s and rad/s at impact
+      var G = 2600 * g.size / 40, FLOOR = gy - g.size * 0.31, PIVX = ox1 + 1.5 * sp, SIM = (LAND - FALL) * DUR, DT = 1 / 120;
+      keys.forEach(function (k, i) {
+        var o = g.cells[k], fx0 = o.c * (g.size + g.gap) + half, fy0 = o.r * (g.size + g.gap) + half, s = slots[i], kf = [];
+        function T(x, y, rot, sc) { return "translate(" + (x - fx0) + "px," + (y - fy0) + "px) rotate(" + rot + "deg) scale(" + sc + ")"; }
+        var times = [];
+        for (var st0 = 0; st0 < STEPS; st0++) [0, 0.18, 0.36, 0.55, 0.61, 0.68, 0.84].forEach(function (u) { times.push((st0 + u) / STEPS * WALK); });
+        times.push(WALK, WALK + 0.03, WALK + 0.06, WALK + 0.1);
+        for (var tf = T0; tf < FALL; tf += (FALL - T0) / 14) times.push(tf); // the topple, finely, so it swings on its arc
+        times.push(FALL);
+        times.forEach(function (t) { var f = figure(s, t); kf.push({ transform: T(f.x, Math.min(f.y, FLOOR + g.size * 0.2), f.rot, 0.62), opacity: t < 0.03 ? 0 : 1, offset: t }); });
+        var c = figure(s, FALL);
+        var vx = -WR * (c.y - gy) * (0.8 + Math.random() * 0.4) + (Math.random() - 0.5) * 90, vy = WR * (c.x - PIVX) * (0.8 + Math.random() * 0.4);
+        var x = c.x, y = Math.min(c.y, FLOOR), rot = c.rot, vr = OMEGA * (0.4 + Math.random() * 0.9) * (Math.random() < 0.3 ? -1 : 1);
+        var hit = null, next = 1 / 30, minX = g.size * 0.35, maxX = W - g.size * 0.35, floor = FLOOR - Math.random() * g.size * 1.1, SCAT = 300 * g.size / 40; // each rests at its own height in the heap
+        for (var tt = DT; tt <= SIM; tt += DT) {
+          vy += G * DT; x += vx * DT; y += vy * DT; rot += vr * DT;
+          if (y >= floor) { y = floor; if (vy > 0) {
+            if (hit === null) { hit = tt; vx = vx * 0.5 + (Math.random() - 0.5) * 2 * SCAT; vy = -vy * (0.25 + Math.random() * 0.3); vr += (Math.random() - 0.5) * 900; } // breaks apart
+            else { vy = vy > 120 ? -vy * 0.3 : 0; vx *= 0.7; vr *= 0.5; } } }
+          if (y >= floor && vy === 0) { vx *= 0.9; vr *= 0.86; } // sliding to a stop
+          if (x < minX) { x = minX; vx = Math.abs(vx) * 0.4; }
+          if (x > maxX) { x = maxX; vx = -Math.abs(vx) * 0.4; }
+          if (tt >= next) { kf.push({ transform: T(x, y, rot, 0.62), opacity: 1, offset: FALL + tt / DUR }); next += 1 / 30; }
+        }
+        kf[kf.length - 1].easing = "cubic-bezier(.3,.5,.4,1)"; // then a slow roll home
+        var roll = Math.round((rot + Math.hypot(fx0 - x, fy0 - y) / g.size * 90 * (fx0 >= x ? 1 : -1)) / 90) * 90;
+        kf.push({ transform: "translate(0,0) rotate(" + roll + "deg) scale(1)", opacity: 1, offset: 1 });
+        a[k] = { kf: kf, delay: 0, dur: DUR, ease: "linear" };
+        if (hit !== null && i % 2 === 0) sfx(DUR * FALL + hit, function (when, S) { S.knock(when, i); });
+        if (i % 5 === 0) sfx(DUR * (0.97 + Math.random() * 0.03), function (when, S) { S.knock(when, i + 2); });
+      });
+      sfx(DUR * 0.02, function (when, S) { S.growl(when, 0.9); });
+      for (var st = 0; st < STEPS; st++) (function (st) {
+        var slam = DUR * WALK * (st + 0.68) / STEPS;
+        sfx(slam, function (when, S) { S.stomp(when, st); });
+        g.at(slam, function () { return shake(g.board, 3); });
+      })(st);
+      sfx(DUR * (WALK + 0.02), function (when, S) { S.uhoh(when); });
+      sfx(DUR * (WALK + 0.12), function (when, S) { S.whoosh(when, DUR * (FALL - WALK - 0.12)); });
+      sfx(DUR * FALL, function (when, S) { S.crash(when); });
+      sfx(DUR * LAND, function (when, S) { S.rumble(when, DUR * (1 - LAND) * 0.9); });
+      return a;
+    } },
+  { id: "saucer", name: "Flying saucer", premium: true,
+    // The boxes assemble into a block flying saucer that swoops in and hovers. A little cannon
+    // at the bottom fires: miss, miss, hit! The saucer bursts and its pieces drift slowly into
+    // place. A warbly hum, pews, a boom.
+    plan: function (g, sfx) {
+      var a = {}, W = g.cols * (g.size + g.gap) - g.gap, H = g.rows * (g.size + g.gap) - g.gap, sp = g.size * 0.55, DUR = 6.2, half = g.size / 2;
+      var slots = [];
+      [-0.5, 0.5].forEach(function (c) { slots.push({ c: c, r: -2 }); });
+      [-1.5, -0.5, 0.5, 1.5].forEach(function (c) { slots.push({ c: c, r: -1 }); });
+      for (var c1 = -3.5; c1 <= 3.5; c1++) slots.push({ c: c1, r: 0 });
+      for (var c2 = -4.5; c2 <= 4.5; c2++) slots.push({ c: c2, r: 1 });
+      [-4, -2, 0, 2, 4].forEach(function (c) { slots.push({ c: c, r: 2 }); });
+      var keys = g.order.slice().sort(function () { return Math.random() - 0.5; });
+      while (slots.length < keys.length) slots.push({ c: (slots.length % 7) - 3, r: 0 });
+      var IN = 0.18, A1 = 0.33, A2 = 0.46, HIT = 0.6, SETTLE = 0.78, halfW = 5 * sp + g.size * 0.3;
+      var PTS = [[IN, 0.5], [A1, 0.3], [A2, 0.7], [HIT, 0.5]]; // where the saucer hovers, as a share of the board width
+      function center(t) {
+        if (t <= IN) { var e = 1 - Math.pow(1 - t / IN, 3); return { x: -0.45 * W + (0.95 * W) * e, y: -0.35 * H + 0.6 * H * e, tilt: -16 * (1 - e) }; }
+        for (var i = 1; i < PTS.length; i++) if (t <= PTS[i][0]) {
+          var q = (t - PTS[i - 1][0]) / (PTS[i][0] - PTS[i - 1][0]), s = (1 - Math.cos(q * Math.PI)) / 2, dx = PTS[i][1] - PTS[i - 1][1];
+          return { x: W * (PTS[i - 1][1] + dx * s), y: 0.25 * H + 0.035 * H * Math.sin(t * 60), tilt: -dx * 40 * Math.sin(q * Math.PI) };
+        }
+        return { x: W * 0.5, y: 0.25 * H, tilt: 0 };
+      }
+      function at(s, t) { var c = center(t), r = c.tilt * Math.PI / 180, ux = s.c * sp, uy = s.r * sp; return { x: c.x + ux * Math.cos(r) - uy * Math.sin(r), y: c.y + ux * Math.sin(r) + uy * Math.cos(r), rot: c.tilt }; }
+      var hitC = center(HIT), DRAG = 2.4, G = 260 * g.size / 40, DT = 1 / 60;
+      keys.forEach(function (k, i) {
+        var o = g.cells[k], fx0 = o.c * (g.size + g.gap) + half, fy0 = o.r * (g.size + g.gap) + half, s = slots[i], kf = [];
+        function T(x, y, rot, sc) { return "translate(" + (x - fx0) + "px," + (y - fy0) + "px) rotate(" + rot + "deg) scale(" + sc + ")"; }
+        for (var t = 0; t < HIT; t += 0.01) { var p = at(s, t); kf.push({ transform: T(p.x, p.y, p.rot, 0.55), opacity: 1, offset: t }); }
+        var p0 = at(s, HIT); kf.push({ transform: T(p0.x, p0.y, 0, 0.55), opacity: 1, offset: HIT });
+        var dx = p0.x - hitC.x, dy = p0.y - hitC.y, len = Math.hypot(dx, dy) || 1, ang = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.9, sp0 = (520 + Math.random() * 520) * g.size / 40;
+        var x = p0.x, y = p0.y, vx = Math.cos(ang) * sp0, vy = Math.sin(ang) * sp0 - 120 * g.size / 40, rot = 0, vr = (Math.random() < 0.5 ? -1 : 1) * (400 + Math.random() * 700), next = 1 / 30;
+        for (var tt = DT; tt <= (SETTLE - HIT) * DUR; tt += DT) {
+          var dmp = Math.exp(-DRAG * DT); vx *= dmp; vy = vy * dmp + G * DT; vr *= Math.exp(-1.6 * DT);
+          x += vx * DT; y += vy * DT; rot += vr * DT;
+          if (x < half * 0.6) { x = half * 0.6; vx = Math.abs(vx) * 0.5; } if (x > W - half * 0.6) { x = W - half * 0.6; vx = -Math.abs(vx) * 0.5; }
+          if (y < half * 0.6) { y = half * 0.6; vy = Math.abs(vy) * 0.5; } if (y > H - half * 0.6) { y = H - half * 0.6; vy = -Math.abs(vy) * 0.4; }
+          if (tt >= next) { kf.push({ transform: T(x, y, rot, 0.55 + 0.2 * (tt / ((SETTLE - HIT) * DUR))), opacity: 1, offset: HIT + tt / DUR }); next += 1 / 30; }
+        }
+        kf[kf.length - 1].easing = "cubic-bezier(.3,.5,.4,1)"; // drift slowly home
+        kf.push({ transform: "translate(0,0) rotate(" + (Math.round(rot / 90) * 90) + "deg) scale(1)", opacity: 1, offset: 1 });
+        a[k] = { kf: kf, delay: 0, dur: DUR, ease: "linear" };
+      });
+      // The cannon, its shots, the flash: page pieces that come and go.
+      var MERGE = 0.74, u = g.size * 0.36, ug = 2, cw = 3 * u + 2 * ug, ch = 2 * u + ug, cy = H - ch, clamp = function (v) { return Math.max(cw / 2, Math.min(W - cw / 2, v)); }; // a blaster of blocks: 3 across, 1 on top
+      var shotsAt = [[A1 - 0.05, clamp(center(A1).x + halfW + g.size * 0.7), false], [A2 - 0.05, clamp(center(A2).x - halfW - g.size * 0.7), false], [HIT - 0.05, clamp(hitC.x), true]];
+      g.at(DUR * 0.1, function () {
+        var c = document.createElement("div"); c.className = "entrance-cannon"; c.style.width = cw + "px"; c.style.height = ch + "px"; c.style.left = "0px"; c.style.top = cy + "px";
+        [[0, 1], [1, 1], [2, 1], [1, 0]].forEach(function (q) { var k = document.createElement("div"); k.className = "entrance-blk"; k.style.width = k.style.height = u + "px"; k.style.left = q[0] * (u + ug) + "px"; k.style.top = q[1] * (u + ug) + "px"; c.appendChild(k); });
+        g.board.appendChild(c);
+        var span = DUR * (MERGE - 0.1), kfc = [{ transform: "translate(" + (W / 2 - cw / 2) + "px," + ch * 2 + "px)", opacity: 0, offset: 0 }, { transform: "translate(" + (W / 2 - cw / 2) + "px,0)", opacity: 1, offset: 0.06 / (MERGE - 0.1) }];
+        shotsAt.forEach(function (sh) { var off = (sh[0] - 0.1) / (MERGE - 0.1); kfc.push({ transform: "translate(" + (sh[1] - cw / 2) + "px,0)", opacity: 1, offset: off - 0.05 }); kfc.push({ transform: "translate(" + (sh[1] - cw / 2) + "px,3px)", opacity: 1, offset: off + 0.01 }); kfc.push({ transform: "translate(" + (sh[1] - cw / 2) + "px,0)", opacity: 1, offset: off + 0.03 }); });
+        kfc.push({ transform: "translate(" + (shotsAt[2][1] - cw / 2) + "px,0)", opacity: 1, offset: (HIT + 0.06 - 0.1) / (MERGE - 0.1) });
+        kfc.push({ transform: "translate(" + (shotsAt[2][1] - cw / 2) + "px,0)", opacity: 1, offset: 1 }); // waits, then its blocks lift off (below)
+        var an = c.animate(kfc, { duration: span * 1000, easing: "ease-in-out" }); an.onfinish = an.oncancel = function () { c.remove(); }; return an;
+      });
+      shotsAt.forEach(function (sh) {
+        sfx(DUR * sh[0], function (when, S) { S.pew(when); });
+        g.at(DUR * sh[0], function () {
+          var b = document.createElement("div"), y0 = cy - u, y1 = sh[2] ? hitC.y + sp * 2 : -u * 3; // a block, fired from the barrel
+          b.className = "entrance-shot"; b.style.width = b.style.height = u + "px"; b.style.left = (sh[1] - u / 2) + "px"; b.style.top = y0 + "px"; g.board.appendChild(b);
+          var an = b.animate([{ transform: "translateY(0) rotate(0)" }, { transform: "translateY(" + (y1 - y0) + "px) rotate(" + (sh[2] ? 270 : 450) + "deg)" }], { duration: DUR * (sh[2] ? 0.05 : 0.07) * 1000, easing: "linear" });
+          an.onfinish = an.oncancel = function () { b.remove(); }; return an;
+        });
+      });
+      g.at(DUR * HIT, function () {
+        var f = document.createElement("div"), d = g.size * 3; f.className = "entrance-flash"; f.style.width = f.style.height = d + "px"; f.style.left = (hitC.x - d / 2) + "px"; f.style.top = (hitC.y - d / 2) + "px"; g.board.appendChild(f);
+        var an = f.animate([{ transform: "scale(.2)", opacity: 1 }, { transform: "scale(2.2)", opacity: 0 }], { duration: 600, easing: "ease-out" }); an.onfinish = an.oncancel = function () { f.remove(); }; return an;
+      });
+      // The blaster's blocks lift off, merge into one, and arc over to become word 1's highlight.
+      g.at(DUR * MERGE, function () {
+        var gx = shotsAt[2][1] - cw / 2, mx = shotsAt[2][1], my = cy - u * 1.6, tgt = g.cells[g.words[0].cells[0]];
+        var tx = tgt.c * (g.size + g.gap) + g.size / 2, ty = tgt.r * (g.size + g.gap) + g.size / 2, big = g.size / u, peakY = Math.min(my, ty) - H * 0.22;
+        return [[0, 1], [1, 1], [2, 1], [1, 0]].map(function (q) {
+          var k = document.createElement("div"), bx = gx + q[0] * (u + ug), by = cy + q[1] * (u + ug), ox = bx + u / 2, oy = by + u / 2;
+          k.className = "entrance-blk"; k.style.width = k.style.height = u + "px"; k.style.left = bx + "px"; k.style.top = by + "px"; k.style.zIndex = 5; g.board.appendChild(k);
+          function M(x, y, sc, rot) { return "translate(" + (x - ox) + "px," + (y - oy) + "px) rotate(" + rot + "deg) scale(" + sc + ")"; }
+          var an = k.animate([
+            { transform: M(ox, oy, 1, 0), offset: 0 },
+            { transform: M(ox + (q[0] - 1) * u * 0.6, oy - u * 0.8, 1, 0), offset: 0.15 },
+            { transform: M(mx, my, 1.3, 90), offset: 0.32, easing: "ease-in-out" },
+            { transform: M(mx, my, 1.7, 180), offset: 0.42, easing: "ease-in" },
+            { transform: M((mx + tx) / 2, peakY, (1.7 + big) / 2, 270), offset: 0.7, easing: "ease-out" },
+            { transform: M(tx, ty, big, 360), offset: 1 }], { duration: DUR * (1 - MERGE) * 1000, easing: "linear" });
+          an.onfinish = an.oncancel = function () { k.remove(); }; return an;
+        });
+      });
+      sfx(DUR * (MERGE + (1 - MERGE) * 0.32), function (when, S) { S.zwoop(when, DUR * (1 - MERGE) * 0.6); });
+      sfx(DUR - 0.02, function (when, S) { S.clickin(when); });
+      sfx(0, function (when, S) { S.hum(when, DUR * HIT); });
+      sfx(DUR * HIT, function (when, S) { S.boom(when); });
+      return a;
     } }
 ];
 
@@ -284,6 +564,7 @@ export function playEntrance(id, g, opts) {
       S = makeSfx(audio.ctx, bus); t0 = audio.ctx.currentTime + 0.06;
     } catch (err) { bus = null; S = null; }
   }
+  g.board.classList.add("entering"); // the selection shows once the boxes are in place
   var extras = [];
   g.at = function (sec, fn) { extras.push({ at: sec, fn: fn }); };
   function sfx(at, fn) { if (S) { try { fn(t0 + at, S); } catch (err) {} } }
@@ -295,7 +576,7 @@ export function playEntrance(id, g, opts) {
     end = Math.max(end, p.delay + p.dur);
   });
   extras.forEach(function (x) {
-    timers.push(setTimeout(function () { var an = x.fn(); if (an) anims.push(an); }, x.at * 1000 + 60));
+    timers.push(setTimeout(function () { [].concat(x.fn() || []).forEach(function (an) { anims.push(an); }); }, x.at * 1000 + 60));
     end = Math.max(end, x.at + 0.7);
   });
   var over = false;
@@ -303,6 +584,7 @@ export function playEntrance(id, g, opts) {
     if (over) return;
     over = true;
     timers.forEach(clearTimeout);
+    g.board.classList.remove("entering");
     if (skipped) anims.forEach(function (an) { try { an.cancel(); } catch (err) {} });
     if (bus) {
       var ctx = audio.ctx;
