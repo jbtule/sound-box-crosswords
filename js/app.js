@@ -122,14 +122,21 @@ try {
   throw e;
 }
 
-// Settings: the letter pad, syllable colors and auto-speak are the edition's own (each child's);
-// the chime belongs to the device, shared by every edition ("shared"). Until that's
-// first saved it comes from the settings saved before editions (plain "sbx:settings").
-var SHARED = ["chime"];
-var sharedBefore = {}, oldSettings = device.get("settings", {});
-SHARED.forEach(function (k) { if (oldSettings && k in oldSettings) sharedBefore[k] = oldSettings[k]; });
-var settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true },
-  store.get("settings", {}), sharedBefore, device.get("shared", {}));
+// Settings are the edition's own (each child's), the chime too. The chime used to be the
+// device's ("sbx:shared", before that the plain "sbx:settings"), so once, that choice is copied
+// into every edition's settings: a device that had it off keeps it off everywhere.
+(function moveChime() {
+  if (device.get("chimeMoved", false)) return;
+  var was = (device.get("shared", {}) || {}).chime;
+  if (was === undefined) was = (device.get("settings", {}) || {}).chime;
+  if (was !== undefined) EDITIONS.forEach(function (ed) {
+    var key = storagePrefix(ed) + "settings";
+    try { var s = JSON.parse(localStorage.getItem(key)) || {}; s.chime = was; localStorage.setItem(key, JSON.stringify(s)); } catch (e) {}
+  });
+  try { localStorage.removeItem("sbx:shared"); } catch (e) {}
+  device.set("chimeMoved", true);
+})();
+var settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true }, store.get("settings", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
 var packId = store.get("pack", "");
@@ -1131,12 +1138,7 @@ function openAchievements() {
 }
 function closeAchievements() { $("#achSheet").hidden = true; $("#trophyBtn").focus(); refreshPill(); }
 function closeSheet() { $("#sheet").hidden = true; $("#settingsBtn").focus(); refreshPill(); }
-function saveSettings() {
-  var own = {}, shared = {};
-  Object.keys(settings).forEach(function (k) { (SHARED.indexOf(k) >= 0 ? shared : own)[k] = settings[k]; });
-  store.set("settings", own);
-  device.set("shared", shared);
-}
+function saveSettings() { store.set("settings", settings); }
 $("#settingsBtn").addEventListener("click", function () { openSheet(); });
 $("#trophyBtn").addEventListener("click", openAchievements);
 $("#awardNext").addEventListener("click", nextAward);
