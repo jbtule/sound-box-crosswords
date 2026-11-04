@@ -27,6 +27,12 @@
 #   {sounds}  optional, last on the line: the word's sounds for Sound it out (editions with
 #               sound_it_out), letters grouped by sound: cat 🐈 {c a t}, ship 🚢 {sh i p},
 #               city {c=s i t y=ee}. See js/phonics.js. Leave it off sight words.
+#   # differs: <why>   a word in more than one list (another pack or grade) is said and
+#               shown the same way everywhere (same syllables, picture, hint, sentence and
+#               sounds), so one recording and one listen mark cover it; the check compares
+#               them. When one should differ (a sight word with no sounds, a simpler sentence
+#               for a younger grade), put this comment on the line above it. Other lines
+#               starting with # inside a word list are comments too.
 #   words_in_text = true   optional: lets this pack's words appear in its note and in each
 #               other's sentences. Only for packs where spotting a printed word helps
 #               (kindergarten high-frequency words); normally the check forbids it.

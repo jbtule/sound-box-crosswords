@@ -207,8 +207,9 @@ for (const ed of editions) {
   }
   if (!(raw.pack || []).length) errors.push(`${file}: needs at least one [[pack]]`);
   if (!starter) errors.push(`${file}: missing [custom] words = """..."""`);
-  for (const [id, p] of Object.entries(packs)) lists.push({ id: tag + id, text: p.list, custom: false });
-  lists.push({ id: tag + "custom", text: starter, custom: true });
+  const sio = ed.soundItOut;
+  for (const [id, p] of Object.entries(packs)) lists.push({ id: tag + id, text: p.list, custom: false, sio });
+  lists.push({ id: tag + "custom", text: starter, custom: true, sio });
 }
 
 // Short hint parts that speech engines read as words, not letters. "un" and "ub" were
@@ -225,14 +226,31 @@ const ABBREV = new Set(["mit", "bih", "uhn", "uhb", "ca", "tle", "ril", "ple", "
 // {its sounds} for Sound it out.
 const LINE = /^([a-z][a-z']*(?:-[a-z']+)*)(?: +([^\s("{]\S*))?(?: +\(([^)]*)\))?(?: +"([^"]+)")?(?: +\{([^}]*)\})?$/;
 const { parseSounds } = await import("../js/phonics.js");
-for (const { id, text, custom } of lists) {
+// Every entry of every word, to compare across lists below: { id, differs, fields }.
+const entries = {};
+for (const { id, text, custom, sio } of lists) {
   if (!text) continue; // "mine" is filled in by the user
   const seen = new Set();
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-  for (const line of lines) {
+  // Lines starting with # are comments (parseList skips them too). "# differs: <why>"
+  // applies to the word on the next line.
+  const all = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const lines = all.filter((l) => !l.startsWith("#"));
+  let differs = null;
+  for (const line of all) {
+    if (line.startsWith("#")) {
+      const d = line.match(/^#\s*differs\b:?\s*(.*)$/i);
+      if (d) {
+        if (!d[1].trim()) errors.push(`${id}: "${line}" needs a reason: "# differs: <why>"`);
+        differs = d[1].trim() || "?";
+      }
+      continue;
+    }
     const m = line.match(LINE);
-    if (!m) { errors.push(`${id}: "${line}" should look like "syl-la-bles 🙂"`); continue; }
+    if (!m) { errors.push(`${id}: "${line}" should look like "syl-la-bles 🙂"`); differs = null; continue; }
     const w = m[1].replace(/-/g, "");
+    // Sounds only matter in editions with Sound it out; elsewhere they're never compared.
+    (entries[w] ??= []).push({ id, differs, fields: [m[1], m[2] ?? "", m[3] ?? "", m[4] ?? "", sio ? m[5] ?? "" : null] });
+    differs = null;
     if (w.length < 2 || w.length > 12) errors.push(`${id}: "${w}" must be 2–12 letters`);
     if (seen.has(w)) errors.push(`${id}: "${w}" is listed twice`);
     if (m[2] != null && !/\p{Extended_Pictographic}/u.test(m[2])) errors.push(`${id}: "${w}" picture "${m[2]}" isn't an emoji`);
@@ -259,6 +277,7 @@ for (const { id, text, custom } of lists) {
     }
     seen.add(w);
   }
+  if (differs !== null) errors.push(`${id}: "# differs" at the end, with no word after it`);
   // Sentences are shown with the word blanked out, so one that uses another word from the
   // same list would spell it on screen when both are in a puzzle.
   if (!custom && !textOk.has(id)) {
@@ -272,6 +291,25 @@ for (const { id, text, custom } of lists) {
   }
   if (parseList(text).length !== seen.size) errors.push(`${id}: parseList disagrees with the line count`);
   if (!custom && lines.length < 10) errors.push(`${id}: only ${lines.length} words; packs need variety to build puzzles`);
+}
+
+// A word in more than one list (another pack, another grade, a Custom starter) is said and
+// shown the same way everywhere: same syllables, picture, hint, sentence and sounds, so one
+// recording and one listen mark serve them all. When one should differ (a shorter sentence
+// for a younger grade, a sight word with no sounds, a sentence that would give away a word
+// in its own pack), put "# differs: <why>" on the line above it.
+const FIELDS = ["syllables", "picture", "hint", "sentence", "sounds"];
+const unlike = (a, b) => FIELDS.filter((_, i) => a.fields[i] !== null && b.fields[i] !== null && a.fields[i] !== b.fields[i]);
+for (const [w, list] of Object.entries(entries)) {
+  const plain = list.filter((e) => !e.differs);
+  for (const e of plain.slice(1)) {
+    const diff = unlike(plain[0], e);
+    if (diff.length) errors.push(`"${w}": ${diff.join(", ")} in ${e.id} ${diff.length > 1 ? "differ" : "differs"} from ${plain[0].id}; make them match, or put "# differs: <why>" on the line above one`);
+  }
+  for (const e of list.filter((e) => e.differs)) {
+    if (list.length === 1) errors.push(`${e.id}: "# differs" above "${w}", which isn't in any other list`);
+    else if (list.every((o) => o === e || !unlike(o, e).length)) errors.push(`${e.id}: "# differs" above "${w}", but it matches everywhere; remove the comment`);
+  }
 }
 
 const RUNS = 50;

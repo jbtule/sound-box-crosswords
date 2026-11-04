@@ -47,8 +47,70 @@ to "I go to school."
 we "We like to read."
 see "I see a bird."
 and "Mom and I go to the store."
+# differs: a sight word here, learned by heart from a sentence (no picture or sounds)
 can "I can jump high."
 is "The sky is blue."
+"""
+
+# Phonics packs, in teaching order: two letters for one sound, then blends at the start,
+# then blends at the end. Short vowels only, so every other sound is one players know.
+[[pack]]
+id = "k-two-letter-sounds"
+name = "Two-letter sounds"
+note = "Some sounds need two letters. Listen for each sound, and give it its boxes."
+words = """
+ship 🚢 {sh i p}
+fish 🐟 {f i sh}
+shell 🐚 {sh e ll}
+chick 🐤 {ch i ck}
+check ✔️ {ch e ck}
+chess ♟️ {ch e ss}
+bath 🛁 {b a th}
+duck 🦆 {d u ck}
+sock 🧦 {s o ck}
+lock 🔒 {l o ck}
+rock 🪨 {r o ck}
+wing 🪽 {w i ng}
+ring 💍 {r i ng}
+"""
+
+[[pack]]
+id = "k-blends"
+name = "Blends"
+note = "Two sounds slide together at the start. Say every sound, and give each a box."
+words = """
+frog 🐸 {f r o g}
+crab 🦀 {c r a b}
+flag 🚩 {f l a g}
+drum 🥁 {d r u m}
+swim 🏊 {s w i m}
+sled 🛷 {s l e d}
+clap 👏 {c l a p}
+stop 🛑 {s t o p}
+plug 🔌 {p l u g}
+trap 🪤 {t r a p}
+brick 🧱 {b r i ck}
+truck 🚚 {t r u ck}
+clock 🕰️ {c l o ck}
+"""
+
+[[pack]]
+id = "k-ending-blends"
+name = "Ending blends"
+note = "Two sounds slide together at the end. Hold on to the last sound!"
+words = """
+nest 🪺 {n e s t}
+hand ✋ {h a n d}
+tent ⛺ {t e n t}
+milk 🥛 {m i l k}
+gift 🎁 {g i f t}
+fist ✊ {f i s t}
+camp 🏕️ {c a m p}
+vest 🦺 {v e s t}
+elf 🧝 {e l f}
+wink 😉 {w i n=ng k}
+plant 🪴 {p l a n t}
+skunk 🦨 {s k u n=ng k}
 """
 
 # The starter Custom list for this grade (Settings → Custom words). Swap in this week's words.
