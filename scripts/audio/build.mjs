@@ -54,9 +54,13 @@ const methodOf = (kind, text) => METHOD_FOR[kind + ":" + text] ?? METHOD[kind];
 // SOUND_INPUTS is the hash of those three files (soundInputs); `npm run check` fails when it
 // no longer matches. Then: if the change alters how a sound is made (a new pick, a new
 // recipe, a change to the cut), set SOUND_RECIPE to a new value too, which re-records all
-// 46 and resets their marks. If it doesn't (a comment, a refactor), update SOUND_INPUTS only.
+// 46 and resets their marks. For a change to some sounds only (a new pick for one sound),
+// give just those a recipe of their own in SOUND_RECIPE_FOR instead: only they re-record.
+// If it doesn't change a sound (a comment, a refactor), update SOUND_INPUTS only.
 export const SOUND_RECIPE = "007b92ef43eb";
-export const SOUND_INPUTS = "76c26911d0ec";
+// Sounds re-picked since SOUND_RECIPE: name -> its own recipe value.
+export const SOUND_RECIPE_FOR = { i: "core70-kid-slow" };
+export const SOUND_INPUTS = "c5c642e75270";
 export const SOUND_FILES = ["sounds/picks.json", "sounds/lab.py", "kokoro_core.py"];
 export function soundInputs() {
   return createHash("sha256")
@@ -65,7 +69,7 @@ export function soundInputs() {
 }
 
 export function keyFor(kind, text) {
-  if (kind === "f") return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "sound", SOUND_RECIPE, text])).digest("hex").slice(0, 20);
+  if (kind === "f") return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "sound", SOUND_RECIPE_FOR[text] ?? SOUND_RECIPE, text])).digest("hex").slice(0, 20);
   const parts = [MODEL, VOICE, speedOf(kind, text), ENCODING];
   const method = methodOf(kind, text);
   if (method === "cut") parts.push(CUT); // "text" clips keep their original keys

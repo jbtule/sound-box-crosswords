@@ -146,7 +146,7 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
   const { SOUND_INPUTS, SOUND_FILES, soundInputs } = await import("./audio/build.mjs");
   const now = soundInputs();
   if (now !== SOUND_INPUTS) errors.push(`scripts/audio/build.mjs: ${SOUND_FILES.join(", ")} changed (SOUND_INPUTS is ${SOUND_INPUTS}, now ${now}). ` +
-    `If the Sound it out clips will sound different, also give SOUND_RECIPE a new value (re-records all 46; their listen marks reset). Either way, set SOUND_INPUTS to "${now}".`);
+    `If the Sound it out clips will sound different, give those sounds a new value in SOUND_RECIPE_FOR (only they re-record and lose their listen marks), or SOUND_RECIPE for all 46. Either way, set SOUND_INPUTS to "${now}".`);
 }
 
 // Achievement cards are read aloud line by line (spokenParts); spokenLines() must list
