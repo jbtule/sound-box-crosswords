@@ -330,7 +330,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
   - The More sheet (`#settingsBtn`, a quiet line gear + "More" in the muted color, no pill, so it
     reads as the grown-ups' door beside the 🏆): tabs Settings, Stats and About (license, Home Screen steps); `openSheet(tab)` opens
-    on Settings or the named tab (`SHEET_TABS`; the Home Screen tip's How? opens About), with
+    on Settings or the named tab (`SHEET_TABS`; the Home Screen tip's How? shows the same steps as About in a popover, `#installPop`), with
     `closeSheet` and the change handlers below them. `selectTab` switches tabs here and in 🏆.
   - Stats (`renderProgressSheet`): practice days, the last 4 weeks (`renderCalendar`); each
     pack's words done and right on the first try; comebacks (`counts.comeback`: words right on

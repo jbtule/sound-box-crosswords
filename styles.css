@@ -216,6 +216,10 @@ html.standalone { touch-action: pan-x pan-y; }
 /* A secret achievement earned outside a puzzle waits here until it's tapped. */
 .secret-pill { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 18px; border: none; border-radius: 999px; background: var(--ink); color: var(--card); font-weight: 600; font-size: 0.95rem; box-shadow: var(--shadow); }
 .secret-pill.show { animation: award-pop 0.45s cubic-bezier(.2, 1.4, .4, 1) both; }
+/* How?'s steps, a popover in the top layer, placed under the tip by app.js. */
+.install-pop { position: fixed; inset: auto; top: 80px; left: 50%; transform: translateX(-50%); width: min(340px, calc(100vw - 32px)); margin: 0; border: none; border-radius: 18px; background: var(--card); color: var(--ink); border: 2px solid var(--key-edge); box-shadow: 0 10px 30px rgba(0,0,0,0.22); padding: 14px 16px 16px; text-align: left; }
+.install-pop h3 { margin: 0 0 4px; }
+.install-pop .primary { width: 100%; }
 .steps { margin: 6px 0 10px; padding-left: 1.3em; display: flex; flex-direction: column; gap: 4px; }
 .share-ico { width: 0.9em; height: 1.1em; vertical-align: -0.15em; }
 
