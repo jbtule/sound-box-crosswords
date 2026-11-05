@@ -394,6 +394,71 @@ export var ENTRANCES = [
       });
       return a;
     } },
+  { id: "mats", name: "Roll out", icon: "🧻", premium: false,
+    // Word by word, the word arrives rolled up like a mat, its boxes curled face-in round a round
+    // roll (their backs showing, shaded as they turn away), rolling in steadily along its own line
+    // from the edge (across words from the left or right, down words from the top or bottom,
+    // alternating) and pressing each box down flat, face up, as it rolls over its space. A box
+    // can't bend, so while it's on the roll it's drawn as thin slices of itself, each angled a
+    // little more, curving it; pressed flat, the slices line up and the real box takes over.
+    // The first word comes last.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, half = g.size / 2, t = 0, PER = 0.1, K = 6; // K slices per box
+      var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]);
+      order.forEach(function (wi, n) {
+        var w = g.words[wi], mine = w.cells.filter(function (k) { return g.cells[k].owner === wi; });
+        if (!mine.length) return;
+        var across = w.dir === "A", u = Math.floor(n / 2) % 2 === 0 ? 1 : -1; // rolling toward +u
+        var along = function (k) { var o = g.cells[k]; return (across ? o.c : o.r) * step + half; };
+        mine = mine.slice().sort(function (p, q) { return (along(p) - along(q)) * u; });
+        var Rc = Math.max(g.size * 0.5, mine.length * step / (2 * Math.PI)), span = (across ? g.cols : g.rows) * step; // the roll's radius: its boxes wrap once round
+        var C0 = u > 0 ? -Rc * 2 - step : span + Rc * 2 + step, vU = step / PER, t0 = t;
+        var Cat = function (tt) { return C0 + u * vU * (tt - t0); }; // rolling in at a steady pace
+        var tEnd = t0 + Math.abs(along(mine[mine.length - 1]) - C0) / vU;
+        sfx(t0, function (at, S) { S.rumble(at, tEnd - t0 + 0.1); });
+        var press = mine.map(function (k) { return t0 + Math.abs(along(k) - C0) / vU; });
+        // the real boxes: hidden while on the roll, then pressed flat (a little squash)
+        mine.forEach(function (k, j) {
+          var total = press[j] + 0.14;
+          a[k] = { kf: [{ opacity: 0, offset: 0 }, { opacity: 0, offset: press[j] / total, easing: "steps(1, end)" },
+            { opacity: 1, transform: "scale(1.06,.94)", offset: press[j] / total + 0.0001 }, { opacity: 1, transform: "scale(1)", offset: 1 }], delay: 0, dur: total, ease: "linear" };
+          sfx(press[j], function (at, S) { S.cushion(at, 0.7); });
+        });
+        // the roll: each box as K slices of a copy of itself, curled round the roll
+        g.at(t0, function () {
+          var anims = [];
+          mine.forEach(function (k, j) {
+            var o = g.cells[k], A = along(k);
+            for (var i = 0; i < K; i++) {
+              var c = o.el.cloneNode(true);
+              c.removeAttribute("data-k"); c.setAttribute("aria-hidden", "true");
+              c.classList.remove("sel", "cursor", "syl-a", "syl-b");
+              c.style.position = "absolute"; c.style.margin = "0"; c.style.left = o.c * step + "px"; c.style.top = o.r * step + "px";
+              c.style.backgroundColor = o.look.bg; c.style.borderColor = o.look.edge; c.style.boxShadow = "none";
+              var lo = i / K * 100, hi = (K - 1 - i) / K * 100, mid = (i + 0.5) / K * 100;
+              c.style.clipPath = across ? "inset(-2px " + hi + "% -2px " + lo + "%)" : "inset(" + lo + "% -2px " + hi + "% -2px)";
+              c.style.transformOrigin = across ? mid + "% 50%" : "50% " + mid + "%";
+              g.board.appendChild(c);
+              var sOff = ((i + 0.5) / K - 0.5) * g.size * (across ? 1 : 1), kf = [], end = press[j] - t0;
+              for (var tt = 0; tt <= end + 0.001; tt += 0.03) {
+                var C = Cat(t0 + Math.min(tt, end)), th = Math.PI - u * (A - C) / Rc, phi = th - u * sOff / Rc; // this slice's angle round the roll
+                var al = C + u * Rc * Math.sin(phi) - (A + sOff), z = Rc + Rc * Math.cos(phi), deg = (phi + Math.PI) * 180 / Math.PI;
+                var turn = across ? "rotateY(" + u * deg + "deg)" : "rotateX(" + -u * deg + "deg)";
+                kf.push({ transform: "translate3d(" + (across ? al : 0) + "px," + (across ? 0 : al) + "px," + z + "px) " + turn,
+                  opacity: tt === 0 ? 0 : 1, filter: "brightness(" + (0.6 + 0.4 * Math.abs(Math.cos(phi))) + ")", offset: Math.min(1, tt / end) });
+              }
+              kf[kf.length - 1].offset = 1;
+              var an = c.animate(kf, { duration: end * 1000, easing: "linear" });
+              (function (el) { an.onfinish = an.oncancel = function () { el.remove(); }; })(c);
+              anims.push(an);
+            }
+          });
+          return anims;
+        });
+        t += 0.55;
+      });
+      return a;
+    } },
   { id: "zoom", name: "Zoom", icon: "🔍", premium: false,
     // Boxes grow outward from the crossings, past their size, then settle. A pop as each
     // ring grows, a soft tap as it settles.
