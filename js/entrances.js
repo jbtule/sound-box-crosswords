@@ -1050,9 +1050,9 @@ export var ENTRANCES = [
   { id: "wave", name: "Wave", icon: "🌊", premium: false,
     // An ocean of plain boxes rolls in from the left as a curling wave, the shape of the 🌊: a
     // body sloping up behind a tall crest whose lip curls forward and down round a hollow barrel,
-    // big boxes overlapping and tumbling in it. As it rolls past, the slope behind the crest sinks
-    // away, uncovering the puzzle's own boxes left behind in their places, and the wave rolls off
-    // to the right. Surf, a crash, foam fizzing.
+    // big boxes overlapping and tumbling in it, the puzzle's own boxes carried along in it too.
+    // As it rolls past each one's place it sets it down there, left behind like things on a
+    // beach, and the wave rolls off to the right. Surf, a crash, foam fizzing.
     plan: function (g, sfx) {
       var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
       var ws = Math.max(g.size * 0.95, Math.sqrt((W + g.size * 4) * (H + g.size) / 130)), box = ws * 1.15; // big boxes, overlapping
@@ -1073,13 +1073,23 @@ export var ENTRANCES = [
         if (X > 0 && X < R * 2) best = Math.max(best, (ws * 0.7 - h) / ws); // foam running ahead at the foot
         return best;
       }
-      // the puzzle's boxes: hidden under the water until it drains past them
+      // the puzzle's boxes: carried in the wave, tumbling just behind the crest at their own
+      // height, and set down in their places as the wave rolls on past them
       g.order.forEach(function (key) {
-        var o = g.cells[key], fx = o.c * step + half, fy = o.r * step + half, tR = END - 0.2;
-        for (var q = 0; q <= 400; q++) { var tq = passed(fx) + q / 400 * (END - passed(fx)); if (depth(fx, fy, tq) < -0.3) { tR = tq; break; } }
-        var total = tR + 0.3;
-        a[key] = { kf: [{ opacity: 0, transform: "translateY(4px) scale(.94)", offset: 0 }, { opacity: 0, transform: "translateY(4px) scale(.94)", offset: tR / total },
-          { opacity: 1, transform: "translateY(0) scale(1)", offset: 1 }], delay: 0, dur: total, ease: "ease-out" };
+        var o = g.cells[key], fx = o.c * step + half, fy = o.r * step + half, k = R * (0.3 + Math.random() * 0.35), ph = Math.random() * 6;
+        var spin = (Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 200), tDep = ROLL;
+        for (var q = 0; q <= 400; q++) { var tq = q / 400 * ROLL; if (xc(tq) - k >= fx) { tDep = tq; break; } }
+        var SET = 0.4, total = tDep + SET, kf = [], rot = 0;
+        for (var t = 0; t <= tDep + 0.001; t += 0.04) {
+          var x = xc(t) - k + Math.sin(t * 3 + ph) * ws * 0.2, y = fy - ws * 0.4 * Math.sin(Math.min(1, t / tDep) * Math.PI) + Math.sin(t * 4 + ph) * ws * 0.15;
+          rot = spin * t;
+          kf.push({ transform: "translate(" + (x - fx) + "px," + (y - fy) + "px) rotate(" + rot + "deg) scale(.9)", opacity: x < -g.size ? 0 : 1, zIndex: 4, offset: t / total });
+        }
+        var endRot = Math.round(rot / 360) * 360; // lands upright
+        kf.push({ transform: "translate(0,3px) rotate(" + endRot + "deg) scale(1.08,.9)", opacity: 1, zIndex: 1, offset: (tDep + SET * 0.75) / total, easing: "ease-out" });
+        kf.push({ transform: "translate(0,0) rotate(" + endRot + "deg) scale(1)", opacity: 1, zIndex: 1, offset: 1 });
+        kf[kf.length - 3].easing = "cubic-bezier(.3,0,.5,1)"; // set down as the water rolls on
+        a[key] = { kf: kf, delay: 0, dur: total, ease: "linear" };
       });
       // the sea: a grid of big plain boxes, each showing while it's in the water, churning; faster in the curl
       var cols = Math.ceil((W + g.size * 4) / ws), rows = Math.ceil((Hc + ws) / ws);
