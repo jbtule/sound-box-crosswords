@@ -549,12 +549,13 @@ export function geometry(P, board, clueOrder) {
   return g;
 }
 
-// Plays one entrance. `audio`: { ctx, out } to make its sounds (or null for none). Returns
+// Plays one entrance. `audio`: { ctx, out } to make its sounds (or null for none); `rate`: speed
+// (the tester's slow motion: 0.5 is half speed; the sounds are left out then). Returns
 // { done, skip }: done resolves when it ends or is skipped; skip() jumps to the finished board
 // and silences what it scheduled.
 export function playEntrance(id, g, opts) {
   var e = ENTRANCES.find(function (x) { return x.id === id; }) || ENTRANCES[0];
-  var anims = [], timers = [], audio = opts && opts.audio, bus = null, S = null, t0 = 0, finish;
+  var rate = (opts && opts.rate) || 1, anims = [], timers = [], audio = rate === 1 && opts && opts.audio, bus = null, S = null, t0 = 0, finish;
   var done = new Promise(function (resolve) { finish = resolve; });
   if (audio && audio.ctx) {
     try {
@@ -572,11 +573,11 @@ export function playEntrance(id, g, opts) {
   g.order.forEach(function (k) {
     var p = plan[k], el = g.cells[k].el;
     if (!p || !el) return;
-    anims.push(el.animate(p.kf, { duration: p.dur * 1000, delay: p.delay * 1000 + 60, easing: p.ease, fill: "backwards" }));
+    anims.push(el.animate(p.kf, { duration: p.dur * 1000 / rate, delay: (p.delay * 1000 + 60) / rate, easing: p.ease, fill: "backwards" }));
     end = Math.max(end, p.delay + p.dur);
   });
   extras.forEach(function (x) {
-    timers.push(setTimeout(function () { [].concat(x.fn() || []).forEach(function (an) { anims.push(an); }); }, x.at * 1000 + 60));
+    timers.push(setTimeout(function () { [].concat(x.fn() || []).forEach(function (an) { an.playbackRate = rate; anims.push(an); }); }, (x.at * 1000 + 60) / rate));
     end = Math.max(end, x.at + 0.7);
   });
   var over = false;
@@ -593,7 +594,7 @@ export function playEntrance(id, g, opts) {
     }
     finish(skipped);
   }
-  timers.push(setTimeout(function () { stop(false); }, end * 1000 + 120));
+  timers.push(setTimeout(function () { stop(false); }, (end * 1000 + 120) / rate));
   return { id: e.id, done: done, skip: function () { stop(true); } };
 }
 

@@ -86,6 +86,11 @@ h1 span { color: var(--accent); }
 .board-card { scroll-margin: 12px; position: relative; background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 16px 12px; min-height: 160px; display: flex; justify-content: center; }
 /* --cell is the box color token; --cell-size is set per puzzle by sizeBoard() */
 .board { display: grid; gap: 4px; --cell-size: 40px; position: relative; perspective: 700px; }
+/* The entrance tester (?backstage, js/entrance-tester.js): a bar pinned to the top. */
+.tester { position: fixed; top: 0; left: 0; right: 0; z-index: 40; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 10px calc(8px); padding-top: calc(8px + env(safe-area-inset-top, 0px)); background: var(--card); box-shadow: var(--shadow); font-size: 0.9rem; }
+.tester select, .tester button { width: auto; flex: none; min-height: 40px; border-radius: 10px; border: 1.5px solid var(--key-edge); background: var(--key); color: var(--ink); font: inherit; font-weight: 600; padding: 0 10px; }
+.tester label { display: inline-flex; align-items: center; gap: 4px; }
+.tester #tryTime { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 3.5em; }
 .entrance-ring { position: absolute; border-radius: 7px; border: 2px solid var(--sylA-edge); pointer-events: none; } /* Raindrops (entrances.js) */
 .entrance-ring.b { border-color: var(--sylB-edge); }
 .entrance-blk, .entrance-shot { position: absolute; border-radius: 5px; border: 2px solid var(--accent); background: var(--accent-soft); pointer-events: none; } /* Billiards' cue ball, the saucer's blaster */
