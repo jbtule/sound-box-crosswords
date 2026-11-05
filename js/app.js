@@ -1256,7 +1256,10 @@ function openAchievements() {
     }
     list.appendChild(li);
   });
-  $("#tabEnt").hidden = !earned["secret:entrances"];
+  // The Director tab shows as ??? (locked) until Front Row Seat is earned.
+  var director = !!earned["secret:entrances"], tabEnt = $("#tabEnt");
+  tabEnt.textContent = director ? "Director" : "???"; tabEnt.disabled = !director;
+  if (director) tabEnt.removeAttribute("aria-label"); else tabEnt.setAttribute("aria-label", "Locked tab");
   showTab("ach");
   $("#achSheet").hidden = false;
   renderCollection(); renderColors(); renderEntrances(); // measured below, so draw them now
