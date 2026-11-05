@@ -171,22 +171,23 @@ export var ENTRANCES = [
       return a;
     } },
   { id: "shutters", name: "Shutters", icon: "🪟", premium: false,
-    // Every box starts in place turned edge-on (invisible) and they all turn together, slightly,
-    // to show as thin lines. Then word by word they flip, fast and slowing, until they face you,
+    // Every box starts in place turned edge-on (invisible); after a moment of nothing they all
+    // turn together, slowly and slightly, to show as thin lines. Then word by word they flip, fast and slowing, until they face you,
     // with a rattle that slows too. Across words flip side to side, down words top to bottom; the
     // first word goes last.
     plan: function (g, sfx) {
-      var a = {}, LINE = 0.45, HOLD = 0.35, FLIP = 1.4, EACH = 0.5;
+      var a = {}, BLANK = 0.7, LINE = 1.0, HOLD = 0.3, FLIP = 1.4, EACH = 0.5; // a moment of nothing, then a slow turn to lines
       var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]); // the first word last
       order.forEach(function (wi, n) {
         var w = g.words[wi], mine = w.cells.filter(function (k) { return g.cells[k].owner === wi; });
         if (!mine.length) return;
-        var axis = w.dir === "A" ? "rotateY" : "rotateX", sign = n % 2 ? -1 : 1, start = LINE + HOLD + n * EACH;
+        var axis = w.dir === "A" ? "rotateY" : "rotateX", sign = n % 2 ? -1 : 1, start = BLANK + LINE + HOLD + n * EACH;
         mine.forEach(function (k, j) {
           var go = start + j * 0.035, total = go + FLIP, R = function (d) { return axis + "(" + d * sign + "deg)"; };
           a[k] = { kf: [
-              { transform: R(90), opacity: 0, offset: 0, easing: "ease-out" },
-              { transform: R(78), opacity: 1, offset: LINE / total },
+              { transform: R(90), opacity: 0, offset: 0 },
+              { transform: R(90), opacity: 0, offset: BLANK / total, easing: "ease-in-out" },
+              { transform: R(78), opacity: 1, offset: (BLANK + LINE) / total },
               { transform: R(78), opacity: 1, offset: go / total, easing: "cubic-bezier(.2,.7,.3,1)" }, // quick, then slowing
               { transform: R(720), opacity: 1, offset: 1 }],
             delay: 0, dur: total, ease: "linear" };
