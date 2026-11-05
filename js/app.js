@@ -1356,7 +1356,7 @@ function showStart(continuing) {
   onAccent();
   $("#startLabel").textContent = continuing ? "Continue" : "Start";
   $("#startOverlay").hidden = false;
-  $("#startBtn").focus();
+  $("#startBtn").focus({ preventScroll: true });
 }
 function start() {
   if ($("#startOverlay").hidden) return;
@@ -1366,7 +1366,13 @@ function start() {
   else if (P && !finished && settings.speakSel) sayWord(P.words[cur], 0.85);
 }
 $("#startOverlay").addEventListener("click", start);
-document.addEventListener("keydown", function (e) { // a physical key starts too, and isn't typed into the puzzle
+// A physical key or a letter pad tap starts too, and isn't typed into the puzzle (whose boxes
+// may still be waiting for their entrance). Not while a sheet is open, which has its own fields.
+document.addEventListener("keydown", function (e) {
+  if ($("#startOverlay").hidden || !safeToReload() || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  e.preventDefault(); e.stopPropagation(); start();
+}, true);
+kbEl.addEventListener("click", function (e) {
   if ($("#startOverlay").hidden) return;
   e.preventDefault(); e.stopPropagation(); start();
 }, true);

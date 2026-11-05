@@ -132,7 +132,7 @@ html.standalone { touch-action: pan-x pan-y; }
 @keyframes toast { 0% { opacity: 0; transform: translate(-50%, -6px); } 12%, 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
 /* New-achievement card: one big card per achievement, over a scrim. */
 /* Start / Continue: one big button over the board at launch (iOS plays sound only after a tap). */
-.start { position: fixed; inset: 0; z-index: 30; background: var(--scrim); display: grid; place-items: center; padding: 16px; }
+.start { position: absolute; inset: 0; z-index: 6; border-radius: inherit; background: var(--scrim); display: grid; place-items: start center; padding: min(28%, 120px) 16px 16px; } /* over the puzzle only; the rest of the page stays usable */
 .start .start-btn { display: inline-flex; align-items: center; gap: 10px; font-size: 1.6rem; padding: 18px 40px 18px 30px; min-height: 68px; background: var(--accent); color: var(--on-accent); box-shadow: 0 6px 24px rgba(0,0,0,.25); cursor: pointer; }
 .start .start-btn svg { width: 30px; height: 30px; }
 .start .start-btn:active { transform: scale(0.97); }
