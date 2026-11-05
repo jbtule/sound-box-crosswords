@@ -306,6 +306,56 @@ export var ENTRANCES = [
       sfx(endT - 0.02, function (when, S) { S.clickin(when); });
       return a;
     } },
+  { id: "kaleidoscope", name: "Kaleidoscope", icon: "🔮", premium: false,
+    // The boxes form a mandala in the middle of the board: the first word, in its colors, the
+    // inner ring, the plain boxes in rings around it, every box turned to point outward. Like
+    // twisting a kaleidoscope, the rings turn opposite ways and breathe in and out, the pattern
+    // shifting, with shimmering bells. Then it blooms: boxes fly out to their places, outer rings
+    // first, the colored center last, on a chord.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      var cx = W / 2, cy = H / 2, SC = 0.62, sp = g.size * SC * 1.12, FORM = 0.8, TURN = 2.2, BLOOM = 0.9;
+      var rings = [], word = firstWord(g), plain = others(g), GAP = 1.32;
+      rings.push({ keys: word, r: Math.max(sp * 1.1, word.length * sp * 1.15 / (2 * Math.PI)) });
+      var rest = plain.slice();
+      while (rest.length) {
+        var r = rings[rings.length - 1].r + sp * GAP, cap = Math.max(6, Math.floor(2 * Math.PI * r / (sp * 1.2) / 6) * 6);
+        rings.push({ keys: rest.splice(0, cap), r: r });
+      }
+      // fit it on the board: shrink the whole pattern if the outer ring would reach past it
+      var fit = Math.min(1, (Math.min(W, H) * 0.5 + g.size) / (rings[rings.length - 1].r + sp));
+      rings.forEach(function (ring) { ring.r *= fit; }); SC *= fit; sp *= fit;
+      var bloomAt = FORM + TURN, landEnd = 0;
+      function spot(ring, j, n, t, ri) {
+        var dir = ri % 2 ? -1 : 1, twist = dir * (0.55 * t + 0.35 * Math.sin(t * 1.6 + ri)); // turning, with a twist that ebbs and flows
+        var th = j / n * Math.PI * 2 + twist + ri * 0.4, rr = ring.r * (1 + 0.1 * Math.sin(t * 2.4)); // the whole pattern breathes together
+        return { x: cx + rr * Math.cos(th), y: cy + rr * Math.sin(th), rot: th * 180 / Math.PI + 45 };
+      }
+      rings.forEach(function (ring, ri) {
+        var n = ring.keys.length, order = rings.length - 1 - ri; // outer rings bloom first
+        ring.keys.forEach(function (key, j) {
+          var o = g.cells[key], fx = o.c * step + half, fy = o.r * step + half;
+          var go = bloomAt + order * 0.28 + (j % 6) * 0.03, total = go + BLOOM, kf = [], last;
+          for (var t = 0; t <= go + 0.001; t += 0.05) {
+            var p = spot(ring, j, n, t, ri), grow = Math.min(1, t / FORM), e = grow * grow * (3 - 2 * grow);
+            last = p;
+            kf.push({ transform: "translate(" + (cx + (p.x - cx) * e - fx) + "px," + (cy + (p.y - cy) * e - fy) + "px) rotate(" + p.rot + "deg) scale(" + SC * (0.3 + 0.7 * e) + ")",
+              opacity: Math.min(1, t / (FORM * 0.6)), offset: t / total });
+          }
+          var endRot = Math.round(last.rot / 360) * 360;
+          kf.push({ transform: "translate(" + (last.x - fx) * 0.5 + "px," + (last.y - fy) * 0.5 + "px) rotate(" + (last.rot + endRot) / 2 + "deg) scale(" + (SC + 1) / 2 + ")", opacity: 1, offset: (go + BLOOM * 0.55) / total, easing: "cubic-bezier(.2,.8,.3,1.15)" });
+          kf.push({ transform: "translate(0,0) rotate(" + endRot + "deg) scale(1)", opacity: 1, offset: 1 });
+          kf[kf.length - 3].easing = "ease-in";
+          a[key] = { kf: kf, delay: 0, dur: total, ease: "linear" };
+          landEnd = Math.max(landEnd, total);
+        });
+      });
+      // shimmering bells while it turns (a slow rising and falling run), a chord as it blooms
+      for (var q = 0; q < 14; q++) (function (q) { sfx(0.3 + q * (FORM + TURN - 0.4) / 14, function (when, S) { S.bell(when, [0, 2, 4, 6, 8, 10, 12, 10, 8, 6, 4, 6, 8, 10][q]); }); })(q);
+      sfx(bloomAt, function (when, S) { S.whoosh(when, 0.6); });
+      sfx(landEnd - 0.35, function (when, S) { S.chord(when, [523.25, 659.25, 783.99, 1046.5], 0.13); });
+      return a;
+    } },
   { id: "zoom", name: "Zoom", icon: "🔍", premium: false,
     // Boxes grow outward from the crossings, past their size, then settle. A pop as each
     // ring grows, a soft tap as it settles.
