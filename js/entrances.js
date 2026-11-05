@@ -987,46 +987,47 @@ export var ENTRANCES = [
       return a;
     } },
   { id: "wave", name: "Wave", icon: "🌊", premium: false,
-    // An ocean of boxes. A sea of extra boxes rises from the bottom of the board and a big swell
-    // rolls in from the left, building to a towering crest; it crashes forward, throwing spray,
-    // and the sea floods the whole board, sloshing. Then it subsides, draining away, and as the
-    // water uncovers them the puzzle's own boxes are left behind in their places. Surf, a crash,
-    // foam fizzing as it drains.
+    // An ocean of boxes surges in from the left: a wall of water, its top running ahead and
+    // curling over, big boxes overlapping and tumbling in it, spray thrown ahead as it crashes.
+    // It floods the board, then washes back out to the left, and as it draws back it uncovers the
+    // puzzle's own boxes, left behind in their places. Surf, a crash, foam fizzing as it draws back.
     plan: function (g, sfx) {
       var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
-      var SWELL = 1.0, CRASH = 1.35, FLOOD = 1.9, DRAIN = 3.3, END = 3.6;
-      var ws = Math.max(g.size * 0.62, Math.sqrt((W + g.size * 2) * (H * 1.2) / 220)); // the sea's boxes: about 220 of them
+      var IN = 1.3, HOLD = 0.45, BACK = 1.4, END = IN + HOLD + BACK + 0.2;
+      var ws = Math.max(g.size * 1.0, Math.sqrt((W + g.size * 3) * (H + g.size) / 150)), box = ws * 1.15; // big boxes, overlapping
       var sm = function (u) { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
-      // the water's height at x (from the bottom of the board), over time
-      function level(x, t) {
-        var base = t < CRASH ? H * 0.35 * sm(t / SWELL) : t < FLOOD ? H * (0.35 + 0.85 * sm((t - CRASH) / (FLOOD - CRASH))) : H * 1.2 * (1 - sm((t - FLOOD - (x / W) * 0.25) / (DRAIN - FLOOD - 0.25))) - ws;
-        var xc = -W * 0.25 + (W * 0.85) * sm(t / CRASH), amp = t < CRASH ? H * 0.95 * sm(t / SWELL) : H * 0.95 * (1 - sm((t - CRASH) / 0.35)), wid = W * 0.22;
-        var slosh = t > CRASH && t < DRAIN ? Math.sin(x / W * 6 - t * 7) * ws * 0.6 : 0;
-        return base + amp * Math.exp(-Math.pow((x - xc) / wid, 2)) + slosh;
+      // the water's edge at height y (0 is the top of the board): everything left of it is under water
+      function edge(y, t) {
+        var v = Math.max(0, Math.min(1, y / H)), curl;
+        if (t < IN) { var u = sm(t / IN); curl = (1 - v) * (1 - v) * g.size * 2.4 * Math.sin(Math.min(1, t / IN) * Math.PI * 0.95); return -W * 0.35 + (W * 1.6) * u + curl; } // surging in, its top ahead
+        if (t < IN + HOLD) return W * 1.25 + Math.sin((t - IN) * 8 + v * 4) * ws * 0.5; // flooded, sloshing
+        var b = sm((t - IN - HOLD) / BACK); return W * 1.25 - (W * 1.25 + W * 0.45 + g.size * 2) * b + v * g.size * 1.2 * b; // washing back out, the bottom last
       }
-      // the puzzle's boxes: hidden under the water until it drains past them
+      // the puzzle's boxes: hidden under the water until it draws back past them
       g.order.forEach(function (key) {
-        var o = g.cells[key], fx = o.c * step + half, fy = o.r * step + half, up = H - (fy + half), tR = END - 0.2;
-        for (var q = 0; q <= 300; q++) { var tq = FLOOD + q / 300 * (END - FLOOD); if (level(fx, tq) < up) { tR = tq; break; } }
+        var o = g.cells[key], fx = o.c * step + half, fy = o.r * step + half, tR = END - 0.2;
+        for (var q = 0; q <= 300; q++) { var tq = IN + HOLD + q / 300 * (BACK + 0.2); if (edge(fy, tq) < fx - half) { tR = tq; break; } }
         var total = tR + 0.3;
-        a[key] = { kf: [{ opacity: 0, transform: "translateY(4px) scale(.94)", offset: 0 }, { opacity: 0, transform: "translateY(4px) scale(.94)", offset: tR / total },
-          { opacity: 1, transform: "translateY(0) scale(1)", offset: 1 }], delay: 0, dur: total, ease: "ease-out" };
+        a[key] = { kf: [{ opacity: 0, transform: "translateX(-6px) scale(.94)", offset: 0 }, { opacity: 0, transform: "translateX(-6px) scale(.94)", offset: tR / total },
+          { opacity: 1, transform: "translateX(0) scale(1)", offset: 1 }], delay: 0, dur: total, ease: "ease-out" };
       });
-      // the sea: boxes in a grid, each showing while it's under the water's surface, bobbing,
-      // the ones at the surface tumbling; near the crest when it crashes, thrown up as spray
-      var cols = Math.ceil((W + g.size * 2) / ws), rows = Math.ceil(H * 1.25 / ws);
+      // the sea: a grid of big boxes, each showing while it's in the water, drifting with the surge
+      // and tumbling; near the curling top as it crashes, thrown ahead as spray
+      var cols = Math.ceil((W + g.size * 3) / ws), rows = Math.ceil((H + g.size) / ws);
       g.at(0, function () {
         var anims = [];
         for (var ci = 0; ci < cols; ci++) for (var ri = 0; ri < rows; ri++) {
-          var x = -g.size + (ci + 0.5) * ws, yb = (ri + 0.5) * ws, ph = Math.random() * 6, kf = [], spray = Math.random() < 0.35;
+          var x = -g.size * 1.5 + (ci + 0.5) * ws, y = -g.size * 0.5 + (ri + 0.5) * ws, ph = Math.random() * 6, spin = (Math.random() < 0.5 ? -1 : 1) * (180 + Math.random() * 260), kf = [];
+          var spray = ri < rows * 0.35 && Math.random() < 0.5;
           var d = document.createElement("div"); d.className = "entrance-decoy entrance-sea";
-          d.style.width = d.style.height = ws * 0.86 + "px"; d.style.left = (x - ws * 0.43) + "px"; d.style.top = (H - yb - ws * 0.43) + "px";
+          d.style.width = d.style.height = box + "px"; d.style.left = (x - box / 2) + "px"; d.style.top = (y - box / 2) + "px";
           g.board.appendChild(d);
           for (var t = 0; t <= END + 0.001; t += 0.06) {
-            var L = level(x, t), under = (L - yb) / ws, op = Math.max(0, Math.min(1, under + 0.5)), surf = Math.max(0, 1 - Math.abs(under) / 1.5);
-            var dx = Math.sin(t * 3 + ph + yb * 0.02) * ws * 0.3 * (0.4 + surf), dy = Math.sin(t * 4.5 + ph) * ws * 0.15 * (0.3 + surf), rot = surf * Math.sin(t * 5 + ph) * 60;
-            var c = t - CRASH; // spray: thrown up and forward near the crest as it crashes, falling back
-            if (spray && c > 0 && c < 0.7 && Math.abs(x - W * 0.6) < W * 0.35 && under > -1.5 && under < 1) { var arc = c / 0.7; dy -= Math.sin(arc * Math.PI) * ws * 3; dx += arc * ws * 2; rot += arc * 360; op = Math.max(op, 1 - arc * 0.3); }
+            var E = edge(y, t), under = (E - x) / ws, op = Math.max(0, Math.min(1, under + 0.6));
+            var surge = t < IN ? (1 - sm(t / IN)) * ws * 1.2 : t < IN + HOLD ? 0 : -sm((t - IN - HOLD) / BACK) * ws * 1.5; // carried with the water
+            var dx = surge + Math.sin(t * 3 + ph) * ws * 0.3, dy = Math.sin(t * 4 + ph) * ws * 0.3, rot = spin * t;
+            var c = t - IN * 0.75; // spray off the curling top as it crashes
+            if (spray && c > 0 && c < 0.8 && under > -0.5 && under < 2.5) { var arc = c / 0.8; dx += arc * ws * 2.2; dy -= Math.sin(arc * Math.PI) * ws * 2.5; op = Math.max(op, 1 - arc); }
             kf.push({ transform: "translate(" + dx + "px," + dy + "px) rotate(" + rot + "deg)", opacity: op, offset: t / END });
           }
           kf[kf.length - 1].offset = 1;
@@ -1036,9 +1037,9 @@ export var ENTRANCES = [
         }
         return anims;
       });
-      sfx(0, function (when, S) { S.surf(when, CRASH + 0.1); });
-      sfx(CRASH, function (when, S) { S.crash(when); });
-      sfx(FLOOD, function (when, S) { S.fizz(when, DRAIN - FLOOD + 0.4); });
+      sfx(0, function (when, S) { S.surf(when, IN + 0.1); });
+      sfx(IN * 0.8, function (when, S) { S.crash(when); });
+      sfx(IN + HOLD, function (when, S) { S.fizz(when, BACK + 0.4); S.surf(when, BACK); });
       return a;
     } },
   { id: "saucer", name: "Flying saucer", icon: "🛸", premium: true,
