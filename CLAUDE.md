@@ -245,7 +245,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   (`showBoardCard`) and the letter pad fades out while it plays (`.keyboard.resting`) and back in after; physical keys still type, and nothing
   cuts it short but a new puzzle. Its sounds are
   `js/sfx.js` (`makeSfx`, Web Audio like the chime, through `audioOut()` in `chime.js`) and
-  follow the Sound effects setting.
+  follow the Sound effects setting. Each entrance seen to the end is saved (`seenEntrances`,
+  `sawEntrance`); all of them earns the secret Front Row Seat, which shows the 🏆 sheet's
+  Entrances tab (`renderEntrances`): every entrance (`icon`, ⭐ for premium), tapped into an
+  order (`entranceQueue`) that finished puzzles play one each before the usual cycle.
 - `js/achievements.js`: no DOM. `catalog(state)` lists achievements (pack champion, then once that's reached a pack
   Legend, every word right on the first try, not for Custom, and unlocking no colors; tiered
   clean solves, comeback words, practice days, showing only the next unmet tier), `award`
@@ -255,7 +258,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   Champion of Champions and then Legend of Legends: every pack's Champion / Legend, in grades
   with at least 5 packs (Custom doesn't count). Secret achievements (`SECRETS`: Good Listener,
   Two for One, Triple Digits, Weekend Speller, Touch Typist, Show-Off, New Look, Collector's
-  Eye) show as ??? in the 🏆 sheet until earned, with no hint, and their card says "Secret
+  Eye, Front Row Seat) show as ??? in the 🏆 sheet until earned, with no hint, and their card says "Secret
   achievement!"; their counts are in `sbx:counts` too (puzzle ones from `pz`, this puzzle's
   flags in `app.js`).
   Shown on the solved card, as a big card per new achievement (`showAwards`, after the
@@ -334,7 +337,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     first try, as pictures or sound stickers to tap and hear); recent puzzles. Like the rest
     of the sheet it isn't locked, so it never shows a spelling.
   - Start over (Settings): clears this edition's `achievements`, `progress`, `counts`, `days`,
-    `log`, `stars`, `puzzle`, `pending` and `slips` (`RESET_KEYS`) and the color scheme, once "start over" is
+    `log`, `stars`, `puzzle`, `pending`, `slips`, `seenEntrances` and `entranceQueue` (`RESET_KEYS`) and the color scheme, once "start over" is
     typed. Achievements, stars, pictures and colors are all worked out from progress, so
     clearing only achievements would bring them back. Settings and the Custom list stay.
 

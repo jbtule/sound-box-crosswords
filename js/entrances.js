@@ -13,7 +13,7 @@ var BOUNCE = "cubic-bezier(.25,1.45,.45,1)";
 // as Billiards' cue ball remove themselves when theirs ends or is cancelled). Times are in seconds; sfx(at, function (when) {...})
 // schedules a sound at `at` seconds in.
 export var ENTRANCES = [
-  { id: "slide", name: "Slide in", premium: false,
+  { id: "slide", name: "Slide in", icon: "➡️", premium: false,
     // Each word's boxes slide in from its own edge: across words from the left, down words
     // from the top. A soft whoosh per word.
     plan: function (g, sfx) {
@@ -31,7 +31,7 @@ export var ENTRANCES = [
       });
       return a;
     } },
-  { id: "stamp", name: "Stamp", premium: false,
+  { id: "stamp", name: "Stamp", icon: "📮", premium: false,
     // Boxes come down from above the page, big as if close, and press onto the paper a few at
     // a time, each batch with a rubber-stamp thump; now and then the board gives a tiny shake.
     plan: function (g, sfx) {
@@ -53,7 +53,7 @@ export var ENTRANCES = [
       }
       return a;
     } },
-  { id: "raindrops", name: "Raindrops", premium: false,
+  { id: "raindrops", name: "Raindrops", icon: "💧", premium: false,
     // Boxes drop in at random spots like rain, getting busier as it goes. Each landing sends a
     // ring spreading out in its syllable color, with a water-drop plip.
     plan: function (g, sfx) {
@@ -76,7 +76,7 @@ export var ENTRANCES = [
       });
       return a;
     } },
-  { id: "converge", name: "Converge", premium: false,
+  { id: "converge", name: "Converge", icon: "🧲", premium: false,
     // Boxes start scattered across the board and glide into the grid, over a rising swoosh
     // that resolves into a chord as everything snaps into place.
     plan: function (g, sfx) {
@@ -91,7 +91,7 @@ export var ENTRANCES = [
       sfx(end * 0.9, function (at, S) { S.chord(at, [523.25, 659.25, 783.99, 1046.5], 0.14); });
       return a;
     } },
-  { id: "sweep", name: "Sweep", premium: false,
+  { id: "sweep", name: "Sweep", icon: "🧹", premium: false,
     // A left-to-right wave, column by column, like a scanner passing over the paper. One note
     // per column, climbing.
     plan: function (g, sfx) {
@@ -103,7 +103,7 @@ export var ENTRANCES = [
       });
       return a;
     } },
-  { id: "flip", name: "Flip", premium: false,
+  { id: "flip", name: "Flip", icon: "🃏", premium: false,
     // Boxes flip over in place one after another, in reading order, like cards turning face
     // up, each with a card-flip click.
     plan: function (g, sfx) {
@@ -115,7 +115,7 @@ export var ENTRANCES = [
       });
       return a;
     } },
-  { id: "spin", name: "Spin in", premium: false,
+  { id: "spin", name: "Spin in", icon: "🌀", premium: false,
     // Boxes come spinning in from every side, spiraling as they shrink into place, over a
     // rising whirr; they settle with a little rattle, like a coin wobbling to a stop.
     plan: function (g, sfx) {
@@ -135,7 +135,7 @@ export var ENTRANCES = [
       sfx(0, function (at, S) { S.whirr(at, end); });
       return a;
     } },
-  { id: "leaves", name: "Leaves in the wind", premium: false,
+  { id: "leaves", name: "Leaves in the wind", icon: "🍃", premium: false,
     // A gust sweeps in from the left and the boxes ride it like leaves, tumbling and
     // fluttering, slowing as the wind dies, then rocking gently to rest. Wind and rustles.
     plan: function (g, sfx) {
@@ -161,7 +161,7 @@ export var ENTRANCES = [
       for (var r = 0; r < 14; r++) sfx(Math.pow(Math.random(), 1.2) * end * 0.8, function (at, S) { S.rustle(at); });
       return a;
     } },
-  { id: "zoom", name: "Zoom", premium: false,
+  { id: "zoom", name: "Zoom", icon: "🔍", premium: false,
     // Boxes grow outward from the crossings, past their size, then settle. A pop as each
     // ring grows, a soft tap as it settles.
     plan: function (g, sfx) {
@@ -184,7 +184,7 @@ export var ENTRANCES = [
       });
       return a;
     } },
-  { id: "wash", name: "Color wash", premium: false,
+  { id: "wash", name: "Color wash", icon: "🌈", premium: false,
     // Boxes land plain, then a diagonal wave blooms each box in its syllable color and back to
     // the board's own look (only the selected word keeps its colors). A harp-like glissando.
     plan: function (g, sfx) {
@@ -206,7 +206,7 @@ export var ENTRANCES = [
       });
       return a;
     } },
-  { id: "neon", name: "Neon", premium: false,
+  { id: "neon", name: "Neon", icon: "💡", premium: false,
     // Dark, unlit tubes sputter on like a neon sign warming up, each flickering in its own
     // rhythm before it catches, glowing in its syllable color, then easing to normal.
     plan: function (g, sfx) {
@@ -234,7 +234,7 @@ export var ENTRANCES = [
       return a;
     } },
   // The premium ones: showpieces, every 5th turn (nextEntrance).
-  { id: "coaster", name: "Roller coaster", premium: true,
+  { id: "coaster", name: "Roller coaster", icon: "🎢", premium: true,
     // The boxes ride in as one long train: a slow climb up the left, a drop, a loop-the-loop,
     // then each car peels off to its spot. Clack-clack up the lift, a whoosh down, a wheee
     // round the loop, then an air-brake hiss and cars clunking into place.
@@ -269,7 +269,7 @@ export var ENTRANCES = [
       sfx(DUR * 0.86, function (when, S) { S.brake(when, 0.7); });
       return a;
     } },
-  { id: "billiards", name: "Billiards", premium: true,
+  { id: "billiards", name: "Billiards", icon: "🎱", premium: true,
     // The boxes appear racked in a triangle, a cue ball breaks them, and they scatter,
     // spinning, bounce off the board's edges, and roll to a stop in their places. Racking
     // clicks, a sharp break, clacks and cushion thuds.
@@ -332,7 +332,7 @@ export var ENTRANCES = [
       sfx(DUR - 0.02, function (when, S) { S.clickin(when); });
       return a;
     } },
-  { id: "kaiju", name: "Kaiju", premium: true,
+  { id: "kaiju", name: "Kaiju", icon: "🦖", premium: true,
     // The boxes stack into a kaiju that lurches in from the left, rearing up and slamming down
     // each step so the board shakes, then trips, teeters (uh-oh), topples, and shatters; the
     // boxes roll slowly into place. A growl, heavy stomps, a crash, wooden knocks, a rumble.
@@ -418,7 +418,7 @@ export var ENTRANCES = [
       sfx(DUR * LAND, function (when, S) { S.rumble(when, DUR * (1 - LAND) * 0.9); });
       return a;
     } },
-  { id: "saucer", name: "Flying saucer", premium: true,
+  { id: "saucer", name: "Flying saucer", icon: "🛸", premium: true,
     // The boxes assemble into a block flying saucer that swoops in and hovers. A little cannon
     // at the bottom fires: miss, miss, hit! The saucer bursts and its pieces drift slowly into
     // place. A warbly hum, pews, a boom.

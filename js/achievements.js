@@ -1,3 +1,5 @@
+import { ENTRANCES } from "./entrances.js";
+
 // Achievements: worked out from saved progress, and kept once earned (nothing is ever
 // taken away, so there are no streaks to lose). No DOM here; app.js shows them.
 //
@@ -8,7 +10,7 @@
 //   comeback: words spelled right on the first try after an earlier miss
 //   days:     ["YYYY-MM-DD", ...] local days with a finished puzzle
 //   edition:  the grade's name ("3rd grade"), for Champion of Champions and Legend of Legends
-//   secret:   { listener, twofer, shared, look, peek, words, qwerty, weekend } counts for the
+//   secret:   { listener, twofer, shared, look, peek, words, qwerty, weekend, entrances } counts for the
 //             secret achievements (SECRETS)
 // }
 
@@ -43,7 +45,9 @@ var SECRETS = [
   { key: "qwerty", goal: 5, icon: "⌨️", title: "Touch Typist", detail: "5 puzzles typed on the QWERTY keys" },
   { key: "shared", goal: 1, icon: "📣", title: "Show-Off", detail: "Shared an achievement" },
   { key: "look", goal: 1, icon: "🎨", title: "New Look", detail: "Picked new colors" },
-  { key: "peek", goal: 1, icon: "👀", title: "Collector's Eye", detail: "Heard a word from the collection" }
+  { key: "peek", goal: 1, icon: "👀", title: "Collector's Eye", detail: "Heard a word from the collection" },
+  // Every new-puzzle entrance seen to the end; it unlocks the Entrances tab (pick the order).
+  { key: "entrances", goal: ENTRANCES.length, icon: "🍿", title: "Front Row Seat", detail: "Saw every way the boxes arrive" }
 ];
 // The whole grade at once, for grades with at least this many packs (Custom doesn't count).
 var GRAND_MIN = 5;
