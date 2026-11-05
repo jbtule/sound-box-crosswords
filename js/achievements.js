@@ -46,7 +46,7 @@ var SECRETS = [
   { key: "shared", goal: 1, icon: "📣", title: "Show-Off", detail: "Shared an achievement" },
   { key: "look", goal: 1, icon: "🎨", title: "New Look", detail: "Picked new colors" },
   { key: "peek", goal: 1, icon: "👀", title: "Collector's Eye", detail: "Heard a word from the collection" },
-  // Every new-puzzle entrance seen to the end; it unlocks the Entrances tab (pick the order).
+  // Every new-puzzle entrance seen to the end; it unlocks the Director tab (pick the entrances' order).
   { key: "entrances", goal: ENTRANCES.length, icon: "🍿", title: "Front Row Seat", detail: "Saw every way the boxes arrive" }
 ];
 // The whole grade at once, for grades with at least this many packs (Custom doesn't count).

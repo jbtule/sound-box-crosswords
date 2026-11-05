@@ -241,7 +241,7 @@ function runEntrance(turn) {
   if (reducedMotion() && !test) { after(); return; }
   var saved = store.get("entrances", null), id = saved && saved.last, queue = entranceQueue();
   if (test) id = test.id; // the tester (?backstage) picks it, and leaves the cycle and Front Row Seat alone
-  else if (turn && queue.length) { // the player's own order (the Entrances tab) comes first
+  else if (turn && queue.length) { // the player's own order (the Director tab) comes first
     id = queue.shift(); store.set("entranceQueue", queue);
     store.set("entrances", Object.assign({}, saved, { last: id }));
   } else if (turn || !id) { var pick = nextEntrance(saved); store.set("entrances", pick.state); id = pick.id; }
@@ -279,7 +279,7 @@ function showBoardCard() {
   card.scrollIntoView({ block: r.height <= window.innerHeight - 24 ? "nearest" : "start", behavior: "smooth" });
 }
 function skipEntrance() { if (entrance) entrance.skip(); }
-// Entrances seen to the end, for Front Row Seat (every one), which opens the Entrances tab.
+// Entrances seen to the end, for Front Row Seat (every one), which opens the Director tab.
 function sawEntrance(id) {
   var seen = store.get("seenEntrances", []);
   if (seen.indexOf(id) >= 0) return;
@@ -1172,7 +1172,7 @@ function renderColors() {
     wrap.appendChild(b);
   });
 }
-// Entrances tab (once Front Row Seat is earned): every entrance; tapping one adds it to the
+// Director tab (once Front Row Seat is earned): every entrance; tapping one adds it to the
 // order played after the next finished puzzles (one each), before the usual shuffle.
 function renderEntrances() {
   var queue = entranceQueue(), q = $("#entQueue"), list = $("#entList");
@@ -1256,7 +1256,10 @@ function openAchievements() {
     }
     list.appendChild(li);
   });
-  $("#tabEnt").hidden = !earned["secret:entrances"];
+  // The Director tab shows as ??? (locked) until Front Row Seat is earned.
+  var director = !!earned["secret:entrances"], tabEnt = $("#tabEnt");
+  tabEnt.textContent = director ? "Director" : "???"; tabEnt.disabled = !director;
+  if (director) tabEnt.removeAttribute("aria-label"); else tabEnt.setAttribute("aria-label", "Locked tab");
   showTab("ach");
   $("#achSheet").hidden = false;
   renderCollection(); renderColors(); renderEntrances(); // measured below, so draw them now

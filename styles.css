@@ -172,6 +172,7 @@ html.standalone { touch-action: pan-x pan-y; }
 .tabs::-webkit-scrollbar { display: none; }
 .tabs button { flex: none; white-space: nowrap; border: none; background: transparent; border-radius: 999px; padding: 8px 12px; min-height: 40px; font-weight: 600; font-size: 0.92rem; color: var(--muted); }
 .tabs button[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
+.tabs button:disabled { opacity: 0.55; cursor: default; } /* a locked tab (the 🏆 sheet's ??? until Front Row Seat) */
 /* Picture collection: a sticker page per pack. */
 .col-pack { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .col-pack h3 { margin: 0; }
