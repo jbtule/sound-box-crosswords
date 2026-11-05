@@ -218,7 +218,9 @@ function newPuzzle(solved) {
   renderBoard();
   renderClues();
   select(order()[0], null, false);
-  var turn = solved === true; // only finishing a puzzle moves on to the next entrance
+  // Only finishing a puzzle moves on to the next entrance. Remembered (entranceDue) until it
+  // plays, so an update's reload between the solve and the new puzzle doesn't lose the turn.
+  var turn = solved === true || store.get("entranceDue", false) === true;
   if (started || gradeTapped) runEntrance(turn); else { board.classList.add("waiting"); waitTurn = turn; } // the Start tap plays it
 }
 // The first word, said as the new puzzle's boxes land (with auto-speak on), unless the player has
@@ -240,6 +242,7 @@ function runEntrance(turn) {
   if (!P || document.hidden) return;
   if (reducedMotion() && !test) { after(); return; }
   var saved = store.get("entrances", null), id = saved && saved.last, queue = entranceQueue();
+  if (turn && !test) store.set("entranceDue", false);
   if (test) id = test.id; // the tester (?backstage) picks it, and leaves the cycle and Front Row Seat alone
   else if (turn && queue.length) { // the player's own order (the Director tab) comes first
     id = queue.shift(); store.set("entranceQueue", queue);
@@ -569,6 +572,7 @@ function finish() {
   var wd = new Date().getDay();
   if (wd === 0 || wd === 6) counts.weekend = (counts.weekend || 0) + 1; // this puzzle, not past weekends
   store.set("counts", counts);
+  store.set("entranceDue", true); // the next new puzzle gets the next entrance (newPuzzle)
   var today = dayKey(Date.now());
   if (days.indexOf(today) < 0) { days.push(today); store.set("days", days); }
   // Secret ones earned outside a puzzle and not opened yet join this puzzle's.
@@ -911,7 +915,7 @@ $("#editionSel").addEventListener("change", function (e) {
 // achievements would bring them straight back. Typing the phrase keeps it from happening
 // by accident.
 var RESET_PHRASE = "start over";
-var RESET_KEYS = ["achievements", "progress", "counts", "days", "log", "stars", "puzzle", "pending", "slips", "seenEntrances", "entranceQueue"];
+var RESET_KEYS = ["achievements", "progress", "counts", "days", "log", "stars", "puzzle", "pending", "slips", "seenEntrances", "entranceQueue", "entranceDue"];
 function resetMatches() { return $("#resetText").value.trim().toLowerCase() === RESET_PHRASE; }
 $("#resetOpen").addEventListener("click", function () {
   $("#resetOpen").hidden = true; $("#resetBox").hidden = false; $("#resetText").focus();
