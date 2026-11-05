@@ -1096,7 +1096,7 @@ function nextAward() {
 function prevAward() {
   if (awardIndex > 0) { awardIndex--; showAward(); }
 }
-// 👂 Hear it on the card: "Achievement!", then its name and what it took, again (for
+// Hear it on the card: "Achievement!", then its name and what it took, again (for
 // players who can't read it yet); also on ones reopened from the 🏆 sheet, which aren't
 // read on their own.
 function hearAward() {
