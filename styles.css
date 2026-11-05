@@ -219,6 +219,9 @@ html.standalone { touch-action: pan-x pan-y; }
 /* A blank in the sentence: one small box per letter, like the grid's boxes. */
 .sent .blank { display: inline-flex; gap: 2px; vertical-align: -0.2em; margin: 0 2px; }
 .sent .blank span { width: 0.8em; height: 1.05em; border: 1.5px solid var(--cell-edge); border-radius: 3px; background: var(--cell); }
+.sent.pic-line { display: flex; align-items: center; gap: 4px; }
+.sent .to-pic { width: 56px; height: 30px; flex: none; margin: -6px 2px 0 7px; color: var(--muted); align-self: flex-start; } /* its tip sits under the middle of the picture (76px wide, above) */
+.sent.pic-line .blank span { width: 1.05em; height: 1.3em; }
 
 /* The pad sticks to the bottom of the screen while its place in the layout is below the
    fold (short screens), so typing never needs scrolling. Its background is always solid

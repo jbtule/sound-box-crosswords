@@ -211,7 +211,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   that uses the word: *Hear it*, the picture, and auto-speak then say word, sentence, word
   (spelling-test style; `sayWord` in `app.js`). **Required for pack words with no emoji**,
   and it tells homophones apart (their/there). Also shown under the clue with the word as a blank of small boxes, one per letter like the grid (`blankSentence` in
-  `crossword.js`), so it must not use another word from the same pack; the check enforces this. Syllable splits should match how a
+  `crossword.js`); a word with a picture and no sentence shows just its blank boxes on that line, with an
+  arrow up to the picture (`showSentence` in `app.js`), when the puzzle has the line, so it must not use another word from the same pack; the check enforces this. Syllable splits should match how a
   teacher would clap the word. A word in more than one list (another pack or edition) matches
   everywhere (syllables, emoji, hint, sentence, and sounds between Sound it out editions), so
   one recording and one listen mark cover it; the check enforces this unless the line above
