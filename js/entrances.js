@@ -462,8 +462,8 @@ export var ENTRANCES = [
   { id: "unfold", name: "Unfold", icon: "🗺️", premium: false,
     // The whole puzzle starts folded up into a single square in the corner, like a map, and
     // unfolds fold by fold, across and down in turn: at each fold the boxes on the folded-over
-    // half flip out over the crease in 3D, the square doubling each time, a paper swish and a
-    // crease as each lands, until every box lies in its place.
+    // half flip out over the crease in 3D, the square doubling each time, with the sound of paper
+    // turning over (a crinkle, a flap, a crease), until every box lies in its place.
     plan: function (g, sfx) {
       var a = {}, step = g.size + g.gap, half = g.size / 2, POP = 0.35, FLIP = 0.42, GAPT = 0.08;
       var Kx = Math.ceil(Math.log2(Math.max(1, g.cols))), Ky = Math.ceil(Math.log2(Math.max(1, g.rows)));
@@ -498,9 +498,8 @@ export var ENTRANCES = [
         kf.push({ transform: "translate3d(0,0,0) rotate(0deg)", opacity: 1, zIndex: 1, offset: 1 });
         a[key] = { kf: kf, delay: 0, dur: end, ease: "linear" };
       });
-      steps.forEach(function (st, i) {
-        sfx(st.t, function (at, S) { S.whoosh(at, FLIP * 0.8); });
-        sfx(st.t + FLIP, function (at, S) { S.click(at, i); });
+      steps.forEach(function (st, i) { // the paper turning over, bigger as the map opens
+        sfx(st.t, function (at, S) { S.paper(at, FLIP, i / Math.max(1, steps.length - 1)); });
       });
       return a;
     } },

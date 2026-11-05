@@ -172,6 +172,19 @@ export function makeSfx(ac, dest) {
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.2); g.gain.setValueAtTime(0.05, t + dur - 0.25); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       lfo.connect(lg); lg.connect(g.gain); o.connect(f); f.connect(g); g.connect(dest); o.start(t); lfo.start(t); o.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
     },
+    // Unfold: a sheet of paper turning over: a crinkle of tiny crackles as it lifts (swelling, then
+    // fading), a soft flap of air as it comes down, a crease snap as it lands flat. `size` 0..1:
+    // bigger folds (later ones) are longer, fuller and lower.
+    paper: function (t, dur, size) {
+      var big = size || 0, n = Math.round(18 + big * 22);
+      for (var j = 0; j < n; j++) {
+        var u = Math.pow(Math.random(), 0.8) * 0.75, at = t + u * dur, swell = Math.sin(Math.min(1, u / 0.75) * Math.PI);
+        noise(at, 0.006 + Math.random() * 0.012, "bandpass", (3800 - big * 1400) + Math.random() * 2600, 0, (0.05 + 0.1 * swell) * (0.7 + Math.random() * 0.6), 2.5);
+      }
+      noise(t + dur * 0.55, dur * 0.4, "lowpass", 1400 - big * 500, 300, 0.16 + big * 0.1, 0.7); // the flap of air
+      noise(t + dur * 0.97, 0.018, "highpass", 2400 - big * 600, 0, 0.36, 0.9); // the crease snap
+      osc(t + dur * 0.97, 260 - big * 90, "triangle", 0.12 + big * 0.06, 0.002, 0.05, 140 - big * 40);
+    },
     rustle: function (t) { for (var j = 0; j < 3; j++) noise(t + j * 0.025 + Math.random() * 0.02, 0.03, "bandpass", 3200 + Math.random() * 2500, 0, 0.07, 1.5); }
   };
 }
