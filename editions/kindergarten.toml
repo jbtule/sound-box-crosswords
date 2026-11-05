@@ -28,11 +28,44 @@ can 🥫 {c a n}
 hat 🎩 {h a t}
 """
 
-# The class's high-frequency words; add each new list here as it comes home (one
-# growing pack). "I" can't be included: every word needs at least two boxes.
+# The class's high-frequency words, one pack per list as it comes home, newest first.
+# "I" can't be included: every word needs at least two boxes.
 # words_in_text: these words may appear in the note and in each other's sentences, since
 # spotting a word printed nearby is part of learning to read it. A clue's own word is
 # still blanked.
+[[pack]]
+id = "k-hfw-2"
+name = "High frequency words 2"
+note = "More everyday words to know by heart. Listen to the sentence, then spell."
+words_in_text = true
+school = true
+words = """
+are "We are friends."
+big "An elephant is big." {b i g}
+come "Come to my house."
+for "This gift is for you."
+has "She has a red ball."
+have "I have two cats."
+he "He can run fast."
+here "Come here, puppy!"
+jump "Frogs can jump high."
+lit-tle (lit-tul) "A mouse is little."
+look "Look at the moon!"
+me "Read a book to me."
+of "I want a cup of milk."
+one "I have one nose."
+play "Let's play a game."
+put "Put on your shoes."
+said "Mom said yes."
+saw "I saw a rainbow."
+this "This is my bike."
+two "I have two hands."
+want "I want a snack."
+what "What is your name?"
+with "Come play with me."
+you "I love you."
+"""
+
 [[pack]]
 id = "k-hfw"
 name = "High frequency words"
