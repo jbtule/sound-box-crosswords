@@ -707,7 +707,7 @@ function renderPacks() {
     b.addEventListener("click", function () {
       if (packId === id) return;
       packId = id; store.set("pack", id); recent = [];
-      renderPacks(); newPuzzle();
+      renderPacks(); startNewPuzzle();
     });
     wrap.appendChild(b);
   });
@@ -1219,7 +1219,7 @@ $("#optChime").addEventListener("change", function (e) { settings.chime = e.targ
 $("#optCustom").addEventListener("change", function (e) {
   settings.custom = e.target.checked; saveSettings();
   $("#customBox").hidden = !settings.custom;
-  if (!settings.custom && packId === "mine") { packId = packIds()[0]; store.set("pack", packId); recent = []; newPuzzle(); }
+  if (!settings.custom && packId === "mine") { packId = packIds()[0]; store.set("pack", packId); recent = []; startNewPuzzle(); }
   renderPacks(); renderProgressSheet();
 });
 ["kbAbc", "kbQwerty"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.kb = e.target.value; saveSettings(); renderKeyboard(); sizeBoard(); }); });
@@ -1229,7 +1229,7 @@ $("#saveBtn").addEventListener("click", function () {
   customText = txt; store.set("custom", txt);
   $("#saveMsg").style.color = ""; $("#saveMsg").textContent = "Saved " + n + " words.";
   packId = "mine"; store.set("pack", "mine"); recent = [];
-  renderPacks(); newPuzzle();
+  renderPacks(); startNewPuzzle();
   setTimeout(closeSheet, 600);
 });
 
@@ -1330,8 +1330,8 @@ $("#pic").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0
 $("#hearBtn").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0.75); });
 $("#clapBtn").addEventListener("click", clap);
 $("#soundBtn").addEventListener("click", soundOut);
-$("#newBtn").addEventListener("click", function () { newPuzzle(); });
-$("#nextBtn").addEventListener("click", function () { newPuzzle(true); });
+$("#newBtn").addEventListener("click", function () { startNewPuzzle(); });
+$("#nextBtn").addEventListener("click", function () { startNewPuzzle(true); });
 window.addEventListener("resize", sizeBoard);
 function reducedMotion() { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
 // Floating pad: --kb-h for the cells' scroll margin, and .floating while it's stuck to the
@@ -1363,6 +1363,14 @@ function onAccent() {
   var a = lum(acc), navy = (a + 0.05) / (lum("#1b2a41") + 0.05), white = 1.05 / (a + 0.05);
   document.documentElement.style.setProperty("--on-accent", navy >= white ? "#1b2a41" : "#ffffff");
 }
+// A new puzzle the player asked for (New puzzle, Next puzzle, a pack): that tap woke the sound,
+// so Start goes away and the entrance plays.
+function startNewPuzzle(solved) {
+  if (!$("#startOverlay").hidden) { $("#startOverlay").hidden = true; started = true; }
+  newPuzzle(solved);
+}
+// Whether any letter of this puzzle has been typed. One that hasn't is new: Start, not Continue.
+function played() { return Object.keys(fill).some(function (k) { return fill[k]; }); }
 function showStart(continuing) {
   onAccent();
   $("#startLabel").textContent = continuing ? "Continue" : "Start";
@@ -1389,7 +1397,7 @@ kbEl.addEventListener("click", function (e) {
 }, true);
 document.addEventListener("visibilitychange", function () {
   if (document.visibilityState !== "visible" || !$("#startOverlay").hidden || (!started && !gradeTapped)) return;
-  audioAwake().then(function (ok) { if (!ok && document.visibilityState === "visible") showStart(true); });
+  audioAwake().then(function (ok) { if (!ok && document.visibilityState === "visible") showStart(played()); });
 });
 
 // A home-screen app usually resumes instead of relaunching, so it would keep running an
@@ -1423,4 +1431,5 @@ renderPacks();
 renderKeyboard();
 var resumed = loadPuzzle();
 if (!resumed) newPuzzle();
-if (!gradeTapped) showStart(resumed);
+else if (!played() && !gradeTapped) board.classList.add("waiting"); // untouched: it's new, so Start plays its entrance
+if (!gradeTapped) showStart(resumed && played());

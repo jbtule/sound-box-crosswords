@@ -308,8 +308,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     only the puzzle card, so the packs, 🏆 and More stay usable), since
     iOS plays recorded words, the device voice and the chime only after a tap; tapping it (or
     any key or letter pad tap, which isn't typed) dismisses it and says the current word if auto-speak is on.
-    Skipped after the first-visit grade question (a tap already). On return from the
-    background, Continue shows only if `audioAwake()` (`chime.js`) can't wake the sound.
+    Skipped after the first-visit grade question (a tap already). It says Continue only for a
+    puzzle with letters typed (`played`); an untouched saved puzzle counts as new (Start, with
+    its entrance). New puzzle, Next puzzle or a pack tap while it shows dismisses it and starts
+    the new puzzle (`startNewPuzzle`). On return from the background, the button shows only if
+    `audioAwake()` (`chime.js`) can't wake the sound.
     Its text color is navy or white, whichever stands out more on the scheme's accent (`onAccent`).
   - `input` / `checkWord` / `complete` / `settleCrossings`: whole-word checking only. Letters
     are accepted until the word is full; then wrong letters flash and clear. Finishing one
