@@ -194,10 +194,9 @@ export var ENTRANCES = [
         var o = g.cells[k], d = o.r + o.c, band = g.band[o.band];
         diag[d] = 1;
         g.at(t + d * STEP, function () {
-          var cs = getComputedStyle(o.el);
           return o.el.animate([
             { backgroundColor: band.fill, borderColor: band.edge, transform: "scale(1.08)", filter: "brightness(1.15)" },
-            { backgroundColor: cs.backgroundColor, borderColor: cs.borderColor, transform: "scale(1)", filter: "brightness(1)" }],
+            { backgroundColor: o.look.bg, borderColor: o.look.edge, transform: "scale(1)", filter: "brightness(1)" }],
             { duration: 700, easing: "ease-out" });
         });
       });
@@ -245,20 +244,7 @@ export var ENTRANCES = [
         sfx(caught, function (when, S) { S.tick(when, 4 + j); });
         ringAt = Math.max(ringAt, wordAt + j * 0.2 + 0.7);
       });
-      var cur = word.map(function (k) { return g.cells[k]; }).filter(function (o) { return o.cursor; })[0];
-      if (cur) {
-        var none = "0 0 0 0 transparent", ring = cur.look.ring;
-        g.at(ringAt, function () {
-          return cur.el.animate([
-            { boxShadow: none, offset: 0, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.15, easing: "steps(1, end)" },
-            { boxShadow: none, offset: 0.3, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.5, easing: "steps(1, end)" },
-            { boxShadow: none, offset: 0.6, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.8 }, { boxShadow: ring, offset: 1 }],
-            { duration: 450, fill: "forwards" });
-        });
-        sfx(ringAt, function (when, S) { S.zap(when, 1); });
-        sfx(ringAt + 0.36, function (when, S) { S.tick(when, 5 + word.length); });
-        end = Math.max(end, ringAt + 0.5);
-      }
+      end = Math.max(end, ringOn(g, ringAt, sfx, true));
       sfx(0, function (at, S) { S.buzz(at, end + 0.4); });
       return a;
     } },
@@ -358,6 +344,7 @@ export var ENTRANCES = [
         an.onfinish = an.oncancel = function () { cue.remove(); };
         return an;
       });
+      ringOn(g, DUR, sfx, false); // the cue ball lands as the highlight
       sfx(DUR - 0.02, function (when, S) { S.clickin(when); });
       return a;
     } },
@@ -536,6 +523,7 @@ export var ENTRANCES = [
         });
       });
       sfx(DUR * (MERGE + (1 - MERGE) * 0.32), function (when, S) { S.zwoop(when, DUR * (1 - MERGE) * 0.6); });
+      ringOn(g, DUR, sfx, false); // the blaster's blocks land as the highlight
       sfx(DUR - 0.02, function (when, S) { S.clickin(when); });
       sfx(0, function (when, S) { S.hum(when, DUR * HIT); });
       sfx(DUR * HIT, function (when, S) { S.boom(when); });
@@ -543,6 +531,28 @@ export var ENTRANCES = [
     } }
 ];
 
+// The cursor's orange ring comes on at `at` seconds: flickering on like a tube with a zap and a
+// note (flicker), or at once (a piece that became the highlight, as in Billiards). Returns when
+// it's done. Plans that place it themselves call it and set g.ringDone; otherwise every entrance
+// ends with it (playEntrance).
+function ringOn(g, at, sfx, flicker) {
+  g.ringDone = true;
+  var cur = g.order.map(function (k) { return g.cells[k]; }).filter(function (o) { return o.cursor; })[0];
+  if (!cur) return at;
+  var none = "0 0 0 0 transparent", ring = cur.look.ring;
+  var frames = flicker ? [
+    { boxShadow: none, offset: 0, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.15, easing: "steps(1, end)" },
+    { boxShadow: none, offset: 0.3, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.5, easing: "steps(1, end)" },
+    { boxShadow: none, offset: 0.6, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.8 }, { boxShadow: ring, offset: 1 }]
+    : [{ boxShadow: ring }, { boxShadow: ring }];
+  var dur = flicker ? 0.45 : 0.1;
+  g.at(at, function () { return cur.el.animate(frames, { duration: dur * 1000, fill: "forwards" }); });
+  if (flicker) {
+    sfx(at, function (when, S) { S.zap(when, 1); });
+    sfx(at + 0.36, function (when, S) { S.tick(when, 9); });
+  }
+  return at + dur;
+}
 function readingOrder(g) { return g.order.slice().sort(function (a, b) { return g.cells[a].r - g.cells[b].r || g.cells[a].c - g.cells[b].c; }); }
 // A small jolt of the whole board, as if something landed hard.
 function shake(el, px) {
@@ -603,17 +613,27 @@ export function playEntrance(id, g, opts) {
   var extras = [];
   g.at = function (sec, fn) { extras.push({ at: sec, fn: fn }); };
   function sfx(at, fn) { if (S) { try { fn(t0 + at, S); } catch (err) {} } }
+  g.ringDone = false;
   var plan = e.plan(g, sfx), end = 0;
   g.order.forEach(function (k) {
-    var p = plan[k], el = g.cells[k].el;
+    var p = plan[k], o = g.cells[k], el = o.el;
     if (!p || !el) return;
-    // fill "both" holds a box's last frame (its starting look) until the selection shows (stop).
-    anims.push(el.animate(p.kf, { duration: p.dur * 1000 / rate, delay: (p.delay * 1000 + 60) / rate, easing: p.ease, fill: p.fill || "backwards" }));
+    // The first word keeps its colors the whole way (any frame that doesn't set them), and fill
+    // "both" holds its last frame (its starting look) until the selection shows (stop), so its
+    // colors never snap in at the end.
+    var kf = p.kf, fill = p.fill || "backwards";
+    if (o.sel) {
+      kf = kf.map(function (f) { return Object.assign({ backgroundColor: o.look.bg, borderColor: o.look.edge }, f); });
+      fill = "both";
+    }
+    anims.push(el.animate(kf, { duration: p.dur * 1000 / rate, delay: (p.delay * 1000 + 60) / rate, easing: p.ease, fill: fill }));
     end = Math.max(end, p.delay + p.dur);
   });
+  extras.forEach(function (x) { end = Math.max(end, x.at + 0.5); });
+  if (!g.ringDone) end = ringOn(g, end, sfx, true); // last, the cursor's ring flickers on
   extras.forEach(function (x) {
     timers.push(setTimeout(function () { [].concat(x.fn() || []).forEach(function (an) { an.playbackRate = rate; anims.push(an); }); }, (x.at * 1000 + 60) / rate));
-    end = Math.max(end, x.at + 0.7);
+    end = Math.max(end, x.at + 0.5);
   });
   var over = false;
   function stop(skipped) {
