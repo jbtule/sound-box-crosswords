@@ -243,11 +243,18 @@ function runEntrance(turn) {
   if (turn || !id) { var pick = nextEntrance(saved); store.set("entrances", pick.state); id = pick.id; }
   var run = playEntrance(id, geometry(P, board, order()), { audio: settings.chime ? audioOut() : null });
   entrance = run;
+  showBoardCard();
   kbEl.classList.add("resting"); // the letter pad fades out while the boxes arrive, and back in
   run.done.then(function (skipped) {
     if (entrance === run) { entrance = null; kbEl.classList.remove("resting"); }
     if (!skipped) after();
   });
+}
+// Brings the whole puzzle card into view for an entrance (its top, if it's taller than the screen).
+function showBoardCard() {
+  var card = board.parentElement, r = card.getBoundingClientRect();
+  if (r.top >= 0 && r.bottom <= window.innerHeight) return;
+  card.scrollIntoView({ block: r.height <= window.innerHeight - 24 ? "nearest" : "start", behavior: "smooth" });
 }
 function skipEntrance() { if (entrance) entrance.skip(); }
 // Word indexes in clue order: by number, across before down.

@@ -83,7 +83,7 @@ h1 span { color: var(--accent); }
 .plain.log { color: var(--muted); font-size: 0.85rem; max-height: 220px; overflow-y: auto; }
 .panel h3.sub { margin-top: 12px; }
 
-.board-card { position: relative; background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 16px 12px; min-height: 160px; display: flex; justify-content: center; }
+.board-card { scroll-margin: 12px; position: relative; background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 16px 12px; min-height: 160px; display: flex; justify-content: center; }
 /* --cell is the box color token; --cell-size is set per puzzle by sizeBoard() */
 .board { display: grid; gap: 4px; --cell-size: 40px; position: relative; perspective: 700px; }
 .entrance-ring { position: absolute; border-radius: 7px; border: 2px solid var(--sylA-edge); pointer-events: none; } /* Raindrops (entrances.js) */
