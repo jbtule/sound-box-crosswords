@@ -98,6 +98,7 @@ h1 span { color: var(--accent); }
 .entrance-shot { box-shadow: 0 0 8px var(--accent); }
 .entrance-cannon { position: absolute; pointer-events: none; }
 .entrance-decoy { position: absolute; border-radius: 7px; border: 2px solid var(--cell-edge); background: var(--cell); pointer-events: none; } /* Carve: the extra boxes that get knocked out */
+.entrance-sea { border-color: var(--sylB-edge); background: color-mix(in srgb, var(--sylB) 55%, var(--cell)); } /* Wave: the ocean's boxes */
 .entrance-flash { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, var(--card) 0%, var(--accent) 38%, transparent 70%); }
 .board.waiting .cell { visibility: hidden; } /* a new puzzle's boxes wait for the Start tap to make their entrance */
 .cell { width: var(--cell-size); height: var(--cell-size); background: var(--cell); border: 2px solid var(--cell-edge); border-radius: 7px; position: relative; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: calc(var(--cell-size) * 0.56); text-transform: lowercase; user-select: none; transition: background 0.15s, border-color 0.15s; }
