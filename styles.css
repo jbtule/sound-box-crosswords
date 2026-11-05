@@ -223,8 +223,9 @@ html.standalone { touch-action: pan-x pan-y; }
    fold (short screens), so typing never needs scrolling. Its background is always solid
    (so nothing shows through, even before app.js notices it's floating); .floating adds the
    shadow. --kb-h (its height) keeps the cursor box from hiding behind it. */
-.keyboard { display: flex; flex-direction: column; gap: 6px; user-select: none; position: sticky; bottom: 0; z-index: 5; margin-inline: -8px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px)); border-radius: 16px 16px 0 0; background: var(--bg); transition: box-shadow 0.15s; }
+.keyboard { display: flex; flex-direction: column; gap: 6px; user-select: none; position: sticky; bottom: 0; z-index: 5; margin-inline: -8px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px)); border-radius: 16px 16px 0 0; background: var(--bg); transition: box-shadow 0.15s, opacity 0.4s ease-out; }
 .keyboard.floating { box-shadow: var(--float-shadow); }
+.keyboard.resting { opacity: 0; pointer-events: none; transition: box-shadow 0.15s, opacity 0.25s ease-in; } /* out of the way while a new puzzle's boxes arrive (runEntrance) */
 .kb-end { height: 1px; margin-top: -15px; }
 .cell { scroll-margin-top: 12px; scroll-margin-bottom: calc(var(--kb-h, 0px) + 12px); }
 .krow { display: flex; gap: 6px; justify-content: center; }

@@ -243,7 +243,11 @@ function runEntrance(turn) {
   if (turn || !id) { var pick = nextEntrance(saved); store.set("entrances", pick.state); id = pick.id; }
   var run = playEntrance(id, geometry(P, board, order()), { audio: settings.chime ? audioOut() : null });
   entrance = run;
-  run.done.then(function (skipped) { if (entrance === run) entrance = null; if (!skipped) after(); });
+  kbEl.classList.add("resting"); // the letter pad fades out while the boxes arrive, and back in
+  run.done.then(function (skipped) {
+    if (entrance === run) { entrance = null; kbEl.classList.remove("resting"); }
+    if (!skipped) after();
+  });
 }
 function skipEntrance() { if (entrance) entrance.skip(); }
 // Word indexes in clue order: by number, across before down.
