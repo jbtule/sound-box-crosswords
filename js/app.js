@@ -236,23 +236,37 @@ var entrance = null, waitTurn = false;
 function runEntrance(turn) {
   board.classList.remove("waiting");
   skipEntrance();
-  var p = P, after = function () { sayFirstWord(p); };
+  var p = P, after = function () { sayFirstWord(p); }, test = tester && tester.next();
   if (!P || document.hidden) return;
-  if (reducedMotion()) { after(); return; }
+  if (reducedMotion() && !test) { after(); return; }
   var saved = store.get("entrances", null), id = saved && saved.last, queue = entranceQueue();
-  if (turn && queue.length) { // the player's own order (the Entrances tab) comes first
+  if (test) id = test.id; // the tester (?try) picks it, and leaves the cycle and Front Row Seat alone
+  else if (turn && queue.length) { // the player's own order (the Entrances tab) comes first
     id = queue.shift(); store.set("entranceQueue", queue);
     store.set("entrances", Object.assign({}, saved, { last: id }));
   } else if (turn || !id) { var pick = nextEntrance(saved); store.set("entrances", pick.state); id = pick.id; }
-  var run = playEntrance(id, geometry(P, board, order()), { audio: settings.chime ? audioOut() : null });
+  var run = playEntrance(id, geometry(P, board, order()), { audio: (test ? test.sound : settings.chime) ? audioOut() : null, rate: test ? test.rate : 1 });
   entrance = run;
   showBoardCard();
   kbEl.classList.add("resting"); // the letter pad fades out while the boxes arrive, and back in
   run.done.then(function (skipped) {
     if (entrance === run) { entrance = null; kbEl.classList.remove("resting"); }
-    if (!skipped) { after(); sawEntrance(run.id); }
+    if (test) test.done(run, skipped);
+    else if (!skipped) { after(); sawEntrance(run.id); }
   });
 }
+// The entrance tester: open the app with ?try for a bar that replays any entrance on the real
+// board (js/entrance-tester.js), to refine them where they'll be seen. Nothing links to it.
+var tester = null;
+if (new URLSearchParams(location.search).has("try")) {
+  import("./entrance-tester.js").then(function (m) {
+    tester = m.mountTester({
+      replay: function () { dismissStart(); runEntrance(false); },
+      newShape: function () { dismissStart(); newPuzzle(); }
+    });
+  });
+}
+function dismissStart() { if (!$("#startOverlay").hidden) { $("#startOverlay").hidden = true; started = true; } }
 // Brings the whole puzzle card into view for an entrance (its top, if it's taller than the screen).
 function showBoardCard() {
   var card = board.parentElement, r = card.getBoundingClientRect();
@@ -1424,7 +1438,7 @@ function onAccent() {
 // A new puzzle the player asked for (New puzzle, Next puzzle, a pack): that tap woke the sound,
 // so Start goes away and the entrance plays.
 function startNewPuzzle(solved) {
-  if (!$("#startOverlay").hidden) { $("#startOverlay").hidden = true; started = true; }
+  dismissStart();
   newPuzzle(solved);
 }
 // Whether any letter of this puzzle has been typed. One that hasn't is new: Start, not Continue.
