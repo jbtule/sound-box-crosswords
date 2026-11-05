@@ -170,6 +170,36 @@ export var ENTRANCES = [
       for (var r = 0; r < 14; r++) sfx(Math.pow(Math.random(), 1.2) * end * 0.8, function (at, S) { S.rustle(at); });
       return a;
     } },
+  { id: "shutters", name: "Shutters", icon: "🪟", premium: false,
+    // Each word slides in slowly from the side in a straight line, its boxes turned edge-on like
+    // slats (across words from the left or right, down words from above or below); once it's in
+    // place its boxes turn, one after another, to face you, with a soft click each. The first
+    // word comes in last.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, t = 0, SLIDE = 1.0, TURN = 0.5, GAP = 0.07;
+      var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]); // the first word last
+      order.forEach(function (wi, n) {
+        var w = g.words[wi], mine = w.cells.filter(function (k) { return g.cells[k].owner === wi; });
+        if (!mine.length) return;
+        var across = w.dir === "A", from = n % 2 ? 1 : -1, axis = across ? "rotateY" : "rotateX";
+        sfx(t, function (at, S) { S.whoosh(at, SLIDE * 0.9); });
+        mine.forEach(function (k, j) {
+          var o = g.cells[k], far = (across ? g.cols : g.rows) * step + step * 2;
+          var dx = across ? from * far : 0, dy = across ? 0 : from * far;
+          var total = SLIDE + j * GAP + TURN, edge = axis + "(" + (84 * -from) + "deg)";
+          a[k] = { kf: [
+              { transform: "translate(" + dx + "px," + dy + "px) " + edge, opacity: 0, offset: 0 },
+              { transform: "translate(" + dx * 0.88 + "px," + dy * 0.88 + "px) " + edge, opacity: 1, offset: 0.12 * SLIDE / total, easing: "cubic-bezier(.25,.5,.35,1)" },
+              { transform: "translate(0,0) " + edge, opacity: 1, offset: SLIDE / total, easing: "linear" },
+              { transform: "translate(0,0) " + edge, opacity: 1, offset: (SLIDE + j * GAP) / total, easing: "cubic-bezier(.3,1.5,.5,1)" },
+              { transform: "translate(0,0) " + axis + "(0deg)", opacity: 1, offset: 1 }],
+            delay: t, dur: total, ease: "linear" };
+          sfx(t + SLIDE + j * GAP + TURN * 0.35, function (at, S) { S.click(at, j); });
+        });
+        t += 0.55;
+      });
+      return a;
+    } },
   { id: "zoom", name: "Zoom", icon: "🔍", premium: false,
     // Boxes grow outward from the crossings, past their size, then settle. A pop as each
     // ring grows, a soft tap as it settles.
