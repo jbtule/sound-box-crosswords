@@ -356,24 +356,26 @@ export var ENTRANCES = [
       return a;
     } },
   { id: "star", name: "Shooting star", icon: "🌠", premium: false,
-    // Word by word, a shooting star: the word's first box is its head, spinning, and the rest
-    // stream behind as its tail, twisting like a ribbon, flying in a straight line from a
-    // different edge each time (left, top, right, bottom, a corner), with a whistling streak.
+    // Word by word, a shooting star: the box at its leading end is its head, spinning, and the rest
+    // stream behind as its tail, twisting like a ribbon, flying in along its own line (across
+    // words from the left or right, down words from the top or bottom), with a whistling streak.
     // At the word, each box flattens into its own space with a squash. The first word comes last.
     plan: function (g, sfx) {
       var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
-      var DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]], FLY = 0.75, LAG = 0.07, t = 0;
+      var FLY = 0.75, LAG = 0.07, t = 0;
       var D = Math.hypot(W, H) * 0.75 + g.size * 3;
       var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]); // the first word last
       order.forEach(function (wi, n) {
         var w = g.words[wi], mine = w.cells.filter(function (k) { return g.cells[k].owner === wi; });
         if (!mine.length) return;
-        var d = DIRS[(n * 3) % DIRS.length], len = Math.hypot(d[0], d[1]), ux = d[0] / len, uy = d[1] / len; // it comes from -u
-        var cxw = 0, cyw = 0; mine.forEach(function (k) { cxw += g.cells[k].c * step + half; cyw += g.cells[k].r * step + half; }); cxw /= mine.length; cyw /= mine.length;
+        // it flies in along its own line: across words from the left or right, down words from the
+        // top or bottom (alternating sides); the box at the leading end is the head
+        var fwd = Math.floor(n / 2) % 2 === 0 ? 1 : -1, across = w.dir === "A", ux = across ? fwd : 0, uy = across ? 0 : fwd; // moving along u
+        mine = mine.slice().sort(function (p, q) { var A = g.cells[p], B = g.cells[q]; return across ? (B.c - A.c) * fwd : (B.r - A.r) * fwd; });
         sfx(t, function (at, S) { S.streak(at, FLY + mine.length * LAG); });
         mine.forEach(function (k, j) {
           var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, head = j === 0;
-          var sx = cxw - ux * D + (fx - cxw) * 0.15, sy = cyw - uy * D + (fy - cyw) * 0.15; // all start together off the edge, the tail strung out behind by time
+          var sx = fx - ux * D, sy = fy - uy * D; // straight along its line from off the edge; the tail strung out behind by time
           var delay = t + j * LAG, kf = [], N = 14, twistX = (j % 2 ? 1 : -1) * 70, spin = head ? 720 : 180;
           var base = head ? 1 : 0.85 - 0.35 * Math.min(1, j / 6); // the tail tapers
           for (var q = 0; q <= N; q++) {
