@@ -171,28 +171,27 @@ export var ENTRANCES = [
       return a;
     } },
   { id: "shutters", name: "Shutters", icon: "🪟", premium: false,
-    // Word by word: its boxes start in place turned edge-on (invisible), turn slightly so they
-    // show as thin lines, pause, then flip really fast, several turns, slowing down until they
-    // face you, with a whirring rattle that slows too. Across words flip one way, down words the
-    // other. The first word goes last.
+    // Every box starts in place turned edge-on (invisible) and they all turn together, slightly,
+    // to show as thin lines. Then word by word they flip, fast and slowing, until they face you,
+    // with a rattle that slows too. Across words flip side to side, down words top to bottom; the
+    // first word goes last.
     plan: function (g, sfx) {
-      var a = {}, t = 0, LINE = 0.3, HOLD = 0.3, FLIP = 1.3, EACH = 0.62;
+      var a = {}, LINE = 0.45, HOLD = 0.35, FLIP = 1.4, EACH = 0.5;
       var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]); // the first word last
       order.forEach(function (wi, n) {
         var w = g.words[wi], mine = w.cells.filter(function (k) { return g.cells[k].owner === wi; });
         if (!mine.length) return;
-        var axis = w.dir === "A" ? "rotateY" : "rotateX", turns = 3 + (n % 2), sign = n % 2 ? -1 : 1;
+        var axis = w.dir === "A" ? "rotateY" : "rotateX", sign = n % 2 ? -1 : 1, start = LINE + HOLD + n * EACH;
         mine.forEach(function (k, j) {
-          var lag = j * 0.03, total = LINE + HOLD + lag + FLIP, R = function (d) { return axis + "(" + d * sign + "deg)"; };
+          var go = start + j * 0.035, total = go + FLIP, R = function (d) { return axis + "(" + d * sign + "deg)"; };
           a[k] = { kf: [
               { transform: R(90), opacity: 0, offset: 0, easing: "ease-out" },
-              { transform: R(80), opacity: 1, offset: LINE / total },
-              { transform: R(80), opacity: 1, offset: (LINE + HOLD + lag) / total, easing: "cubic-bezier(.05,.85,.25,1)" }, // fast, then slowing
-              { transform: R(turns * 360), opacity: 1, offset: 1 }],
-            delay: t, dur: total, ease: "linear" };
+              { transform: R(78), opacity: 1, offset: LINE / total },
+              { transform: R(78), opacity: 1, offset: go / total, easing: "cubic-bezier(.2,.7,.3,1)" }, // quick, then slowing
+              { transform: R(720), opacity: 1, offset: 1 }],
+            delay: 0, dur: total, ease: "linear" };
         });
-        sfx(t + LINE + HOLD, function (at, S) { S.settle(at, n); S.whoosh(at, 0.35); });
-        t += EACH;
+        sfx(start, function (at, S) { S.settle(at, n); S.whoosh(at, 0.3); });
       });
       return a;
     } },

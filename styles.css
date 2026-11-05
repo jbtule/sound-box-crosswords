@@ -108,6 +108,7 @@ h1 span { color: var(--accent); }
 .cell.cursor { box-shadow: 0 0 0 3px var(--accent); z-index: 1; }
 /* During a new puzzle's entrance the selection is off, and turns on as it ends (Billiards' cue ball becomes the highlight). */
 .board.entering .cell.sel, .board.entering .cell.cursor { background: var(--cell); border-color: var(--cell-edge); box-shadow: none; }
+.board.entering .cell { will-change: transform, opacity; } /* each box on its own layer while it moves, for smooth 3D turns on the iPad */
 .cell.locked { color: var(--ok); }
 .cell.beat { transform: scale(1.12); box-shadow: 0 0 0 3px var(--ink); z-index: 2; }
 .cell.wiggle { animation: wiggle 0.4s; border-color: var(--bad); }
