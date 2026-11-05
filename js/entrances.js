@@ -553,9 +553,10 @@ export var ENTRANCES = [
 ];
 
 // The cursor's orange ring comes on at `at` seconds: flickering on like a tube with a zap and a
-// note (flicker), or at once (a piece that became the highlight, as in Billiards). Returns when
-// it's done. Plans that place it themselves call it and set g.ringDone; otherwise every entrance
-// ends with it (playEntrance).
+// note (flicker: Neon only, where it's part of the sign), or with a quick quiet fade (every other
+// entrance, at its end; at once where a piece becomes the highlight, as in Billiards). Returns
+// when it's done. Plans that place it themselves call it and set g.ringDone; otherwise
+// playEntrance does, at the end.
 function ringOn(g, at, sfx, flicker) {
   g.ringDone = true;
   var cur = g.order.map(function (k) { return g.cells[k]; }).filter(function (o) { return o.cursor; })[0];
@@ -565,8 +566,8 @@ function ringOn(g, at, sfx, flicker) {
     { boxShadow: none, offset: 0, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.15, easing: "steps(1, end)" },
     { boxShadow: none, offset: 0.3, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.5, easing: "steps(1, end)" },
     { boxShadow: none, offset: 0.6, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.8 }, { boxShadow: ring, offset: 1 }]
-    : [{ boxShadow: ring }, { boxShadow: ring }];
-  var dur = flicker ? 0.45 : 0.1;
+    : [{ boxShadow: none }, { boxShadow: ring }];
+  var dur = flicker ? 0.45 : 0.2;
   g.at(at, function () { return cur.el.animate(frames, { duration: dur * 1000, fill: "forwards" }); });
   if (flicker) {
     sfx(at, function (when, S) { S.zap(when, 1); });
@@ -657,7 +658,7 @@ export function playEntrance(id, g, opts) {
     end = Math.max(end, p.delay + p.dur);
   });
   extras.forEach(function (x) { end = Math.max(end, x.at + 0.5); });
-  if (!g.ringDone) end = ringOn(g, end, sfx, true); // last, the cursor's ring flickers on
+  if (!g.ringDone) end = ringOn(g, end, sfx, false); // last, the cursor's ring fades on
   extras.forEach(function (x) {
     timers.push(setTimeout(function () { [].concat(x.fn() || []).forEach(function (an) { an.playbackRate = rate; anims.push(an); }); }, (x.at * 1000 + 60) / rate));
     end = Math.max(end, x.at + 0.5);
