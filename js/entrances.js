@@ -192,7 +192,7 @@ export var ENTRANCES = [
               { transform: R(720), opacity: 1, offset: 1 }],
             delay: 0, dur: total, ease: "linear" };
         });
-        sfx(start, function (at, S) { S.settle(at, n); S.whoosh(at, 0.3); });
+        sfx(start, function (at, S) { S.ratchet(at, FLIP * 0.95, 2, n); });
       });
       return a;
     } },
