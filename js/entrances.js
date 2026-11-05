@@ -207,15 +207,18 @@ export var ENTRANCES = [
       return a;
     } },
   { id: "neon", name: "Neon", icon: "💡", premium: false,
-    // Dark, unlit tubes sputter on like a neon sign warming up, each flickering in its own
-    // rhythm before it catches, glowing in its syllable color, then easing to normal.
+    // A neon sign warming up. The plain boxes sputter on first, dim tubes flickering in their
+    // own rhythm until they catch. Then the first word lights up box by box, like a sign's
+    // lettering, glowing in its syllable colors, and the cursor's ring flickers on last. Each
+    // box ends in exactly its starting look (o.look), so nothing snaps in at the end.
     plan: function (g, sfx) {
-      var a = {}, end = 0;
-      shuffle(g.order).forEach(function (k, i, all) {
-        var o = g.cells[k], glow = g.band[o.band].edge, at = Math.pow(i / all.length, 0.75) * 2.2 + Math.random() * 0.15, dur = 0.75 + Math.random() * 0.45;
-        var off = { opacity: 0.14, filter: "brightness(.7) saturate(.3)", boxShadow: "0 0 0 0 transparent" };
-        var on = { opacity: 1, filter: "brightness(1.35) saturate(1.3)", boxShadow: "0 0 14px 2px " + glow };
-        var kf = [Object.assign({ offset: 0, easing: "steps(1, end)" }, off)], tt = 0, n = 3 + Math.floor(Math.random() * 3), flicks = [];
+      var a = {}, plain = shuffle(g.order.filter(function (k) { return !g.cells[k].sel; }));
+      var word = g.words[0].cells, end = 0, wordAt = plain.length ? 1.9 : 0.3;
+      function tube(k, at, dur, n, i) {
+        var o = g.cells[k], glow = o.look.edge, tint = { backgroundColor: o.look.bg, borderColor: o.look.edge }; // its own colors throughout
+        var off = Object.assign({ opacity: 0.14, filter: "brightness(.7) saturate(.3)", boxShadow: "0 0 0 0 transparent" }, tint);
+        var on = Object.assign({ opacity: 1, filter: "brightness(1.35) saturate(1.3)", boxShadow: "0 0 14px 2px " + glow }, tint);
+        var kf = [Object.assign({ offset: 0, easing: "steps(1, end)" }, off)], tt = 0, flicks = [];
         for (var f = 0; f < n; f++) {
           var t1 = tt + 0.05 + Math.random() * 0.12, t2 = Math.min(t1 + 0.03 + Math.random() * 0.08, 0.6);
           if (t1 >= 0.58) break;
@@ -225,11 +228,37 @@ export var ENTRANCES = [
         }
         var lit = Math.max(tt + 0.04, 0.66);
         kf.push(Object.assign({ offset: lit, easing: "ease-out" }, on)); flicks.push(lit);
-        kf.push({ offset: 1, opacity: 1, filter: "brightness(1) saturate(1)", boxShadow: "0 0 0 0 transparent" });
-        a[k] = { kf: kf, delay: at, dur: dur, ease: "linear" };
+        kf.push(Object.assign({ offset: 1, opacity: 1, filter: "brightness(1) saturate(1)", boxShadow: "0 0 0 0 transparent" }, tint));
+        a[k] = { kf: kf, delay: at, dur: dur, ease: "linear", fill: "both" };
         flicks.slice(0, 3).forEach(function (fl, j) { sfx(at + fl * dur, function (when, S) { S.zap(when, i + j); }); });
         end = Math.max(end, at + dur);
+        return at + lit * dur;
+      }
+      plain.forEach(function (k, i) {
+        tube(k, Math.pow(i / plain.length, 0.75) * 1.6 + Math.random() * 0.15, 0.75 + Math.random() * 0.45, 3 + Math.floor(Math.random() * 3), i);
       });
+      // The first word, box by box (left to right, or top to bottom), in its syllable colors;
+      // each one catching rings a brighter note, climbing. Then the cursor's ring flickers on.
+      var ringAt = wordAt;
+      word.forEach(function (k, j) {
+        var caught = tube(k, wordAt + j * 0.2, 0.6, 2, j + 40);
+        sfx(caught, function (when, S) { S.tick(when, 4 + j); });
+        ringAt = Math.max(ringAt, wordAt + j * 0.2 + 0.7);
+      });
+      var cur = word.map(function (k) { return g.cells[k]; }).filter(function (o) { return o.cursor; })[0];
+      if (cur) {
+        var none = "0 0 0 0 transparent", ring = cur.look.ring;
+        g.at(ringAt, function () {
+          return cur.el.animate([
+            { boxShadow: none, offset: 0, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.15, easing: "steps(1, end)" },
+            { boxShadow: none, offset: 0.3, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.5, easing: "steps(1, end)" },
+            { boxShadow: none, offset: 0.6, easing: "steps(1, end)" }, { boxShadow: ring, offset: 0.8 }, { boxShadow: ring, offset: 1 }],
+            { duration: 450, fill: "forwards" });
+        });
+        sfx(ringAt, function (when, S) { S.zap(when, 1); });
+        sfx(ringAt + 0.36, function (when, S) { S.tick(when, 5 + word.length); });
+        end = Math.max(end, ringAt + 0.5);
+      }
       sfx(0, function (at, S) { S.buzz(at, end + 0.4); });
       return a;
     } },
@@ -531,7 +560,7 @@ function shuffle(list) {
 export function geometry(P, board, clueOrder) {
   var size = parseFloat(getComputedStyle(board).getPropertyValue("--cell-size")) || 40;
   var root = getComputedStyle(document.documentElement);
-  var g = { board: board, size: size, gap: 4, cols: P.cols, rows: P.rows, cells: {}, order: [], words: [],
+  var g = { board: board, size: size, gap: 4, accent: root.getPropertyValue("--accent").trim(), cols: P.cols, rows: P.rows, cells: {}, order: [], words: [],
     band: { a: { fill: root.getPropertyValue("--sylA").trim(), edge: root.getPropertyValue("--sylA-edge").trim() },
             b: { fill: root.getPropertyValue("--sylB").trim(), edge: root.getPropertyValue("--sylB-edge").trim() } } };
   clueOrder.forEach(function (wi, n) {
@@ -540,7 +569,12 @@ export function geometry(P, board, clueOrder) {
     W.cells.forEach(function (k, j) {
       if (!g.cells[k]) {
         var rc = k.split(",").map(Number);
-        g.cells[k] = { r: rc[0], c: rc[1], el: board.querySelector('[data-k="' + k + '"]'), band: W.sylOf[j] % 2 ? "b" : "a", owner: n, words: [] };
+        var el = board.querySelector('[data-k="' + k + '"]'), cs = el && getComputedStyle(el);
+        // `look`: how the box starts the puzzle (its colors and the cursor's ring), read before the
+        // entrance hides the selection; `sel` / `cursor`: it's in the first word / it's the cursor.
+        g.cells[k] = { r: rc[0], c: rc[1], el: el, band: W.sylOf[j] % 2 ? "b" : "a", owner: n, words: [],
+          sel: !!el && el.classList.contains("sel"), cursor: !!el && el.classList.contains("cursor"),
+          look: cs ? { bg: cs.backgroundColor, edge: cs.borderColor, ring: cs.boxShadow } : {} };
         g.order.push(k);
       }
       g.cells[k].words.push(n);
@@ -573,7 +607,8 @@ export function playEntrance(id, g, opts) {
   g.order.forEach(function (k) {
     var p = plan[k], el = g.cells[k].el;
     if (!p || !el) return;
-    anims.push(el.animate(p.kf, { duration: p.dur * 1000 / rate, delay: (p.delay * 1000 + 60) / rate, easing: p.ease, fill: "backwards" }));
+    // fill "both" holds a box's last frame (its starting look) until the selection shows (stop).
+    anims.push(el.animate(p.kf, { duration: p.dur * 1000 / rate, delay: (p.delay * 1000 + 60) / rate, easing: p.ease, fill: p.fill || "backwards" }));
     end = Math.max(end, p.delay + p.dur);
   });
   extras.forEach(function (x) {
@@ -586,7 +621,9 @@ export function playEntrance(id, g, opts) {
     over = true;
     timers.forEach(clearTimeout);
     g.board.classList.remove("entering");
-    if (skipped) anims.forEach(function (an) { try { an.cancel(); } catch (err) {} });
+    var cancel = function () { anims.forEach(function (an) { try { an.cancel(); } catch (err) {} }); };
+    if (skipped) cancel();
+    else setTimeout(cancel, 250); // the selection fades in under any held frames first (.cell's transition)
     if (bus) {
       var ctx = audio.ctx;
       if (skipped) { bus.gain.setTargetAtTime(0, ctx.currentTime, 0.03); setTimeout(function () { try { bus.disconnect(); } catch (err) {} }, 250); }
