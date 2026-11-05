@@ -395,43 +395,43 @@ export var ENTRANCES = [
       return a;
     } },
   { id: "mats", name: "Roll out", icon: "🧻", premium: false,
-    // Word by word, the word arrives rolled up like a mat (a 3D cylinder of its own boxes): it
-    // glides in along its own line from the edge without turning (across words from the left
-    // or right, down words from the top or bottom, alternating), eases to a stop at the start of
-    // its spot, then unrolls smoothly at a steady pace, each box peeling off the back of the roll
-    // and laying flat into its space, until the roll is used up. The first word comes last.
+    // Word by word, the word arrives rolled up like a mat, its boxes wrapped face-in round a 3D
+    // roll (their backs showing, shaded as they turn away). It glides in along its own line from
+    // the edge without turning (across words from the left or right, down words from the top or
+    // bottom, alternating), then rolls on steadily, pressing each box down flat, face up, as it
+    // passes over its space, leaving the word laid out behind it. The first word comes last.
     plan: function (g, sfx) {
-      var a = {}, step = g.size + g.gap, half = g.size / 2, t = 0, IN = 0.5, PER = 0.12, LAY = 0.16;
+      var a = {}, step = g.size + g.gap, half = g.size / 2, t = 0, IN = 0.5, PER = 0.13;
       var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]);
       order.forEach(function (wi, n) {
         var w = g.words[wi], mine = w.cells.filter(function (k) { return g.cells[k].owner === wi; });
         if (!mine.length) return;
-        var across = w.dir === "A", u = Math.floor(n / 2) % 2 === 0 ? 1 : -1; // unrolling toward +u
+        var across = w.dir === "A", u = Math.floor(n / 2) % 2 === 0 ? 1 : -1; // rolling toward +u
         var along = function (k) { var o = g.cells[k]; return (across ? o.c : o.r) * step + half; };
         mine = mine.slice().sort(function (p, q) { return (along(p) - along(q)) * u; });
-        var R = Math.max(g.size * 0.42, mine.length * step / (2 * Math.PI)), span = (across ? g.cols : g.rows) * step;
-        var Cs = along(mine[0]) + u * (R - step * 0.45), Cend = along(mine[mine.length - 1]) + u * R; // unrolling runs from Cs to Cend
+        var R = Math.max(g.size * 0.45, mine.length * step / (2 * Math.PI)), span = (across ? g.cols : g.rows) * step;
+        var Cs = along(mine[0]) - u * step * 0.6, Cend = along(mine[mine.length - 1]); // the roller's center runs from Cs to Cend
         var C0 = u > 0 ? -R * 2 - step : span + R * 2 + step, tS = t + IN, vU = step / PER, tEnd = tS + Math.abs(Cend - Cs) / vU;
-        var Cat = function (tt) { // glide in (easing to a stop), then roll on steadily
-          if (tt <= tS) { var e = 1 - Math.pow(1 - (tt - t) / IN, 3); return C0 + (Cs - C0) * e; }
-          return Cs + u * vU * (tt - tS);
+        var Cat = function (tt) {
+          if (tt <= tS) { var e = 1 - Math.pow(1 - (tt - t) / IN, 3); return C0 + (Cs - C0) * e; } // gliding in, easing to a stop
+          return Cs + u * vU * (tt - tS); // rolling on steadily
         };
-        sfx(tS, function (at, S) { S.rumble(at, tEnd - tS); });
+        sfx(tS, function (at, S) { S.rumble(at, tEnd - tS + 0.1); });
         mine.forEach(function (k, j) {
-          var A = along(k), Cj = A + u * R, tj = tS + Math.abs(Cj - Cs) / vU, total = tj + LAY - t, kf = [];
-          var pose = function (theta, Cpos, z) {
-            var off = Cpos - A, turn = across ? "rotateY(" + (u * theta * 180 / Math.PI) + "deg)" : "rotateX(" + (-u * theta * 180 / Math.PI) + "deg)";
+          var A = along(k), tj = tS + Math.abs(A - Cs) / vU, total = tj + 0.14 - t, kf = [];
+          var pose = function (theta, Cpos, z) { // face-in: at the bottom of the roll (theta = pi) it faces up
+            var off = Cpos - A, deg = (theta + Math.PI) * 180 / Math.PI, turn = across ? "rotateY(" + u * deg + "deg)" : "rotateX(" + -u * deg + "deg)";
             return "translate3d(" + (across ? off : 0) + "px," + (across ? 0 : off) + "px," + z + "px) " + turn;
           };
           for (var tt = t; tt < tj - 0.001; tt += 0.025) {
-            var C = Cat(tt);
-            var th = 1.5 * Math.PI - Math.abs(Cj - (tt <= tS ? Cs : C)) / R; // frozen while gliding in, turning once it unrolls
-            kf.push({ transform: pose(th, C + u * R * Math.sin(th), R + R * Math.cos(th)), opacity: tt === t ? 0 : 1, zIndex: 3, offset: (tt - t) / total });
+            var C = Cat(tt), th = Math.PI - Math.abs(A - (tt <= tS ? Cs : C)) / R; // frozen while gliding, turning as it rolls; at the bottom when over its space
+            kf.push({ transform: pose(th, C + u * R * Math.sin(th), R + R * Math.cos(th)), opacity: tt === t ? 0 : 1, zIndex: 3,
+              filter: "brightness(" + (0.62 + 0.38 * Math.abs(Math.cos(th))) + ")", offset: (tt - t) / total });
           }
-          kf.push({ transform: pose(1.5 * Math.PI, A, R), opacity: 1, zIndex: 3, offset: (tj - t) / total, easing: "cubic-bezier(.4,0,.6,1)" });
-          kf.push({ transform: "translate3d(0,0,0) " + (across ? "rotateY(" + u * 360 + "deg)" : "rotateX(" + -u * 360 + "deg)"), opacity: 1, zIndex: 1, offset: 1 }); // laid flat
+          kf.push({ transform: pose(Math.PI, A, 0) + " scale(1.06,.94)", opacity: 1, zIndex: 1, filter: "brightness(1)", offset: (tj - t) / total }); // pressed flat
+          kf.push({ transform: "translate3d(0,0,0) " + (across ? "rotateY(" + u * 360 + "deg)" : "rotateX(" + -u * 360 + "deg)"), opacity: 1, zIndex: 1, filter: "brightness(1)", offset: 1 });
           a[k] = { kf: kf, delay: t, dur: total, ease: "linear" };
-          sfx(tj + LAY * 0.9, function (at, S) { S.cushion(at, 0.6); });
+          sfx(tj, function (at, S) { S.cushion(at, 0.7); });
         });
         t += 0.55;
       });
