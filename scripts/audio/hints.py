@@ -1,13 +1,13 @@
 # Prints how the recording voice will pronounce every (how-it-sounds) hint, next to the
 # whole word, so a misread shows before it's recorded: "ick" comes out "Ike" (ˈIk), not
-# "ick" (ˈɪk). Phonemes are misaki's (see generate.py): ɪ i (short/long i), æ A (short/long
+# "ick" (ˈɪk). Phonemes are espeak's (see kokoro_core.py): ɪ i (short/long i), æ A (short/long
 # a), ɛ, ʌ, ɑ, O (oh), I (eye), ɜɹ (er). Run it with hints.sh.
 import json
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import generate as g  # noqa: E402
+import kokoro_core as g  # noqa: E402
 
 g.load(sys.argv[1])
 for e in json.load(sys.stdin):
