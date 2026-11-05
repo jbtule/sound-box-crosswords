@@ -25,28 +25,28 @@ var TIERS = {
 // says plainly what it took, for grown-ups.
 var LABELS = {
   // Practice days: a plant that grows a little each day you show up, and never shrinks.
-  days: { tiers: [["🌱", "Seed"], ["🌿", "Sprout"], ["🪴", "Sapling"], ["🌳", "Tree"], ["🌲", "Forest"], ["🏞️", "Big Woods"], ["🌍", "Whole World"]],
-    detail: function (n) { return n + (n === 1 ? " day" : " days") + " of practice"; } },
+  days: { tiers: [["🌱", "Seed Planted"], ["🌿", "Sprouting Up"], ["🪴", "Taking Root"], ["🌳", "Mighty Oak"], ["🌲", "Evergreen"], ["🏞️", "Into the Wild"], ["🌍", "World Tree"]],
+    detail: function (n) { return n + (n === 1 ? " day" : " days") + " of practice, done"; } },
   // Clean solves (no try-agains): a trip through space.
-  clean: { tiers: [["🚀", "Liftoff"], ["🛰️", "In Orbit"], ["🌙", "Moon Landing"], ["🪐", "Ringed Planet"], ["☄️", "Comet Rider"], ["🌌", "Galaxy"]],
-    detail: function (n) { return n + (n === 1 ? " puzzle" : " puzzles") + " with no try-agains"; } },
+  clean: { tiers: [["🚀", "Liftoff"], ["🛰️", "In Orbit"], ["🌙", "Moonwalker"], ["🪐", "Ring Runner"], ["☄️", "Comet Rider"], ["🌌", "Galactic Legend"]],
+    detail: function (n) { return n + " flawless " + (n === 1 ? "puzzle" : "puzzles"); } }, // flawless: no try-agains
   // Comebacks (right after an earlier miss): not giving up. ("We Can Do It" is Rosie the Riveter's
   // poster, with her 💪: the one place the app says "we".)
-  comeback: { tiers: [["🏀", "Bounce Back"], ["💪", "We Can Do It"], ["🧗", "Climber"], ["🦸", "Spelling Hero"], ["🐉", "Dragon Heart"]],
-    detail: function (n) { return n === 1 ? "1 word right first try after missing it" : n + " words right first try after missing them"; } }
+  comeback: { tiers: [["🏀", "Bounce Back"], ["💪", "We Can Do It"], ["🧗", "Summit Climber"], ["🦸", "Spelling Hero"], ["🐉", "Dragon Heart"]],
+    detail: function (n) { return n + (n === 1 ? " word" : " words") + " missed, then mastered"; } } // right on the first try after an earlier miss
 };
 
 // Secret achievements: shown as ??? in the 🏆 sheet until earned, and their card says
 // "Secret achievement!". Each counts something in state.secret.
 var SECRETS = [
-  { key: "listener", goal: 1, icon: "👂", title: "Good Listener", detail: "Used the listening helpers on every word in a puzzle" },
-  { key: "twofer", goal: 1, icon: "✌️", title: "Two for One", detail: "Finished two words at once" },
+  { key: "listener", goal: 1, icon: "👂", title: "Good Listener", detail: "Listened close to every word in a puzzle" },
+  { key: "twofer", goal: 1, icon: "✌️", title: "Two for One", detail: "Finished two words with one move" },
   { key: "words", goal: 100, icon: "💯", title: "Triple Digits", detail: "100 words spelled right" },
-  { key: "weekend", goal: 1, icon: "📅", title: "Weekend Speller", detail: "Finished a puzzle on the weekend" },
+  { key: "weekend", goal: 1, icon: "📅", title: "Weekend Speller", detail: "Spelled on a weekend" },
   { key: "qwerty", goal: 5, icon: "⌨️", title: "Touch Typist", detail: "5 puzzles typed on the QWERTY keys" },
   { key: "shared", goal: 1, icon: "📣", title: "Show-Off", detail: "Shared an achievement" },
-  { key: "look", goal: 1, icon: "🎨", title: "New Look", detail: "Picked new colors" },
-  { key: "peek", goal: 1, icon: "👀", title: "Collector's Eye", detail: "Heard a word from the collection" },
+  { key: "look", goal: 1, icon: "🎨", title: "New Look", detail: "Picked a fresh color scheme" },
+  { key: "peek", goal: 1, icon: "👀", title: "Collector's Eye", detail: "Checked out the collection" },
   // Every new-puzzle entrance seen to the end; it unlocks the Director tab (pick the entrances' order).
   { key: "entrances", goal: ENTRANCES.length, icon: "🍿", title: "Front Row Seat", detail: "Saw every way the boxes arrive" }
 ];
@@ -60,21 +60,21 @@ function tierItem(track, i, have) {
 
 // Every achievement that could be shown: [{ id, icon, title, detail, goal, have, met }],
 // plus `pack` (its id) on a pack's Champion and Legend. Their detail shows the pack's size
-// ("All 23 words in Blends"); what's said stays the same for every pack ("Every word in
+// ("Cleared all 23 words in Blends"); what's said stays the same for every pack ("Cleared every word in
 // this pack"), so a pack needs no recording beyond its name.
 // For tiered tracks that's each tier up to and including the first one not yet met.
 export function catalog(state) {
   var out = [];
   state.packs.forEach(function (p) {
     if (p.total < 3) return;
-    out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "All " + p.total + " words in " + p.name, goal: p.total, have: p.done, pack: p.id,
-      spoken: ["Champion!", p.name, "Every word in this pack"] });
+    out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "Cleared all " + p.total + " words in " + p.name, goal: p.total, have: p.done, pack: p.id,
+      spoken: ["Champion!", p.name, "Cleared every word in this pack"] });
     // Then a Legend: every word right on the first try (at some point, not all at once).
     // Shown once Champion is reached, as the next goal; not for the Custom list ("mine"). It
     // doesn't unlock colors (palettes count pack: achievements only).
     if (p.done >= p.total && p.id !== "mine") {
-      out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "All " + p.total + " words in " + p.name + " right on the first try", goal: p.total, have: p.firsts || 0, pack: p.id,
-        spoken: ["Legend!", p.name, "Every word right on the first try"] });
+      out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "All " + p.total + " words in " + p.name + ", first try, no misses", goal: p.total, have: p.firsts || 0, pack: p.id,
+        spoken: ["Legend!", p.name, "Every word, first try. No misses."] });
     }
   });
   // Champion of Champions: every pack's Champion; then Legend of Legends: every pack's Legend.
@@ -83,12 +83,12 @@ export function catalog(state) {
   if (real.length >= GRAND_MIN) {
     var champs = real.filter(function (p) { return p.done >= p.total; }).length;
     var legends = real.filter(function (p) { return (p.firsts || 0) >= p.total; }).length;
-    var where = state.edition || "every pack";
-    out.push({ id: "grand:champion", icon: "👑", title: "Champion of Champions", detail: "Every word in " + where, goal: real.length, have: champs,
-      spoken: ["Champion of Champions!", "Every word in every pack"] });
+    var where = state.edition ? " in " + state.edition : "";
+    out.push({ id: "grand:champion", icon: "👑", title: "Champion of Champions", detail: "Conquered every pack" + where, goal: real.length, have: champs,
+      spoken: ["Champion of Champions!", "Conquered every pack"] });
     if (champs >= real.length) {
-      out.push({ id: "grand:legend", icon: "🌠", title: "Legend of Legends", detail: "Every word in " + where + " right on the first try", goal: real.length, have: legends,
-        spoken: ["Legend of Legends!", "Every word in every pack, right on the first try"] });
+      out.push({ id: "grand:legend", icon: "🌠", title: "Legend of Legends", detail: "Every pack" + where + ", first try, no misses", goal: real.length, have: legends,
+        spoken: ["Legend of Legends!", "Every pack. Every word. First try."] });
     }
   }
   var have = { clean: state.clean, comeback: state.comeback, days: state.days.length };
@@ -109,7 +109,7 @@ export function catalog(state) {
 
 // What an achievement card says aloud: a few short lines, each recorded on its own. A pack
 // achievement says what it is, then the pack, then what it took ("Champion!" "Unit 3."
-// "Every word in this pack."), so a new pack only needs its name recorded; the others say
+// "Cleared every word in this pack."), so a new pack only needs its name recorded; the others say
 // their title (as an exclamation, like all titles) and detail.
 export function spokenParts(a) {
   return a.spoken || [a.title + "!", a.detail];
@@ -120,8 +120,8 @@ export function spokenParts(a) {
 // each tier's title and detail, so the audio build can record them all
 // (scripts/audio/build.mjs). The check keeps this in step with catalog().
 export function spokenLines(packs) {
-  var out = ["New achievement!", "Secret achievement!", "Achievement!", "Champion!", "Legend!", "Every word in this pack", "Every word right on the first try",
-    "Champion of Champions!", "Every word in every pack", "Legend of Legends!", "Every word in every pack, right on the first try"];
+  var out = ["New achievement!", "Secret achievement!", "Achievement!", "Champion!", "Legend!", "Cleared every word in this pack", "Every word, first try. No misses.",
+    "Champion of Champions!", "Conquered every pack", "Legend of Legends!", "Every pack. Every word. First try."];
   packs.forEach(function (p) { out.push(p.name); });
   Object.keys(TIERS).forEach(function (track) {
     TIERS[track].forEach(function (n, i) { var t = tierItem(track, i, 0); out.push(t.title + "!", t.detail); });

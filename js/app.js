@@ -590,7 +590,7 @@ function finish() {
   confetti($(".board-card"));
   if (settings.chime) chime();
   say("p", "You solved it!", 0.95);
-  say("p", "Great job!", 0.95);
+  say("p", "Way to go!", 0.95);
   $("#nextBtn").focus();
   if (fresh.length) setTimeout(function () { showAwards(fresh); }, 1100); // after the solve celebration
 }
@@ -1106,7 +1106,7 @@ function hearAward() {
   say("p", "Achievement!");
   sayAchievement(a);
 }
-// The card read aloud, line by line ("Champion!" "Unit 3." "Every word in this pack.").
+// The card read aloud, line by line ("Champion!" "Unit 3." "Cleared every word in this pack.").
 function sayAchievement(a) {
   spokenParts(a).forEach(function (line) { say("p", line); });
 }
