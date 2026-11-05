@@ -812,10 +812,18 @@ export var ENTRANCES = [
           var box = document.createElement("div"); box.className = "entrance-cannon"; box.style.left = "0px"; box.style.top = "0px"; box.style.zIndex = 6;
           var body = document.createElement("div"); body.className = "entrance-blk"; body.style.width = body.style.height = bodySz + "px"; body.style.left = -bodySz / 2 + "px"; body.style.top = -bodySz / 2 + "px";
           box.appendChild(body);
-          var rot = bodySz * 0.42, rots = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(function (q) {
+          // the rotors: flat squares spinning level, seen from a little above (tilted back, so they
+          // read as propeller discs), on posts over the body's corners; the back pair a little higher
+          var rot = bodySz * 0.8, rots = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(function (q) {
+            var px = q[0] * bodySz * (q[1] < 0 ? 0.3 : 0.42), lift = bodySz * (q[1] < 0 ? 0.62 : 0.42); // the back pair further in and higher (perspective)
+            var post = document.createElement("div"); post.className = "entrance-blk"; post.style.width = bodySz * 0.14 + "px"; post.style.height = lift + "px";
+            post.style.left = (px - bodySz * 0.07) + "px"; post.style.top = (-bodySz * 0.5 - lift + 2) + "px";
+            post.style.zIndex = q[1] < 0 ? 0 : 1;
+            box.appendChild(post);
             var r = document.createElement("div"); r.className = "entrance-blk"; r.style.width = r.style.height = rot + "px";
-            r.style.left = (q[0] * bodySz * 0.78 - rot / 2) + "px"; r.style.top = (q[1] * bodySz * 0.62 - rot / 2 - bodySz * 0.2) + "px";
-            box.appendChild(r); return { el: r, q: q };
+            r.style.left = (px - rot / 2) + "px"; r.style.top = (-bodySz * 0.5 - lift - rot / 2) + "px";
+            r.style.zIndex = q[1] < 0 ? 0 : 2;
+            box.appendChild(r); return { el: r, q: q, post: post };
           });
           g.board.appendChild(box);
           var end = tr.last ? landEnd + 0.7 : tr.t3, dur = end - tr.t0, kf = [];
@@ -827,14 +835,16 @@ export var ENTRANCES = [
           kf[kf.length - 1].offset = 1;
           var out = [box.animate(kf, { duration: dur * 1000, easing: "linear" })];
           out[0].onfinish = out[0].oncancel = function () { box.remove(); };
-          rots.forEach(function (r) { // spinning; on the last trip they spin off and fly away
-            var spinKf = [{ transform: "rotate(0deg)", opacity: 1, offset: 0 }];
+          var TILT = "rotateX(72deg) ";
+          rots.forEach(function (r) { // spinning level; on the last trip they spin off and fly away, posts and all
+            var dirSpin = r.q[0] * r.q[1] > 0 ? 1 : -1, spinKf = [{ transform: TILT + "rotate(0deg)", opacity: 1, offset: 0 }];
             if (tr.last) {
-              var off = (tr.t2 + DROP - tr.t0) / dur;
-              spinKf.push({ transform: "rotate(" + 2200 * off * dur + "deg)", opacity: 1, offset: off });
-              spinKf.push({ transform: "translate(" + r.q[0] * g.size * 3 + "px," + (-g.size * 4) + "px) rotate(" + 2200 * dur + "deg) scale(.5)", opacity: 0, offset: Math.min(1, off + 0.5 / dur) });
-              spinKf.push({ transform: "translate(" + r.q[0] * g.size * 3 + "px," + (-g.size * 4) + "px)", opacity: 0, offset: 1 });
-            } else spinKf.push({ transform: "rotate(" + 2200 * dur + "deg)", opacity: 1, offset: 1 });
+              var off = (tr.t2 + DROP - tr.t0) / dur, away = "translate(" + r.q[0] * g.size * 3 + "px," + (-g.size * 4) + "px) ";
+              spinKf.push({ transform: TILT + "rotate(" + dirSpin * 1500 * off * dur + "deg)", opacity: 1, offset: off });
+              spinKf.push({ transform: away + TILT + "rotate(" + dirSpin * 1500 * dur + "deg) scale(.5)", opacity: 0, offset: Math.min(1, off + 0.5 / dur) });
+              spinKf.push({ transform: away + TILT + "rotate(0deg)", opacity: 0, offset: 1 });
+              out.push(r.post.animate([{ opacity: 1, transform: "translate(0,0)" }, { opacity: 1, transform: "translate(0,0)", offset: off }, { opacity: 0, transform: away, offset: Math.min(1, off + 0.5 / dur) }, { opacity: 0, transform: away }], { duration: dur * 1000 }));
+            } else spinKf.push({ transform: TILT + "rotate(" + dirSpin * 1500 * dur + "deg)", opacity: 1, offset: 1 });
             out.push(r.el.animate(spinKf, { duration: dur * 1000, easing: "linear" }));
           });
           if (tr.last) out.push(body.animate([{ transform: "scale(1)" }, { transform: "scale(1)", offset: (tr.t2 + DROP + 0.3 - tr.t0) / dur }, { transform: "scale(" + g.size / bodySz + ")" }], { duration: dur * 1000, easing: "ease-in-out" }));
