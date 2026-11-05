@@ -240,8 +240,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   but only Next puzzle after finishing one moves the cycle on; otherwise the same one replays. As it ends, the first word is said (with auto-speak on;
   `sayFirstWord`), unless the player already picked another word or typed. The
   selection is off while one plays (`.board.entering`), so the premium ones can deliver the highlight;
-  skipped with reduced motion; the letter pad fades out
-  while it plays (`.keyboard.resting`) and back in after; physical keys still type, and nothing
+  skipped with reduced motion; the puzzle card scrolls into view
+  (`showBoardCard`) and the letter pad fades out while it plays (`.keyboard.resting`) and back in after; physical keys still type, and nothing
   cuts it short but a new puzzle. Its sounds are
   `js/sfx.js` (`makeSfx`, Web Audio like the chime, through `audioOut()` in `chime.js`) and
   follow the Sound effects setting.
