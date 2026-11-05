@@ -2,7 +2,6 @@
 import { confetti } from "./confetti.js";
 import { chime, sparkle, audioAwake, audioOut } from "./chime.js";
 import { ENTRANCES, geometry, playEntrance, nextEntrance } from "./entrances.js";
-import { mountTester } from "./entrance-tester.js"; // shows nothing unless ?backstage (below)
 import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
@@ -265,10 +264,11 @@ if ((function () {
   try { if (on) localStorage.setItem("sbx:backstage-on", "1"); else on = localStorage.getItem("sbx:backstage-on") === "1"; } catch (e) {}
   return on;
 })()) {
-  // A plain import, not a dynamic one: Safari sometimes failed to load it on a reload.
-  tester = mountTester({
-    replay: function () { dismissStart(); runEntrance(false); },
-    newShape: function () { dismissStart(); newPuzzle(); }
+  import("./entrance-tester.js").then(function (m) {
+    tester = m.mountTester({
+      replay: function () { dismissStart(); runEntrance(false); },
+      newShape: function () { dismissStart(); newPuzzle(); }
+    });
   });
 }
 function dismissStart() { if (!$("#startOverlay").hidden) { $("#startOverlay").hidden = true; started = true; } }

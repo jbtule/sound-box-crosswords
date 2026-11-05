@@ -247,7 +247,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `js/sfx.js` (`makeSfx`, Web Audio like the chime, through `audioOut()` in `chime.js`) and
   follow the Sound effects setting. To refine them, open the app with `?backstage` (it stays on, on that device, until its
   Exit button; ↻ reloads to pick up code changes) (`js/entrance-tester.js`,
-  which shows nothing otherwise; nothing links to it): a bar replays any entrance on the real board (this
+  loaded only then; nothing links to it): a bar replays any entrance on the real board (this
   puzzle or a new shape), at ½× or ¼× (no sound then), looped, with its running time; it leaves
   the cycle, the queue and Front Row Seat alone, and plays even with reduced motion. Each entrance seen to the end is saved (`seenEntrances`,
   `sawEntrance`); all of them earns the secret Front Row Seat, which shows the 🏆 sheet's
