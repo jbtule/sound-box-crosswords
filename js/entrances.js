@@ -124,7 +124,7 @@ export var ENTRANCES = [
       });
       return a;
     } },
-  { id: "spin", name: "Spin in", icon: "🌀", premium: false,
+  { id: "spin", name: "Spin in", icon: "💫", premium: false,
     // Boxes come spinning in from every side, spiraling as they shrink into place, over a
     // rising whirr; they settle with a little rattle, like a coin wobbling to a stop.
     plan: function (g, sfx) {
@@ -503,27 +503,42 @@ export var ENTRANCES = [
       });
       return a;
     } },
-  { id: "whirlpool", name: "Whirlpool", icon: "🫧", premium: false,
-    // A big spiral of plain boxes (six arms, like a galaxy) fades in over the board and turns
-    // slowly. Then a drain opens in the middle: it spins faster and faster (fastest near the
-    // middle), the boxes pulled in and shrinking as they're sucked down it, the innermost first;
-    // as the swirl draws in, the puzzle's own boxes are uncovered, outside first, until the last
-    // box gulps down the drain. Gurgling, then a slurp.
+  { id: "whirlpool", name: "Whirlpool", icon: "🌀", premium: false,
+    // A big spiral of plain boxes (eight arms, like a galaxy) fades in over the board and turns
+    // slowly, the puzzle's own boxes riding in it, each circling at its own distance from the
+    // middle. Then a drain opens in the middle: it spins faster and faster (fastest near the
+    // middle), the plain boxes pulled in and sucked down it, innermost first; as the swirl's edge
+    // draws in past each puzzle box, it slides round into its place and stays, until the last
+    // plain box gulps down the drain. Gurgling, then a slurp.
     plan: function (g, sfx) {
       var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
       var cx = W / 2, cy = H / 2, Rmax = Math.hypot(W, H) / 2 + g.size, ws = g.size * 0.92, FORM = 0.6, TURN = 1.4, DRAIN = 1.9, END = TURN + DRAIN + 0.1;
       var sm = function (u) { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
       function pull(t) { return t < TURN ? 0 : Rmax * Math.pow(sm((t - TURN) / DRAIN), 0.85); } // how far everything has been drawn in
       // the spiral: six arms of boxes from near the middle out past the corners
-      var arms = 6, pts = [];
-      for (var arm = 0; arm < arms; arm++) for (var r = g.size * 0.9; r < Rmax; r += ws * 0.62) pts.push({ r0: r, th0: arm * Math.PI * 2 / arms + r / (ws * 2.2) });
-      // the puzzle's boxes: uncovered as the swirl's edge draws in past them
+      var arms = 8, pts = [];
+      for (var arm = 0; arm < arms; arm++) for (var r = g.size * 0.9; r < Rmax; r += ws * 0.55) pts.push({ r0: r, th0: arm * Math.PI * 2 / arms + r / (ws * 2.2) });
+      // how fast the swirl turns at radius r, time t (faster near the middle, and once the drain opens)
+      function omega(r, t) { return (t < TURN ? 0.9 : 0.9 + 9 * sm((t - TURN) / DRAIN)) * (1 + 2.5 * g.size / (r + g.size)); }
+      // the puzzle's boxes ride in the swirl, each circling at its own distance from the middle; when
+      // the swirl's edge draws in past it, it slides round into its place and stays there
       g.order.forEach(function (key) {
-        var o = g.cells[key], fx = o.c * step + half, fy = o.r * step + half, dist = Math.hypot(fx - cx, fy - cy), tR = END - 0.2;
-        for (var q = 0; q <= 300; q++) { var tq = TURN + q / 300 * DRAIN; if (Rmax - pull(tq) < dist + g.size * 0.3) { tR = tq; break; } }
-        var total = tR + 0.3;
-        a[key] = { kf: [{ opacity: 0, transform: "scale(.9) rotate(-20deg)", offset: 0 }, { opacity: 0, transform: "scale(.9) rotate(-20deg)", offset: tR / total },
-          { opacity: 1, transform: "scale(1) rotate(0)", offset: 1 }], delay: 0, dur: total, ease: "ease-out" };
+        var o = g.cells[key], fx = o.c * step + half, fy = o.r * step + half, dist = Math.hypot(fx - cx, fy - cy), home = Math.atan2(fy - cy, fx - cx), tR = END - 0.4;
+        for (var q = 0; q <= 300; q++) { var tq = TURN + q / 300 * DRAIN; if (Rmax - pull(tq) < dist + g.size * 0.4) { tR = tq; break; } }
+        var SLOT = 0.4, total = tR + SLOT, kf = [], th = home - Math.random() * Math.PI * 2, prev = 0, at = function (ang) { return { x: cx + dist * Math.cos(ang) - fx, y: cy + dist * Math.sin(ang) - fy }; };
+        for (var t = 0; t <= tR + 0.001; t += 0.04) {
+          th += omega(dist, t) * (t - prev); prev = t;
+          var p = at(th);
+          kf.push({ transform: "translate(" + p.x + "px," + p.y + "px) rotate(" + (th - home) * 180 / Math.PI + "deg) scale(" + (0.92 * Math.min(1, t / 0.4 + 0.3)) + ")", opacity: Math.min(1, t / 0.45), offset: t / total });
+        }
+        // slide on round the circle to its own place (the shortest way on, in the swirl's direction), landing upright
+        var to = home + Math.ceil((th - home) / (Math.PI * 2)) * Math.PI * 2;
+        for (var j = 1; j <= 8; j++) {
+          var e = 1 - Math.pow(1 - j / 8, 2.5), ang = th + (to - th) * e, q2 = at(ang);
+          kf.push({ transform: "translate(" + q2.x + "px," + q2.y + "px) rotate(" + (ang - home) * 180 / Math.PI + "deg) scale(" + (0.92 + 0.08 * e) + ")", opacity: 1, offset: (tR + SLOT * j / 8) / total });
+        }
+        kf[kf.length - 1].transform = "translate(0,0) rotate(" + Math.round((to - home) * 180 / Math.PI / 360) * 360 + "deg) scale(1)";
+        a[key] = { kf: kf, delay: 0, dur: total, ease: "linear" };
       });
       g.at(0, function () {
         return pts.map(function (pt, n) {
@@ -532,7 +547,7 @@ export var ENTRANCES = [
           g.board.appendChild(d);
           var kf = [], th = pt.th0, prev = 0, gone = false;
           for (var t = 0; t <= END + 0.001; t += 0.04) {
-            var r = Math.max(0, pt.r0 - pull(t)), w = (t < TURN ? 0.9 : 0.9 + 9 * sm((t - TURN) / DRAIN)) * (1 + 2.5 * g.size / (r + g.size)); // faster near the middle
+            var r = Math.max(0, pt.r0 - pull(t)), w = omega(r, t);
             th += w * (t - prev); prev = t;
             var sc = Math.min(1, r / (g.size * 1.6)), op = Math.min(1, t / FORM * 1.5) * Math.min(1, r / (g.size * 0.6));
             if (r <= 0) gone = true;
