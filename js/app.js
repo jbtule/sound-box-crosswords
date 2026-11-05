@@ -1326,7 +1326,7 @@ function renderInstall() {
   $("#installIOS").hidden = !isIOS;
   $("#installBtn").hidden = isIOS || !installEvt;
   // The tip at the top, until ✕ or installing. Its button installs where the browser can
-  // (Add), and otherwise opens the steps in Settings (How?). Shown from the first visit:
+  // (Add), and otherwise shows the steps (How?). Shown from the first visit:
   // iOS doesn't carry progress from Safari over to the Home Screen app, so earlier is better.
   $("#installNudge").hidden = !canInstall() || !!device.get("installNudge", "");
   $("#installHow").textContent = installEvt ? "Add" : "How?";
@@ -1344,10 +1344,15 @@ $("#installBtn").addEventListener("click", installNow);
 $("#installNo").addEventListener("click", function () {
   device.set("installNudge", "done"); renderInstall(); $("#settingsBtn").focus();
 });
+// How? opens the steps in a popover just under the tip (About keeps them too, for after
+// the tip is gone). Browsers without popovers fall back to About.
+var installPop = $("#installPop");
 $("#installHow").addEventListener("click", function () {
   if (installEvt) { installNow(); return; }
-  openSheet("about");
-  $("#installSec").scrollIntoView({ block: "start" });
+  if (!installPop.showPopover) { openSheet("about"); $("#installSec").scrollIntoView({ block: "start" }); return; }
+  var r = $("#installNudge").getBoundingClientRect();
+  installPop.style.top = Math.round(r.bottom + 8) + "px";
+  installPop.togglePopover();
 });
 renderInstall();
 
