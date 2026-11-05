@@ -766,7 +766,7 @@ export var ENTRANCES = [
     plan: function (g, sfx) {
       var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
       var IN = 0.65, HOVER = 0.45, DROP = 0.25, OUT = 0.55, bodySz = g.size * 0.7, CLAMP = bodySz * 0.5 + g.size * 1.1; // the word hangs on an (unseen) rope
-      var EVERY = IN + HOVER + DROP + 0.1; // one drone at a time: the next comes as this one leaves
+      var EVERY = HOVER + DROP + 0.25; // overlapping: the next flies in while this one hovers; the drops still come one at a time
       var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]);
       var trips = [], t = 0, n = 0;
       order.forEach(function (wi) {
@@ -781,7 +781,7 @@ export var ENTRANCES = [
         t += EVERY; n++;
       });
       // the drone's place and tilt at time tt on its trip
-      function drone(tr, tt) {
+      function path(tr, tt) { // where the drone means to be
         if (tt <= tr.t1) { var u = Math.max(0, (tt - tr.t0) / IN), e = 1 - Math.pow(1 - u, 3);
           return { x: tr.from.x + (tr.hover.x - tr.from.x) * e, y: tr.from.y + (tr.hover.y - tr.from.y) * e + Math.sin(tt * 9) * 2, tilt: (tr.hover.x > tr.from.x ? 14 : -14) * (1 - u) }; }
         if (tt <= tr.t2 || tr.last) return { x: tr.hover.x, y: tr.hover.y + Math.sin(tt * 9) * 2, tilt: 0 };
@@ -790,18 +790,29 @@ export var ENTRANCES = [
       }
       // the load swings like a pendulum on its rope: it lags as the drone speeds up, swings on
       // when it stops, and settles (simulated: the drone's sideways acceleration drives it)
+      // the load swings like a pendulum on its rope, and the drone keeps trying to get back over
+      // it, too hard: it darts toward the swing, overshoots, and the two wobble together until they
+      // settle (simulated: the drone's acceleration drives the swing; the swing pulls the drone)
+      var DT = 1 / 120;
       trips.forEach(function (tr) {
-        var Lr = CLAMP + g.size, phi = 0, w = 0, dt = 1 / 120, xs = [], tt = tr.t0, prevX = drone(tr, tt).x, prevV = 0;
-        tr.swing = [];
-        for (; tt <= tr.t2 + 0.001; tt += dt) {
-          var x = drone(tr, tt).x, v = (x - prevX) / dt, acc = (v - prevV) / dt; prevX = x; prevV = v;
-          var alpha = -(2600 / Lr) * Math.sin(phi) - (acc / Lr) * Math.cos(phi) - 2.2 * w;
-          w += alpha * dt; phi += w * dt;
-          phi = Math.max(-0.7, Math.min(0.7, phi));
-          tr.swing.push(phi);
+        var Lr = CLAMP + g.size, phi = 0, w = 0, c = 0, vc = 0, cAcc = 0, tt = tr.t0, prevX = path(tr, tt).x, prevV = 0;
+        tr.swing = []; tr.corr = []; tr.cAcc = [];
+        for (; tt <= tr.t2 + 0.001; tt += DT) {
+          var x = path(tr, tt).x, v = (x - prevX) / DT, acc = (v - prevV) / DT; prevX = x; prevV = v;
+          var alpha = -(2600 / Lr) * Math.sin(phi) - ((acc + cAcc) / Lr) * Math.cos(phi) - 1.0 * w;
+          w += alpha * DT; phi = Math.max(-0.7, Math.min(0.7, phi + w * DT));
+          cAcc = 150 * Lr * Math.sin(phi) - 2.0 * vc; // chasing the load, under-damped: it overshoots
+          vc += cAcc * DT; c = Math.max(-g.size * 1.2, Math.min(g.size * 1.2, c + vc * DT));
+          tr.swing.push(phi); tr.corr.push(c); tr.cAcc.push(cAcc);
         }
       });
-      function swingAt(tr, tt) { var i = Math.round((tt - tr.t0) * 120); return tr.swing[Math.max(0, Math.min(tr.swing.length - 1, i))]; }
+      function at120(arr, tr, tt) { var i = Math.round((tt - tr.t0) * 120); return arr[Math.max(0, Math.min(arr.length - 1, i))]; }
+      function swingAt(tr, tt) { return at120(tr.swing, tr, tt); }
+      function drone(tr, tt) { // where it is: its path, plus its (over)corrections, which die away once the load is dropped
+        var p = path(tr, tt), c = at120(tr.corr, tr, tt), ca = at120(tr.cAcc, tr, tt);
+        if (tt > tr.t2) { var k = Math.exp(-(tt - tr.t2) * 5), osc = Math.cos((tt - tr.t2) * 14); c *= k * osc; ca *= k; }
+        return { x: p.x + c, y: p.y, tilt: p.tilt + Math.max(-22, Math.min(22, ca * 0.012)) };
+      }
       var cur = g.order.map(function (k) { return g.cells[k]; }).filter(function (o) { return o.cursor; })[0] || g.cells[g.order[0]];
       var home = { x: cur.c * step + half, y: cur.r * step + half }, landEnd = 0;
       trips.forEach(function (tr, ti) {
