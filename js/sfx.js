@@ -140,6 +140,16 @@ export function makeSfx(ac, dest) {
         osc(at, 1400 + (j % 2) * 180, "square", 0.025 * fade, 0.001, 0.012);
       }
     },
+    // Carve: a circular saw's whine for its run, and a grinding bite for each box it cuts.
+    saw: function (t, dur) {
+      var o = ac.createOscillator(), o2 = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
+      o.type = "sawtooth"; o.frequency.setValueAtTime(240, t); o.frequency.linearRampToValueAtTime(300, t + 0.3); o.frequency.setValueAtTime(300, t + dur - 0.4); o.frequency.exponentialRampToValueAtTime(90, t + dur);
+      o2.type = "square"; o2.frequency.setValueAtTime(483, t); o2.frequency.linearRampToValueAtTime(603, t + 0.3); o2.frequency.setValueAtTime(603, t + dur - 0.4); o2.frequency.exponentialRampToValueAtTime(180, t + dur);
+      f.type = "bandpass"; f.frequency.value = 1500; f.Q.value = 0.9;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + 0.25); g.gain.setValueAtTime(0.06, t + dur - 0.4); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(f); o2.connect(f); f.connect(g); g.connect(dest); o.start(t); o2.start(t); o.stop(t + dur + 0.05); o2.stop(t + dur + 0.05);
+    },
+    bite: function (t, i) { noise(t, 0.07, "bandpass", 2200 + (i % 4) * 400, 0, 0.22, 3); osc(t, 210, "sawtooth", 0.05, 0.002, 0.06, 150); },
     rustle: function (t) { for (var j = 0; j < 3; j++) noise(t + j * 0.025 + Math.random() * 0.02, 0.03, "bandpass", 3200 + Math.random() * 2500, 0, 0.07, 1.5); }
   };
 }

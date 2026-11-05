@@ -197,72 +197,94 @@ export var ENTRANCES = [
       return a;
     } },
   { id: "carve", name: "Carve", icon: "🗿", premium: false,
-    // A whole field of plain boxes fades in, filling the puzzle's rectangle, the first word
-    // already there in its colors. Then an orange box (the highlight) spins in and spirals
-    // across the field, knocking out the boxes that don't belong, which pop and fly off spinning.
-    // The spiral closes in on the first box, and the orange box settles there as its ring.
+    // A full field of plain boxes fades in over the puzzle's rectangle, the first word already
+    // there in its colors. Then the orange highlight, spinning like a circular saw, buzzes along
+    // in straight lines (rows, or columns if that takes fewer), cutting out the boxes that don't
+    // belong, which fly off spinning; it hops over the puzzle's own boxes. Last it runs to box 1,
+    // spins down, and settles there as its ring.
     plan: function (g, sfx) {
-      var a = {}, step = g.size + g.gap, half = g.size / 2, FADE = 0.9, GO = 1.2, SWEEP = 3.0;
-      // the field: every box fades in, the puzzle's and the extras alike
+      var a = {}, step = g.size + g.gap, half = g.size / 2, GO = 1.2, PER = 0.032, HOP = 0.14;
       g.order.forEach(function (k) {
         a[k] = { kf: [{ opacity: 0, transform: "scale(.85)" }, { opacity: 1, transform: "scale(1)" }], delay: Math.random() * 0.5, dur: 0.4, ease: "ease-out" };
       });
-      var holes = [];
-      for (var r = 0; r < g.rows; r++) for (var c = 0; c < g.cols; c++) if (!g.cells[r + "," + c]) holes.push({ r: r, c: c, x: c * step + half, y: r * step + half });
-      // the spinner's path: a spiral closing in on the cursor box, wide enough to pass every hole
+      var holes = [], real = function (r, c) { return !!g.cells[r + "," + c]; };
+      for (var r = 0; r < g.rows; r++) for (var c = 0; c < g.cols; c++) if (!real(r, c)) holes.push({ r: r, c: c });
+      // cut along rows or columns, whichever needs fewer lines; back and forth
+      var rowsWith = {}, colsWith = {};
+      holes.forEach(function (h) { rowsWith[h.r] = 1; colsWith[h.c] = 1; });
+      var byRow = Object.keys(rowsWith).length <= Object.keys(colsWith).length;
+      var lines = Object.keys(byRow ? rowsWith : colsWith).map(Number).sort(function (x, y) { return x - y; });
+      var span = byRow ? g.cols : g.rows, segs = [], t = GO;
+      lines.forEach(function (ln, n) {
+        var fwd = n % 2 === 0, a0 = fwd ? -1 : span, a1 = fwd ? span : -1;
+        var pt = function (along) { return byRow ? { x: along * step + half, y: ln * step + half } : { x: ln * step + half, y: along * step + half }; };
+        if (segs.length) { var last = segs[segs.length - 1]; segs.push({ p0: last.p1, p1: pt(a0), t0: t, t1: t + HOP, cut: false }); t += HOP; }
+        var dur = Math.abs(a1 - a0) * PER * (1 + 1 / span);
+        segs.push({ p0: pt(a0), p1: pt(a1), t0: t, t1: t + dur, cut: true, line: ln, from: a0, to: a1 }); t += dur;
+      });
       var cur = g.order.map(function (k) { return g.cells[k]; }).filter(function (o) { return o.cursor; })[0] || g.cells[g.order[0]];
-      var tx = cur.c * step + half, ty = cur.r * step + half, far = 0;
-      holes.concat([{ x: 0, y: 0 }, { x: g.cols * step, y: 0 }, { x: 0, y: g.rows * step }, { x: g.cols * step, y: g.rows * step }])
-        .forEach(function (h) { far = Math.max(far, Math.hypot(h.x - tx, h.y - ty)); });
-      var R0 = far + step, turns = Math.max(2, R0 / (step * 1.9)), reach = step * 1.15;
-      function spot(u) { var e = 1 - Math.pow(1 - u, 1.3), rr = R0 * (1 - e), th = e * turns * Math.PI * 2 + Math.PI; return { x: tx + rr * Math.cos(th), y: ty + rr * Math.sin(th) }; }
-      // when the spinner first passes each hole, it's knocked out
-      var path = []; for (var q = 0; q <= 600; q++) { var u = q / 600, p = spot(u); path.push({ t: GO + u * SWEEP, x: p.x, y: p.y }); }
-      holes.forEach(function (h) {
-        for (var q = 0; q < path.length; q++) if (Math.hypot(path[q].x - h.x, path[q].y - h.y) < reach) { h.hit = path[q].t; h.from = path[q]; break; }
-        if (h.hit == null) { h.hit = GO + SWEEP; h.from = path[path.length - 1]; }
+      var home = { x: cur.c * step + half, y: cur.r * step + half }, endT = t + 0.5;
+      if (!segs.length) segs.push({ p0: { x: -step, y: home.y }, p1: { x: -step, y: home.y }, t0: GO, t1: GO, cut: false });
+      segs.push({ p0: segs[segs.length - 1].p1, p1: home, t0: t, t1: endT, cut: false, home: true });
+      function pos(tt) {
+        for (var q = 0; q < segs.length; q++) {
+          var sg = segs[q];
+          if (tt <= sg.t1 || q === segs.length - 1) {
+            var u = sg.t1 > sg.t0 ? Math.max(0, Math.min(1, (tt - sg.t0) / (sg.t1 - sg.t0))) : 1;
+            if (sg.home) u = 1 - Math.pow(1 - u, 2.5);
+            return { x: sg.p0.x + (sg.p1.x - sg.p0.x) * u, y: sg.p0.y + (sg.p1.y - sg.p0.y) * u, seg: sg };
+          }
+        }
+      }
+      // each hole is cut as the saw crosses it, and flies off to one side, spinning
+      holes.forEach(function (h, n) {
+        var sg = segs.filter(function (x) { return x.cut && x.line === (byRow ? h.r : h.c); })[0], along = byRow ? h.c : h.r;
+        h.hit = sg.t0 + (along - sg.from) / (sg.to - sg.from) * (sg.t1 - sg.t0);
+        h.side = (n % 2 ? 1 : -1);
+        h.dir = byRow ? { x: (sg.to > sg.from ? 1 : -1) * 0.5, y: h.side } : { x: h.side, y: (sg.to > sg.from ? 1 : -1) * 0.5 };
+        if (n % 2 === 0) sfx(h.hit, function (when, S) { S.bite(when, n); });
       });
       g.at(0, function () {
-        return holes.map(function (h, n) {
+        return holes.map(function (h) {
           var d = document.createElement("div");
           d.className = "entrance-decoy";
           d.style.width = d.style.height = g.size + "px"; d.style.left = h.c * step + "px"; d.style.top = h.r * step + "px";
           g.board.appendChild(d);
-          var dx = h.x - h.from.x, dy = h.y - h.from.y, dl = Math.hypot(dx, dy) || 1, fly = g.size * (2.2 + Math.random() * 1.5), spin = (Math.random() < 0.5 ? -1 : 1) * (180 + Math.random() * 360);
-          var total = h.hit + 0.55, fadeAt = Math.random() * 0.5;
+          var fly = g.size * (1.8 + Math.random() * 1.4), spin = h.side * (300 + Math.random() * 300), total = h.hit + 0.5, fadeAt = Math.random() * 0.5;
           var an = d.animate([
             { opacity: 0, transform: "scale(.85)", offset: 0 },
             { opacity: 0, transform: "scale(.85)", offset: fadeAt / total },
             { opacity: 1, transform: "scale(1)", offset: (fadeAt + 0.4) / total },
             { opacity: 1, transform: "scale(1)", offset: h.hit / total, easing: "ease-out" },
-            { opacity: 1, transform: "scale(1.15)", offset: (h.hit + 0.06) / total, easing: "ease-in" },
-            { opacity: 0, transform: "translate(" + dx / dl * fly + "px," + (dy / dl * fly - g.size * 0.8) + "px) rotate(" + spin + "deg) scale(.4)", offset: 1 }],
+            { opacity: 0, transform: "translate(" + h.dir.x * fly + "px," + h.dir.y * fly + "px) rotate(" + spin + "deg) scale(.35)", offset: 1 }],
             { duration: total * 1000, easing: "linear" });
           an.onfinish = an.oncancel = function () { d.remove(); };
           return an;
         });
       });
-      holes.forEach(function (h, n) { if (n % 2 === 0) sfx(h.hit, function (when, S) { S.tick(when, n % 9); }); });
-      // the spinner: an orange box, spinning, along the spiral; it lands on the first box as its ring
-      g.at(GO - 0.25, function () {
-        var d = document.createElement("div"), sz = g.size * 0.82;
+      // the saw: spinning fast while it cuts, lifted over the puzzle's own boxes, spinning down at home
+      var start = segs[0].p0, sz = g.size * 0.86;
+      g.at(GO - 0.3, function () {
+        var d = document.createElement("div");
         d.className = "entrance-blk"; d.style.width = d.style.height = sz + "px"; d.style.zIndex = 5;
-        d.style.left = (tx - sz / 2) + "px"; d.style.top = (ty - sz / 2) + "px";
+        d.style.left = (home.x - sz / 2) + "px"; d.style.top = (home.y - sz / 2) + "px";
         g.board.appendChild(d);
-        var kf = [], N = 90, total = SWEEP + 0.25;
-        for (var q = 0; q <= N; q++) {
-          var u = q / N, p = spot(u), spinDeg = u * 360 * 9 * (1 - 0.3 * u);
-          kf.push({ transform: "translate(" + (p.x - tx) + "px," + (p.y - ty) + "px) rotate(" + spinDeg + "deg) scale(" + (u < 0.98 ? 1 : g.size / sz) + ")", opacity: q === 0 ? 0 : 1, offset: (0.25 + u * SWEEP) / total });
+        var total = endT - (GO - 0.3), kf = [], rot = 0, prev = GO - 0.3;
+        kf.push({ transform: "translate(" + (start.x - home.x) + "px," + (start.y - home.y) + "px) scale(.4)", opacity: 0, offset: 0 });
+        for (var tt = GO; tt <= endT + 0.0001; tt += 0.025) {
+          var p = pos(tt), slow = tt > endT - 0.5 ? (endT - tt) / 0.5 : 1;
+          rot += (tt - prev) * 2400 * slow; prev = tt;
+          var over = p.seg.cut && real(Math.round((p.y - half) / step), Math.round((p.x - half) / step));
+          kf.push({ transform: "translate(" + (p.x - home.x) + "px," + (p.y - home.y) + "px) rotate(" + rot + "deg) scale(" + (over ? 1.22 : 1) + ")", opacity: 1, offset: (tt - (GO - 0.3)) / total });
         }
-        kf.unshift({ transform: "translate(" + (spot(0).x - tx) + "px," + (spot(0).y - ty) + "px) scale(.3)", opacity: 0, offset: 0 });
-        kf[kf.length - 1].transform = "translate(0,0) rotate(" + Math.round(kf[kf.length - 1].transform.match(/rotate\(([-\d.]+)/)[1] / 360) * 360 + "deg) scale(" + (g.size / sz) + ")";
+        kf[kf.length - 1] = { transform: "translate(0,0) rotate(" + Math.round(rot / 90) * 90 + "deg) scale(" + g.size / sz + ")", opacity: 1, offset: 1 };
         var an = d.animate(kf, { duration: total * 1000, easing: "linear" });
         an.onfinish = an.oncancel = function () { d.remove(); };
         return an;
       });
-      sfx(GO - 0.2, function (when, S) { S.whirr(when, SWEEP + 0.2); });
-      ringOn(g, GO + SWEEP, sfx, false);
-      sfx(GO + SWEEP - 0.02, function (when, S) { S.clickin(when); });
+      sfx(GO - 0.2, function (when, S) { S.saw(when, endT - GO + 0.2); });
+      ringOn(g, endT, sfx, false);
+      sfx(endT - 0.02, function (when, S) { S.clickin(when); });
       return a;
     } },
   { id: "zoom", name: "Zoom", icon: "🔍", premium: false,
