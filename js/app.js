@@ -240,7 +240,7 @@ function runEntrance(turn) {
   if (!P || document.hidden) return;
   if (reducedMotion() && !test) { after(); return; }
   var saved = store.get("entrances", null), id = saved && saved.last, queue = entranceQueue();
-  if (test) id = test.id; // the tester (?try) picks it, and leaves the cycle and Front Row Seat alone
+  if (test) id = test.id; // the tester (?backstage) picks it, and leaves the cycle and Front Row Seat alone
   else if (turn && queue.length) { // the player's own order (the Entrances tab) comes first
     id = queue.shift(); store.set("entranceQueue", queue);
     store.set("entrances", Object.assign({}, saved, { last: id }));
@@ -255,10 +255,10 @@ function runEntrance(turn) {
     else if (!skipped) { after(); sawEntrance(run.id); }
   });
 }
-// The entrance tester: open the app with ?try for a bar that replays any entrance on the real
+// The entrance tester: open the app with ?backstage for a bar that replays any entrance on the real
 // board (js/entrance-tester.js), to refine them where they'll be seen. Nothing links to it.
 var tester = null;
-if (new URLSearchParams(location.search).has("try")) {
+if (new URLSearchParams(location.search).has("backstage")) {
   import("./entrance-tester.js").then(function (m) {
     tester = m.mountTester({
       replay: function () { dismissStart(); runEntrance(false); },

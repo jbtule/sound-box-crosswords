@@ -1,4 +1,4 @@
-// The entrance tester, for refining entrances on the real board: open the app with ?try. A bar
+// The entrance tester, for refining entrances on the real board: open the app with ?backstage. A bar
 // at the top picks an entrance, replays it on this puzzle or a new shape, slows it down (no
 // sound then), and shows how long it took. app.js asks it (next()) which entrance to play while
 // it's open, and it leaves the player's cycle, queue and Front Row Seat alone. Not linked from
@@ -27,8 +27,8 @@ export function mountTester(app) {
     });
     pick.appendChild(og);
   });
-  try { var last = localStorage.getItem("sbx:try"); if (last && ENTRANCES.some(function (e) { return e.id === last; })) pick.value = last; } catch (e) {}
-  pick.addEventListener("change", function () { try { localStorage.setItem("sbx:try", pick.value); } catch (e) {} app.replay(); });
+  try { var last = localStorage.getItem("sbx:backstage"); if (last && ENTRANCES.some(function (e) { return e.id === last; })) pick.value = last; } catch (e) {}
+  pick.addEventListener("change", function () { try { localStorage.setItem("sbx:backstage", pick.value); } catch (e) {} app.replay(); });
   bar.querySelector("#tryPlay").addEventListener("click", function () { app.replay(); });
   bar.querySelector("#tryShape").addEventListener("click", function () { app.newShape(); });
   bar.querySelector("#tryRate").addEventListener("change", function () { app.replay(); });
