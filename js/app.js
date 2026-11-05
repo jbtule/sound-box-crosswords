@@ -206,7 +206,7 @@ var pz = { helped: {}, crossed: {}, twofer: false, keys: false };
 function newPuzzle(solved) {
   if (updateReady) { location.reload(); return; }
   skipEntrance();
-  $("#done").hidden = true;
+  $("#done").hidden = true; $("#cluebar").classList.remove("spent");
   finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {}; newPics = 0; pz = { helped: {}, crossed: {}, twofer: false, keys: false };
   var pool = entries(packId);
   if (pool.length < 3) { P = null; renderEmpty(); return; }
@@ -587,6 +587,7 @@ function finish() {
   });
   newList.hidden = !fresh.length;
   $("#done").hidden = false;
+  $("#cluebar").classList.add("spent"); // grayed out with the puzzle solved: no word left to hear
   confetti($(".board-card"));
   if (settings.chime) chime();
   say("p", "You solved it!", 0.95);
