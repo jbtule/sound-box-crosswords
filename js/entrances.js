@@ -456,6 +456,70 @@ export var ENTRANCES = [
       sfx(DUR * LAND, function (when, S) { S.rumble(when, DUR * (1 - LAND) * 0.9); });
       return a;
     } },
+  { id: "cyclone", name: "Cyclone", icon: "🌪️", premium: true,
+    // The boxes swirl up into a big tornado funnel (a narrow tip at the ground, wide at the top),
+    // whirling fast round it (the far side smaller and behind), the first word riding in its eye.
+    // It roams back and forth across the board, bending as it goes, wind howling; then it flings
+    // everything out at once, and the boxes fly into their places.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      var plain = others(g), word = firstWord(g), L = Math.max(4, Math.min(9, Math.round(Math.sqrt(plain.length) * 1.4)));
+      var tall = Math.max(H * 0.95, g.size * 7), sp = tall / L, SC = Math.min(0.7, Math.max(0.48, sp / g.size)), ground = H;
+      var rTip = g.size * 0.3, rTop = Math.min(W * 0.48, g.size * 4.6, tall * 0.55);
+      var FORM = 0.6, FLING = 3.4, flight = 0.95, landEnd = 0;
+      // boxes per level grow with its width (the top holds the most)
+      var wsum = L * (L + 1) / 2, counts = [];
+      for (var lv = 0; lv < L; lv++) counts.push(Math.max(1, Math.round((lv + 1) / wsum * plain.length)));
+      var sum = function () { return counts.reduce(function (x, y) { return x + y; }, 0); };
+      while (sum() > plain.length) counts[counts.indexOf(Math.max.apply(null, counts))]--;
+      while (sum() < plain.length) counts[L - 1]++;
+      var levelOf = []; counts.forEach(function (c, lv) { for (var q = 0; q < c; q++) levelOf.push({ level: lv, slot: q, of: c }); });
+      // where the funnel stands: in from the left, then roaming back and forth across the board
+      function center(t) {
+        var inn = Math.min(1, t / 0.9), e = 1 - Math.pow(1 - inn, 3);
+        return -W * 0.4 * (1 - e) + e * (W * 0.5 + Math.sin((t - 0.4) * 2.1) * W * 0.36 + Math.sin(t * 5.3) * W * 0.04);
+      }
+      function at(level, t, phase, rad) { // a spot on the funnel: x, y, depth (-1 back .. 1 front)
+        var r = rad != null ? rad : rTip + (rTop - rTip) * Math.pow(level / (L - 1), 1.3), w = 9.5 - level * 0.45, th = phase + w * t;
+        var lean = Math.sin(t * 2.6) * sp * 0.9 * level / L; // the funnel bends as it moves
+        return { x: center(t) + lean + r * Math.cos(th), y: ground - level * sp - sp * 0.5 + r * Math.sin(th) * 0.16, z: Math.sin(th), th: th };
+      }
+      function T(x, y, fx, fy, rot, sc) { return "translate(" + (x - fx) + "px," + (y - fy) + "px) rotate(" + rot + "deg) scale(" + sc + ")"; }
+      function ride(k, level, phase, rad, appear, release, eye, n) {
+        var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, total = release + flight, kf = [], spinRot = 0;
+        for (var t = appear; t <= release + 0.001; t += 0.04) {
+          var q = at(level, t, phase, rad), grow = Math.min(1, (t - appear) / 0.35);
+          spinRot = eye ? Math.sin(t * 3 + n) * 15 : (t - appear) * 220;
+          kf.push({ transform: T(q.x, q.y + (1 - grow) * sp * 1.5, fx, fy, spinRot, SC * (eye ? 1 : 0.8 + 0.2 * q.z) * (0.5 + 0.5 * grow)),
+            opacity: grow * (eye ? 1 : 0.7 + 0.3 * (q.z + 1) / 2), zIndex: eye || q.z > 0 ? 3 : 2, offset: t / total });
+        }
+        kf[0].opacity = 0;
+        // flung out along the spin, then curving home
+        var p0 = at(level, release, phase, rad), dir = eye ? (fx > p0.x ? 1 : -1) : (-Math.sin(p0.th) >= 0 ? 1 : -1);
+        var c1 = { x: p0.x + dir * g.size * (eye ? 1 : 2.6), y: p0.y - g.size * (eye ? 2.2 : 1.4) }, endRot = Math.round((spinRot + (eye ? 0 : 360)) / 360) * 360;
+        for (var j = 1; j <= 10; j++) {
+          var u = j / 10, m = 1 - u, x = m * m * p0.x + 2 * m * u * c1.x + u * u * fx, y = m * m * p0.y + 2 * m * u * c1.y + u * u * fy;
+          kf.push({ transform: T(x, y, fx, fy, spinRot + (endRot - spinRot) * u, SC + (1 - SC) * u), opacity: 1, zIndex: 3, offset: (release + flight * u * 0.9) / total });
+        }
+        kf.push({ transform: "translate(0,3px) rotate(" + endRot + "deg) scale(1.08,.9)", opacity: 1, zIndex: 1, offset: (release + flight * 0.95) / total });
+        kf.push({ transform: "translate(0,0) rotate(" + endRot + "deg) scale(1)", opacity: 1, zIndex: 1, offset: 1 });
+        a[k] = { kf: kf, delay: 0, dur: total, ease: "linear" };
+        landEnd = Math.max(landEnd, total);
+      }
+      plain.forEach(function (k, p) {
+        var lv = levelOf[p];
+        ride(k, lv.level, lv.slot / lv.of * Math.PI * 2 + lv.level * 0.7, null, lv.level * 0.06, FLING + Math.random() * 0.12, false, p);
+      });
+      // the eye: the first word stacked up the middle, flung a beat after the rest
+      word.forEach(function (k, n) {
+        ride(k, (n + 0.5) * (L - 0.5) / word.length, n * 1.3, sp * 0.12, 0.1 + n * 0.04, FLING + 0.22 + n * 0.04, true, n);
+      });
+      for (var c = 0; c < 6; c++) (function (c) { sfx(FLING + flight * 0.9 + c * 0.05, function (when, S) { S.settle(when, c); }); })(c);
+      sfx(0, function (when, S) { S.wind(when, FLING + 0.5); S.whirr(when + 0.1, FLING + 0.1); });
+      sfx(FLING, function (when, S) { S.whoosh(when, 0.6); });
+      g.at(FLING + flight * 0.92, function () { return shake(g.board, 3); });
+      return a;
+    } },
   { id: "saucer", name: "Flying saucer", icon: "🛸", premium: true,
     // The boxes assemble into a block flying saucer that swoops in and hovers. A little cannon
     // at the bottom fires: miss, miss, hit! The saucer bursts and its pieces drift slowly into
