@@ -306,8 +306,13 @@ function setPic(el, pic) { if (pic) el.textContent = pic; else el.innerHTML = WA
 function cellEl(kk) { return board.querySelector('[data-k="' + kk + '"]'); }
 // Syncs the board, clue bar, and clue tiles with the play state.
 // The clue's sentence with each blank drawn as small boxes, one per letter, like the grid.
-function showSentence(text) {
+// A word with a picture and no sentence uses that line for its blank boxes, with an arrow up to
+// the picture: these boxes are that picture.
+var UP_ARROW = '<svg class="to-pic" viewBox="0 0 56 30" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M53 23H40c-6 0-9-4-9-11V4"/><path d="M24.5 10.5 31 3.5l6.5 7"/></svg>';
+function showSentence(text, toPic) {
   var el = $("#clueSent"); el.textContent = "";
+  el.classList.toggle("pic-line", !!toPic);
+  if (toPic) el.insertAdjacentHTML("beforeend", UP_ARROW);
   text.split(/(_+)/).forEach(function (part) {
     if (!/^_+$/.test(part)) { if (part) el.appendChild(document.createTextNode(part)); return; }
     var blank = document.createElement("span");
@@ -338,7 +343,7 @@ function update() {
   var n = W.chunks.length;
   $("#clueSub").textContent = W.w.length + " boxes · " + n + (n === 1 ? " beat" : " beats");
   // Only this word is blanked; pack sentences avoid the pack's other words (the check enforces it).
-  showSentence(W.sentence ? blankSentence(W.sentence, [W.w]) : "");
+  showSentence(W.sentence ? blankSentence(W.sentence, [W.w]) : W.pic ? W.w.replace(/./g, "_") : "", !W.sentence && !!W.pic);
   $("#clapBtn").hidden = n < 2; // nothing to break down in a one-beat word
   $("#soundBtn").hidden = !canSoundOut(W);
   document.querySelectorAll(".ctile").forEach(function (t) {
