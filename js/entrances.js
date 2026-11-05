@@ -376,7 +376,7 @@ export var ENTRANCES = [
         mine.forEach(function (k, j) {
           var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, head = j === 0;
           var sx = fx - ux * D, sy = fy - uy * D; // straight along its line from off the edge; the tail strung out behind by time
-          var delay = t + j * LAG, kf = [], N = 14, twistX = (j % 2 ? 1 : -1) * 70, spin = head ? 720 : 180;
+          var delay = t + j * LAG, kf = [], N = 14, twistX = (j % 2 ? 1 : -1) * 70, spin = head ? 720 : 360; // whole turns, so numbers land upright
           var base = head ? 1 : 0.85 - 0.35 * Math.min(1, j / 6); // the tail tapers
           for (var q = 0; q <= N; q++) {
             var u = q / N, e = u < 0.8 ? u / 0.8 * 0.92 : 0.92 + (u - 0.8) / 0.2 * 0.08; // straight and fast, easing only at the very end
