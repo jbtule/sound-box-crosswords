@@ -151,6 +151,17 @@ export function makeSfx(ac, dest) {
       o.connect(f); o2.connect(f); f.connect(g); g.connect(dest); o.start(t); o2.start(t); o.stop(t + dur + 0.05); o2.stop(t + dur + 0.05);
     },
     bite: function (t, i) { noise(t, 0.07, "bandpass", 2200 + (i % 4) * 400, 0, 0.22, 3); osc(t, 210, "sawtooth", 0.05, 0.002, 0.06, 150); },
+    // Kaleidoscope: glass beads tumbling inside as it turns (tiny high clicks at random pitches,
+    // not a tune); `density` clicks a second.
+    beads: function (t, dur, density) {
+      var n = Math.round(dur * (density || 14));
+      for (var j = 0; j < n; j++) {
+        var at = t + Math.random() * dur, f = 2400 + Math.random() * 3200;
+        osc(at, f, "sine", 0.05 + Math.random() * 0.05, 0.001, 0.05 + Math.random() * 0.05, f * 0.97);
+        if (Math.random() < 0.4) noise(at, 0.01, "highpass", 6000, 0, 0.04, 1);
+      }
+    },
+    bead: function (t, i) { var f = 2600 + ((i * 7919) % 2800); osc(t, f, "sine", 0.09, 0.001, 0.08, f * 0.97); noise(t, 0.012, "highpass", 6000, 0, 0.05, 1); },
     rustle: function (t) { for (var j = 0; j < 3; j++) noise(t + j * 0.025 + Math.random() * 0.02, 0.03, "bandpass", 3200 + Math.random() * 2500, 0, 0.07, 1.5); }
   };
 }
