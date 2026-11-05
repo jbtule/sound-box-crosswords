@@ -258,7 +258,12 @@ function runEntrance(turn) {
 // The entrance tester: open the app with ?backstage for a bar that replays any entrance on the real
 // board (js/entrance-tester.js), to refine them where they'll be seen. Nothing links to it.
 var tester = null;
-if (new URLSearchParams(location.search).has("backstage")) {
+// It stays on for this browser tab once opened (sessionStorage), so a plain reload keeps it.
+if ((function () {
+  var on = new URLSearchParams(location.search).has("backstage");
+  try { if (on) sessionStorage.setItem("sbx:backstage", "1"); else on = sessionStorage.getItem("sbx:backstage") === "1"; } catch (e) {}
+  return on;
+})()) {
   import("./entrance-tester.js").then(function (m) {
     tester = m.mountTester({
       replay: function () { dismissStart(); runEntrance(false); },
@@ -897,7 +902,7 @@ $("#editionSel").addEventListener("change", function (e) {
   device.set("edition", e.target.value);
   // Drop ?edition= (it would pick the old one again), then reload: a reload checks the server
   // for the page, where going to the address could show the browser's older copy.
-  history.replaceState(null, "", location.pathname);
+  history.replaceState(null, "", location.pathname + (new URLSearchParams(location.search).has("backstage") ? "?backstage" : ""));
   location.reload();
 });
 // Start over: clears this edition's progress and everything earned from it. Achievements,
