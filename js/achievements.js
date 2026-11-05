@@ -31,7 +31,7 @@ var LABELS = {
   clean: { tiers: [["🚀", "Liftoff"], ["🛰️", "In Orbit"], ["🌙", "Moon Landing"], ["🪐", "Ringed Planet"], ["☄️", "Comet Rider"], ["🌌", "Galaxy"]],
     detail: function (n) { return n + (n === 1 ? " puzzle" : " puzzles") + " with no try-agains"; } },
   // Comebacks (right after an earlier miss): not giving up.
-  comeback: { tiers: [["🏀", "Bounce Back"], ["🐢", "Keep Going"], ["🧗", "Climber"], ["🦸", "Spelling Hero"], ["🐉", "Dragon Heart"]],
+  comeback: { tiers: [["🏀", "Bounce Back"], ["💪", "Keep Going"], ["🧗", "Climber"], ["🦸", "Spelling Hero"], ["🐉", "Dragon Heart"]],
     detail: function (n) { return n === 1 ? "1 word right first try after missing it" : n + " words right first try after missing them"; } }
 };
 
