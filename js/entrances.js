@@ -986,6 +986,38 @@ export var ENTRANCES = [
       sfx(fin - 0.02, function (when, S) { S.clickin(when); });
       return a;
     } },
+  { id: "wave", name: "Wave", icon: "🌊", premium: false,
+    // The boxes come in on a big breaking wave that sweeps across the board from the left: tallest
+    // at the top, where it curls forward into a lip, the boxes churning and tumbling in it. As the
+    // wave front passes each box's column it breaks there, and the box tumbles down out of it and
+    // lands in its place with a splash, left behind like stones on a beach. Surf, a crash, foam.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      var CROSS = 2.6, X0 = -g.size * 3, X1 = W + g.size * 2.5, landEnd = 0, i = 0;
+      function X(t) { var u = Math.max(0, Math.min(1, t / CROSS)); return X0 + (X1 - X0) * (u * u * (3 - 2 * u) * 0.35 + u * 0.65); } // the wave front
+      function front(y) { var v = Math.max(0, Math.min(1, y / H)); return g.size * (1.3 * (1 - v) * (1 - v) - 0.6 * v); } // the face curls forward at the top
+      g.order.forEach(function (key) {
+        var o = g.cells[key], fx = o.c * step + half, fy = o.r * step + half, v = fy / H, lift = g.size * (0.8 * (1 - v) + 0.15), phase = Math.random() * 6;
+        var tDep = CROSS; for (var q = 0; q <= 400; q++) { var tq = q / 400 * CROSS; if (X(tq) + front(fy) >= fx) { tDep = tq; break; } } // when the wave breaks over its column
+        var kf = [], rot = 0, DROP = 0.38, total = tDep + DROP;
+        for (var t = 0; t <= tDep + 0.001; t += 0.035) {
+          var x = X(t) + front(fy) + Math.sin(t * 7 + phase) * g.size * 0.18, y = fy - lift + Math.sin(t * 9 + phase) * g.size * 0.12;
+          rot = (t / CROSS) * 540 + Math.sin(t * 5 + phase) * 40; // tumbling forward in the churn
+          kf.push({ transform: "translate(" + (x - fx) + "px," + (y - fy) + "px) rotate(" + rot + "deg) scale(.82)", opacity: x < -g.size ? 0 : 1, zIndex: 3, offset: t / total });
+        }
+        var endRot = Math.ceil(rot / 360) * 360;
+        kf.push({ transform: "translate(0,3px) rotate(" + endRot + "deg) scale(1.12,.84)", opacity: 1, zIndex: 1, offset: (tDep + DROP * 0.75) / total, easing: "ease-out" });
+        kf.push({ transform: "translate(0,0) rotate(" + endRot + "deg) scale(1)", opacity: 1, zIndex: 1, offset: 1 });
+        kf[kf.length - 3].easing = "cubic-bezier(.5,0,.9,.5)"; // falling out of the wave
+        a[key] = { kf: kf, delay: 0, dur: total, ease: "linear" };
+        if (i++ % 3 === 0) sfx(tDep + DROP * 0.75, function (when, S) { S.plip(when, 300 + Math.random() * 300); });
+        landEnd = Math.max(landEnd, total);
+      });
+      sfx(0, function (when, S) { S.surf(when, CROSS * 0.6); });
+      sfx(CROSS * 0.45, function (when, S) { S.crash(when); });
+      sfx(CROSS * 0.55, function (when, S) { S.fizz(when, landEnd - CROSS * 0.55 + 0.6); });
+      return a;
+    } },
   { id: "saucer", name: "Flying saucer", icon: "🛸", premium: true,
     // The boxes assemble into a block flying saucer that swoops in and hovers. A little cannon
     // at the bottom fires: miss, miss, hit! The saucer bursts and its pieces drift slowly into
