@@ -437,7 +437,8 @@ export var ENTRANCES = [
           if (tt >= next) { kf.push({ transform: T(x, y, rot, 0.62), opacity: 1, offset: FALL + tt / DUR }); next += 1 / 30; }
         }
         kf[kf.length - 1].easing = "cubic-bezier(.3,.5,.4,1)"; // then a slow roll home
-        var roll = Math.round((rot + Math.hypot(fx0 - x, fy0 - y) / g.size * 90 * (fx0 >= x ? 1 : -1)) / 90) * 90;
+        // rolls home and lands upright (whole turns), so its number isn't sideways when it settles
+        var roll = Math.round((rot + Math.hypot(fx0 - x, fy0 - y) / g.size * 90 * (fx0 >= x ? 1 : -1)) / 360) * 360;
         kf.push({ transform: "translate(0,0) rotate(" + roll + "deg) scale(1)", opacity: 1, offset: 1 });
         a[k] = { kf: kf, delay: 0, dur: DUR, ease: "linear" };
         if (hit !== null && i % 2 === 0) sfx(DUR * FALL + hit, function (when, S) { S.knock(when, i); });
@@ -496,7 +497,7 @@ export var ENTRANCES = [
           if (tt >= next) { kf.push({ transform: T(x, y, rot, 0.55 + 0.2 * (tt / ((SETTLE - HIT) * DUR))), opacity: 1, offset: HIT + tt / DUR }); next += 1 / 30; }
         }
         kf[kf.length - 1].easing = "cubic-bezier(.3,.5,.4,1)"; // drift slowly home
-        kf.push({ transform: "translate(0,0) rotate(" + (Math.round(rot / 90) * 90) + "deg) scale(1)", opacity: 1, offset: 1 });
+        kf.push({ transform: "translate(0,0) rotate(" + (Math.round(rot / 360) * 360) + "deg) scale(1)", opacity: 1, offset: 1 }); // upright
         a[k] = { kf: kf, delay: 0, dur: DUR, ease: "linear" };
       });
       // The cannon, its shots, the flash: page pieces that come and go.
