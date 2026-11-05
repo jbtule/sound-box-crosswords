@@ -503,6 +503,52 @@ export var ENTRANCES = [
       });
       return a;
     } },
+  { id: "whirlpool", name: "Whirlpool", icon: "🫧", premium: false,
+    // A big spiral of plain boxes (six arms, like a galaxy) fades in over the board and turns
+    // slowly. Then a drain opens in the middle: it spins faster and faster (fastest near the
+    // middle), the boxes pulled in and shrinking as they're sucked down it, the innermost first;
+    // as the swirl draws in, the puzzle's own boxes are uncovered, outside first, until the last
+    // box gulps down the drain. Gurgling, then a slurp.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      var cx = W / 2, cy = H / 2, Rmax = Math.hypot(W, H) / 2 + g.size, ws = g.size * 0.92, FORM = 0.6, TURN = 1.4, DRAIN = 1.9, END = TURN + DRAIN + 0.1;
+      var sm = function (u) { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
+      function pull(t) { return t < TURN ? 0 : Rmax * Math.pow(sm((t - TURN) / DRAIN), 0.85); } // how far everything has been drawn in
+      // the spiral: six arms of boxes from near the middle out past the corners
+      var arms = 6, pts = [];
+      for (var arm = 0; arm < arms; arm++) for (var r = g.size * 0.9; r < Rmax; r += ws * 0.62) pts.push({ r0: r, th0: arm * Math.PI * 2 / arms + r / (ws * 2.2) });
+      // the puzzle's boxes: uncovered as the swirl's edge draws in past them
+      g.order.forEach(function (key) {
+        var o = g.cells[key], fx = o.c * step + half, fy = o.r * step + half, dist = Math.hypot(fx - cx, fy - cy), tR = END - 0.2;
+        for (var q = 0; q <= 300; q++) { var tq = TURN + q / 300 * DRAIN; if (Rmax - pull(tq) < dist + g.size * 0.3) { tR = tq; break; } }
+        var total = tR + 0.3;
+        a[key] = { kf: [{ opacity: 0, transform: "scale(.9) rotate(-20deg)", offset: 0 }, { opacity: 0, transform: "scale(.9) rotate(-20deg)", offset: tR / total },
+          { opacity: 1, transform: "scale(1) rotate(0)", offset: 1 }], delay: 0, dur: total, ease: "ease-out" };
+      });
+      g.at(0, function () {
+        return pts.map(function (pt, n) {
+          var d = document.createElement("div"); d.className = "entrance-decoy";
+          d.style.width = d.style.height = ws + "px"; d.style.left = (cx - ws / 2) + "px"; d.style.top = (cy - ws / 2) + "px";
+          g.board.appendChild(d);
+          var kf = [], th = pt.th0, prev = 0, gone = false;
+          for (var t = 0; t <= END + 0.001; t += 0.04) {
+            var r = Math.max(0, pt.r0 - pull(t)), w = (t < TURN ? 0.9 : 0.9 + 9 * sm((t - TURN) / DRAIN)) * (1 + 2.5 * g.size / (r + g.size)); // faster near the middle
+            th += w * (t - prev); prev = t;
+            var sc = Math.min(1, r / (g.size * 1.6)), op = Math.min(1, t / FORM * 1.5) * Math.min(1, r / (g.size * 0.6));
+            if (r <= 0) gone = true;
+            kf.push({ transform: "translate(" + r * Math.cos(th) + "px," + r * Math.sin(th) + "px) rotate(" + (th * 180 / Math.PI + 45) + "deg) scale(" + (gone ? 0 : sc) + ")", opacity: gone ? 0 : op, offset: t / END });
+          }
+          kf[kf.length - 1].offset = 1;
+          var an = d.animate(kf, { duration: END * 1000, easing: "linear" });
+          an.onfinish = an.oncancel = function () { d.remove(); };
+          return an;
+        });
+      });
+      sfx(0.3, function (when, S) { S.gurgle(when, TURN - 0.3); });
+      sfx(TURN, function (when, S) { S.gurgle(when, DRAIN - 0.2); S.gurgle(when + DRAIN * 0.4, DRAIN * 0.6); });
+      sfx(TURN + DRAIN - 0.35, function (when, S) { S.slurp(when); });
+      return a;
+    } },
   { id: "zoom", name: "Zoom", icon: "🔍", premium: false,
     // Boxes grow outward from the crossings, past their size, then settle. A pop as each
     // ring grows, a soft tap as it settles.
