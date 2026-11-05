@@ -310,8 +310,8 @@ export var ENTRANCES = [
     // The boxes form a mandala in the middle of the board: the first word, in its colors, the
     // inner ring, the plain boxes in rings around it, every box turned to point outward. Like
     // twisting a kaleidoscope, the rings turn opposite ways, a good few turns, and the pattern
-    // breathes in and out, with glass beads tumbling. Then it blooms in a shower of beads: boxes
-    // fly out to their places, outer rings first, the colored center last.
+    // breathes in and out, with glass beads tumbling. Then it blooms: boxes fly out to their
+    // places, outer rings first, the colored center last, each landing with a glass click.
     plan: function (g, sfx) {
       var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
       var cx = W / 2, cy = H / 2, SC = 0.62, sp = g.size * SC * 1.12, FORM = 0.8, TURN = 2.2, BLOOM = 0.9;
@@ -348,11 +348,11 @@ export var ENTRANCES = [
           kf[kf.length - 3].easing = "ease-in";
           a[key] = { kf: kf, delay: 0, dur: total, ease: "linear" };
           landEnd = Math.max(landEnd, total);
+          var b = ri * 31 + j; sfx(total - 0.02, function (when, S) { S.bead(when, b); }); // a glass click as it lands
         });
       });
-      // glass beads tumbling as it turns, and a shower of them as it blooms
+      // glass beads tumbling as it turns; then a click for each box as it lands (above)
       sfx(0.2, function (when, S) { S.beads(when, bloomAt - 0.2, 12); });
-      sfx(bloomAt, function (when, S) { S.beads(when, landEnd - bloomAt, 30); });
       return a;
     } },
   { id: "zoom", name: "Zoom", icon: "🔍", premium: false,

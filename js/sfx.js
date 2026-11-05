@@ -161,6 +161,7 @@ export function makeSfx(ac, dest) {
         if (Math.random() < 0.4) noise(at, 0.01, "highpass", 6000, 0, 0.04, 1);
       }
     },
+    bead: function (t, i) { var f = 2600 + ((i * 7919) % 2800); osc(t, f, "sine", 0.09, 0.001, 0.08, f * 0.97); noise(t, 0.012, "highpass", 6000, 0, 0.05, 1); },
     rustle: function (t) { for (var j = 0; j < 3; j++) noise(t + j * 0.025 + Math.random() * 0.02, 0.03, "bandpass", 3200 + Math.random() * 2500, 0, 0.07, 1.5); }
   };
 }
