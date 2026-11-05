@@ -170,7 +170,7 @@ export var ENTRANCES = [
       for (var r = 0; r < 14; r++) sfx(Math.pow(Math.random(), 1.2) * end * 0.8, function (at, S) { S.rustle(at); });
       return a;
     } },
-  { id: "shutters", name: "Shutters", icon: "🪟", premium: false,
+  { id: "ratchet", name: "Ratchet", icon: "⚙️", premium: false,
     // Every box starts in place turned edge-on (invisible); after a moment of nothing they all
     // turn together, slowly and slightly, to show as thin lines. Then word by word they flip, fast and slowing, until they face you,
     // with a rattle that slows too. Across words flip side to side, down words top to bottom; the

@@ -130,7 +130,7 @@ export function makeSfx(ac, dest) {
     zwoop: function (t, dur) { osc(t, 280, "sine", 0.14, dur * 0.4, dur * 0.6, 1150); noise(t, dur, "bandpass", 600, 2400, 0.05, 3); },
     // Cyclone: a box smacking flat against the board.
     smack: function (t, i) { noise(t, 0.05, "highpass", 1800 + (i % 4) * 300, 0, 0.32, 0.8); osc(t, 170 - (i % 3) * 15, "sine", 0.35, 0.002, 0.09, 70); },
-    // Shutters: a ratchet, a click per eighth of a turn, spacing out as the flip slows
+    // Ratchet (the entrance): a ratchet, a click per eighth of a turn, spacing out as the flip slows
     // (clicks at equal steps of an ease-out: progress 1 - (1 - t/dur)^2.5).
     ratchet: function (t, dur, turns, i) {
       var n = Math.round(turns * 8), base = 2600 + (i % 3) * 300;
