@@ -185,6 +185,19 @@ export function makeSfx(ac, dest) {
       noise(t + dur * 0.97, 0.018, "highpass", 2400 - big * 600, 0, 0.36, 0.9); // the crease snap
       osc(t + dur * 0.97, 260 - big * 90, "triangle", 0.12 + big * 0.06, 0.002, 0.05, 140 - big * 40);
     },
+    // Wave: surf rolling in (a swell of filtered noise), the crash as it breaks, and foam fizzing away.
+    surf: function (t, dur) {
+      var src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+      src.buffer = noiseBuf; src.loop = true; f.type = "lowpass"; f.Q.value = 0.7;
+      f.frequency.setValueAtTime(300, t); f.frequency.exponentialRampToValueAtTime(2600, t + dur * 0.7); f.frequency.exponentialRampToValueAtTime(900, t + dur);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.38, t + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f); f.connect(g); g.connect(dest); src.start(t); src.stop(t + dur + 0.1);
+    },
+    crash: function (t) { noise(t, 0.6, "lowpass", 3800, 400, 0.55, 0.6); osc(t, 70, "sine", 0.35, 0.01, 0.4, 40); },
+    fizz: function (t, dur) {
+      for (var j = 0; j < 40; j++) noise(t + Math.pow(Math.random(), 1.4) * dur, 0.012, "highpass", 5000 + Math.random() * 3000, 0, 0.05 * (0.4 + Math.random()), 1.5);
+      noise(t, dur, "highpass", 6000, 3000, 0.07, 0.6);
+    },
     rustle: function (t) { for (var j = 0; j < 3; j++) noise(t + j * 0.025 + Math.random() * 0.02, 0.03, "bandpass", 3200 + Math.random() * 2500, 0, 0.07, 1.5); }
   };
 }
