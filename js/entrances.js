@@ -395,13 +395,15 @@ export var ENTRANCES = [
       return a;
     } },
   { id: "mats", name: "Roll out", icon: "🧻", premium: false,
-    // Word by word, the word arrives rolled up like a mat: its boxes fitted edge to edge, face-in,
-    // round a 3D tube (their backs showing, shaded as they turn away). It rolls in steadily along
-    // its own line from the edge (across words from the left or right, down words from the top or
-    // bottom, alternating), one face per space, pressing each box down flat, face up, as it rolls
-    // over its space, leaving the word laid out behind it. The first word comes last.
+    // Word by word, the word arrives rolled up like a mat, its boxes curled face-in round a round
+    // roll (their backs showing, shaded as they turn away), rolling in steadily along its own line
+    // from the edge (across words from the left or right, down words from the top or bottom,
+    // alternating) and pressing each box down flat, face up, as it rolls over its space. A box
+    // can't bend, so while it's on the roll it's drawn as thin slices of itself, each angled a
+    // little more, curving it; pressed flat, the slices line up and the real box takes over.
+    // The first word comes last.
     plan: function (g, sfx) {
-      var a = {}, step = g.size + g.gap, half = g.size / 2, t = 0, PER = 0.1;
+      var a = {}, step = g.size + g.gap, half = g.size / 2, t = 0, PER = 0.1, K = 6; // K slices per box
       var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]);
       order.forEach(function (wi, n) {
         var w = g.words[wi], mine = w.cells.filter(function (k) { return g.cells[k].owner === wi; });
@@ -409,26 +411,49 @@ export var ENTRANCES = [
         var across = w.dir === "A", u = Math.floor(n / 2) % 2 === 0 ? 1 : -1; // rolling toward +u
         var along = function (k) { var o = g.cells[k]; return (across ? o.c : o.r) * step + half; };
         mine = mine.slice().sort(function (p, q) { return (along(p) - along(q)) * u; });
-        // the squares fit edge to edge round the roll, a closed tube (a polygon of n faces)
-        var nF = Math.max(3, mine.length), R = g.size / (2 * Math.tan(Math.PI / nF)), span = (across ? g.cols : g.rows) * step;
-        var C0 = u > 0 ? -R * 2 - step : span + R * 2 + step, Cend = along(mine[mine.length - 1]), vU = step / PER, tEnd = t + Math.abs(Cend - C0) / vU;
-        var Cat = function (tt) { return C0 + u * vU * (tt - t); }; // rolling in from the edge at a steady pace, turning all the way
-        sfx(t, function (at, S) { S.rumble(at, tEnd - t + 0.1); });
+        var Rc = Math.max(g.size * 0.5, mine.length * step / (2 * Math.PI)), span = (across ? g.cols : g.rows) * step; // the roll's radius: its boxes wrap once round
+        var C0 = u > 0 ? -Rc * 2 - step : span + Rc * 2 + step, vU = step / PER, t0 = t;
+        var Cat = function (tt) { return C0 + u * vU * (tt - t0); }; // rolling in at a steady pace
+        var tEnd = t0 + Math.abs(along(mine[mine.length - 1]) - C0) / vU;
+        sfx(t0, function (at, S) { S.rumble(at, tEnd - t0 + 0.1); });
+        var press = mine.map(function (k) { return t0 + Math.abs(along(k) - C0) / vU; });
+        // the real boxes: hidden while on the roll, then pressed flat (a little squash)
         mine.forEach(function (k, j) {
-          var A = along(k), tj = t + Math.abs(A - C0) / vU, total = tj + 0.14 - t, kf = [];
-          var pose = function (theta, Cpos, z) { // face-in: at the bottom of the roll (theta = pi) it faces up
-            var off = Cpos - A, deg = (theta + Math.PI) * 180 / Math.PI, turn = across ? "rotateY(" + u * deg + "deg)" : "rotateX(" + -u * deg + "deg)";
-            return "translate3d(" + (across ? off : 0) + "px," + (across ? 0 : off) + "px," + z + "px) " + turn;
-          };
-          for (var tt = t; tt < tj - 0.001; tt += 0.025) {
-            var C = Cat(tt), th = Math.PI - Math.abs(A - C) * (2 * Math.PI / nF) / step; // rolling: one face per space, at the bottom when over its own
-            kf.push({ transform: pose(th, C + u * R * Math.sin(th), R + R * Math.cos(th)), opacity: tt === t ? 0 : 1, zIndex: 3,
-              filter: "brightness(" + (0.62 + 0.38 * Math.abs(Math.cos(th))) + ")", offset: (tt - t) / total });
-          }
-          kf.push({ transform: pose(Math.PI, A, 0) + " scale(1.06,.94)", opacity: 1, zIndex: 1, filter: "brightness(1)", offset: (tj - t) / total }); // pressed flat
-          kf.push({ transform: "translate3d(0,0,0) " + (across ? "rotateY(" + u * 360 + "deg)" : "rotateX(" + -u * 360 + "deg)"), opacity: 1, zIndex: 1, filter: "brightness(1)", offset: 1 });
-          a[k] = { kf: kf, delay: t, dur: total, ease: "linear" };
-          sfx(tj, function (at, S) { S.cushion(at, 0.7); });
+          var total = press[j] + 0.14;
+          a[k] = { kf: [{ opacity: 0, offset: 0 }, { opacity: 0, offset: press[j] / total, easing: "steps(1, end)" },
+            { opacity: 1, transform: "scale(1.06,.94)", offset: press[j] / total + 0.0001 }, { opacity: 1, transform: "scale(1)", offset: 1 }], delay: 0, dur: total, ease: "linear" };
+          sfx(press[j], function (at, S) { S.cushion(at, 0.7); });
+        });
+        // the roll: each box as K slices of a copy of itself, curled round the roll
+        g.at(t0, function () {
+          var anims = [];
+          mine.forEach(function (k, j) {
+            var o = g.cells[k], A = along(k);
+            for (var i = 0; i < K; i++) {
+              var c = o.el.cloneNode(true);
+              c.removeAttribute("data-k"); c.setAttribute("aria-hidden", "true");
+              c.classList.remove("sel", "cursor", "syl-a", "syl-b");
+              c.style.position = "absolute"; c.style.margin = "0"; c.style.left = o.c * step + "px"; c.style.top = o.r * step + "px";
+              c.style.backgroundColor = o.look.bg; c.style.borderColor = o.look.edge; c.style.boxShadow = "none";
+              var lo = i / K * 100, hi = (K - 1 - i) / K * 100, mid = (i + 0.5) / K * 100;
+              c.style.clipPath = across ? "inset(-2px " + hi + "% -2px " + lo + "%)" : "inset(" + lo + "% -2px " + hi + "% -2px)";
+              c.style.transformOrigin = across ? mid + "% 50%" : "50% " + mid + "%";
+              g.board.appendChild(c);
+              var sOff = ((i + 0.5) / K - 0.5) * g.size * (across ? 1 : 1), kf = [], end = press[j] - t0;
+              for (var tt = 0; tt <= end + 0.001; tt += 0.03) {
+                var C = Cat(t0 + Math.min(tt, end)), th = Math.PI - u * (A - C) / Rc, phi = th - u * sOff / Rc; // this slice's angle round the roll
+                var al = C + u * Rc * Math.sin(phi) - (A + sOff), z = Rc + Rc * Math.cos(phi), deg = (phi + Math.PI) * 180 / Math.PI;
+                var turn = across ? "rotateY(" + u * deg + "deg)" : "rotateX(" + -u * deg + "deg)";
+                kf.push({ transform: "translate3d(" + (across ? al : 0) + "px," + (across ? 0 : al) + "px," + z + "px) " + turn,
+                  opacity: tt === 0 ? 0 : 1, filter: "brightness(" + (0.6 + 0.4 * Math.abs(Math.cos(phi))) + ")", offset: Math.min(1, tt / end) });
+              }
+              kf[kf.length - 1].offset = 1;
+              var an = c.animate(kf, { duration: end * 1000, easing: "linear" });
+              (function (el) { an.onfinish = an.oncancel = function () { el.remove(); }; })(c);
+              anims.push(an);
+            }
+          });
+          return anims;
         });
         t += 0.55;
       });
