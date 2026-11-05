@@ -28,30 +28,18 @@ can 🥫 {c a n}
 hat 🎩 {h a t}
 """
 
-# The class's high-frequency words; add each new list here as it comes home (one
-# growing pack). "I" can't be included: every word needs at least two boxes.
+# The class's high-frequency words, one pack per list as it comes home, newest first.
+# "I" can't be included: every word needs at least two boxes.
 # words_in_text: these words may appear in the note and in each other's sentences, since
 # spotting a word printed nearby is part of learning to read it. A clue's own word is
 # still blanked.
 [[pack]]
-id = "k-hfw"
-name = "High frequency words"
-note = "Everyday words to know by heart. Listen to the sentence, then spell."
+id = "k-hfw-2"
+name = "High frequency words 2"
+note = "More everyday words to know by heart. Listen to the sentence, then spell."
 words_in_text = true
 school = true
 words = """
-my "I like my red hat."
-the "We see the big dog."
-go "We go to the park."
-like "I like to play."
-to "I go to school."
-we "We like to read."
-see "I see a bird."
-and "Mom and I go to the store."
-# differs: a sight word here, learned by heart from a sentence (no picture or sounds)
-can "I can jump high."
-is "The sky is blue."
-she "She can see the dog."
 are "We are friends."
 big "An elephant is big." {b i g}
 come "Come to my house."
@@ -76,6 +64,27 @@ want "I want a snack."
 what "What is your name?"
 with "Come play with me."
 you "I love you."
+"""
+
+[[pack]]
+id = "k-hfw"
+name = "High frequency words"
+note = "Everyday words to know by heart. Listen to the sentence, then spell."
+words_in_text = true
+school = true
+words = """
+my "I like my red hat."
+the "We see the big dog."
+go "We go to the park."
+like "I like to play."
+to "I go to school."
+we "We like to read."
+see "I see a bird."
+and "Mom and I go to the store."
+# differs: a sight word here, learned by heart from a sentence (no picture or sounds)
+can "I can jump high."
+is "The sky is blue."
+she "She can see the dog."
 """
 
 # Phonics packs, in teaching order: two letters for one sound, then blends at the start,
