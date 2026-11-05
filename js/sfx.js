@@ -198,6 +198,16 @@ export function makeSfx(ac, dest) {
       for (var j = 0; j < 40; j++) noise(t + Math.pow(Math.random(), 1.4) * dur, 0.012, "highpass", 5000 + Math.random() * 3000, 0, 0.05 * (0.4 + Math.random()), 1.5);
       noise(t, dur, "highpass", 6000, 3000, 0.07, 0.6);
     },
+    // Whirlpool: water bubbling and gurgling down a drain, busier as it speeds up, then a slurp.
+    gurgle: function (t, dur) {
+      var n = Math.round(dur * 16);
+      for (var j = 0; j < n; j++) {
+        var u = Math.pow(Math.random(), 0.6), at = t + u * dur, f = 180 + Math.random() * 260;
+        osc(at, f, "sine", 0.08 + 0.1 * u, 0.004, 0.05 + Math.random() * 0.05, f * (1.8 + Math.random()));
+      }
+      noise(t, dur, "lowpass", 300, 900, 0.1, 1.2);
+    },
+    slurp: function (t) { osc(t, 520, "sine", 0.22, 0.01, 0.35, 70); noise(t, 0.4, "bandpass", 1400, 200, 0.18, 1.5); },
     rustle: function (t) { for (var j = 0; j < 3; j++) noise(t + j * 0.025 + Math.random() * 0.02, 0.03, "bandpass", 3200 + Math.random() * 2500, 0, 0.07, 1.5); }
   };
 }
