@@ -30,8 +30,9 @@ var LABELS = {
   // Clean solves (no try-agains): a trip through space.
   clean: { tiers: [["🚀", "Liftoff"], ["🛰️", "In Orbit"], ["🌙", "Moon Landing"], ["🪐", "Ringed Planet"], ["☄️", "Comet Rider"], ["🌌", "Galaxy"]],
     detail: function (n) { return n + (n === 1 ? " puzzle" : " puzzles") + " with no try-agains"; } },
-  // Comebacks (right after an earlier miss): not giving up.
-  comeback: { tiers: [["🏀", "Bounce Back"], ["💪", "Keep Going"], ["🧗", "Climber"], ["🦸", "Spelling Hero"], ["🐉", "Dragon Heart"]],
+  // Comebacks (right after an earlier miss): not giving up. ("We Can Do It" is Rosie the Riveter's
+  // poster, with her 💪: the one place the app says "we".)
+  comeback: { tiers: [["🏀", "Bounce Back"], ["💪", "We Can Do It"], ["🧗", "Climber"], ["🦸", "Spelling Hero"], ["🐉", "Dragon Heart"]],
     detail: function (n) { return n === 1 ? "1 word right first try after missing it" : n + " words right first try after missing them"; } }
 };
 

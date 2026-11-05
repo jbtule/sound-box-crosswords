@@ -370,7 +370,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   fits the pack's pattern. If no emoji shows it without misleading (their, would, done),
   leave the emoji off rather than picking a loose match.
 - Keep the copy short and plain; players are young and some text is read by a grown-up.
-  It's a free side project: the app never speaks as "we" or "us", and doesn't promise
+  It's a free side project: the app never speaks as "we" or "us" (one exception: the "We Can Do It" achievement, a nod to Rosie the Riveter's poster), and doesn't promise
   support or turnaround (say what to do, e.g. "Open an issue on GitHub", not "Tell us").
 - License: PolyForm Noncommercial 1.0.0 (`LICENSE.md`, whose first line is the
   `Required Notice:` copyright that must travel with copies). The README lists the
