@@ -198,10 +198,10 @@ export var ENTRANCES = [
     } },
   { id: "carve", name: "Carve", icon: "🗿", premium: false,
     // A full field of plain boxes fades in over the puzzle's rectangle, the first word already
-    // there in its colors. Then the orange highlight, spinning like a circular saw, buzzes along
-    // in straight lines (rows, or columns if that takes fewer), cutting out the boxes that don't
-    // belong, which fly off spinning; it hops over the puzzle's own boxes. Last it runs to box 1,
-    // spins down, and settles there as its ring.
+    // there in its colors. Then the orange highlight, a circular saw, makes cuts: it spins up and
+    // buzzes along a row or a column, cutting out the boxes that don't belong (they fly off
+    // spinning; it hops over the puzzle's own), spins down, lifts, and glides to its next cut,
+    // usually the other way. Last it glides to box 1 and settles there as its ring.
     plan: function (g, sfx) {
       var a = {}, step = g.size + g.gap, half = g.size / 2, GO = 1.2, PER = 0.032, HOP = 0.14;
       g.order.forEach(function (k) {
@@ -209,23 +209,42 @@ export var ENTRANCES = [
       });
       var holes = [], real = function (r, c) { return !!g.cells[r + "," + c]; };
       for (var r = 0; r < g.rows; r++) for (var c = 0; c < g.cols; c++) if (!real(r, c)) holes.push({ r: r, c: c });
-      // cut along rows or columns, whichever needs fewer lines; back and forth
-      var rowsWith = {}, colsWith = {};
-      holes.forEach(function (h) { rowsWith[h.r] = 1; colsWith[h.c] = 1; });
-      var byRow = Object.keys(rowsWith).length <= Object.keys(colsWith).length;
-      var lines = Object.keys(byRow ? rowsWith : colsWith).map(Number).sort(function (x, y) { return x - y; });
-      var span = byRow ? g.cols : g.rows, segs = [], t = GO;
-      lines.forEach(function (ln, n) {
-        var fwd = n % 2 === 0, a0 = fwd ? -1 : span, a1 = fwd ? span : -1;
-        var pt = function (along) { return byRow ? { x: along * step + half, y: ln * step + half } : { x: ln * step + half, y: along * step + half }; };
-        if (segs.length) { var last = segs[segs.length - 1]; segs.push({ p0: last.p1, p1: pt(a0), t0: t, t1: t + HOP, cut: false }); t += HOP; }
-        var dur = Math.abs(a1 - a0) * PER * (1 + 1 / span);
-        segs.push({ p0: pt(a0), p1: pt(a1), t0: t, t1: t + dur, cut: true, line: ln, from: a0, to: a1 }); t += dur;
+      // the cuts: lines (rows or columns) that cover every extra box in as few cuts as can be
+      // (greedy), each spanning just its stretch of extras, taken in turn with the saw off
+      // (lifted, slow, quiet) as it moves to the next; rows and columns alternate where they can
+      var left = holes.slice(), cuts = [];
+      while (left.length) {
+        var best = null;
+        [true, false].forEach(function (row) {
+          var tally = {};
+          left.forEach(function (h) { var key = row ? h.r : h.c; tally[key] = (tally[key] || 0) + 1; });
+          Object.keys(tally).forEach(function (key) {
+            var n = tally[key] + (cuts.length && cuts[cuts.length - 1].row !== row ? 0.5 : 0); // a nudge to alternate
+            if (!best || n > best.n) best = { row: row, line: +key, n: n };
+          });
+        });
+        var mine = left.filter(function (h) { return (best.row ? h.r : h.c) === best.line; });
+        best.lo = Math.min.apply(null, mine.map(function (h) { return best.row ? h.c : h.r; }));
+        best.hi = Math.max.apply(null, mine.map(function (h) { return best.row ? h.c : h.r; }));
+        cuts.push(best);
+        left = left.filter(function (h) { return mine.indexOf(h) < 0; });
+      }
+      var segs = [], t = GO, at = { x: -step, y: -step };
+      cuts.forEach(function (cut) {
+        var pt = function (along) { return cut.row ? { x: along * step + half, y: cut.line * step + half } : { x: cut.line * step + half, y: along * step + half }; };
+        var a0 = cut.lo - 0.8, a1 = cut.hi + 0.8, s0 = pt(a0), s1 = pt(a1);
+        if (Math.hypot(s1.x - at.x, s1.y - at.y) < Math.hypot(s0.x - at.x, s0.y - at.y)) { var sw = a0; a0 = a1; a1 = sw; s0 = pt(a0); s1 = pt(a1); } // start from the nearer end
+        var move = segs.length ? Math.min(0.32, 0.14 + Math.hypot(s0.x - at.x, s0.y - at.y) / step * 0.02) : 0.25;
+        segs.push({ p0: at, p1: s0, t0: t, t1: t + move, cut: false }); t += move + 0.08; // off: glide over, spin up
+        var dur = Math.abs(a1 - a0) * PER;
+        segs.push({ p0: s0, p1: s0, t0: t - 0.08, t1: t, cut: false });
+        segs.push({ p0: s0, p1: s1, t0: t, t1: t + dur, cut: true, row: cut.row, line: cut.line, from: a0, to: a1 });
+        (function (at, d) { sfx(at - 0.08, function (when, S) { S.saw(when, d + 0.2); }); })(t, dur);
+        t += dur + 0.04; at = s1;
       });
       var cur = g.order.map(function (k) { return g.cells[k]; }).filter(function (o) { return o.cursor; })[0] || g.cells[g.order[0]];
-      var home = { x: cur.c * step + half, y: cur.r * step + half }, endT = t + 0.5;
-      if (!segs.length) segs.push({ p0: { x: -step, y: home.y }, p1: { x: -step, y: home.y }, t0: GO, t1: GO, cut: false });
-      segs.push({ p0: segs[segs.length - 1].p1, p1: home, t0: t, t1: endT, cut: false, home: true });
+      var home = { x: cur.c * step + half, y: cur.r * step + half }, endT = t + 0.55;
+      segs.push({ p0: at, p1: home, t0: t, t1: endT, cut: false, home: true });
       function pos(tt) {
         for (var q = 0; q < segs.length; q++) {
           var sg = segs[q];
@@ -238,11 +257,12 @@ export var ENTRANCES = [
       }
       // each hole is cut as the saw crosses it, and flies off to one side, spinning
       holes.forEach(function (h, n) {
-        var sg = segs.filter(function (x) { return x.cut && x.line === (byRow ? h.r : h.c); })[0], along = byRow ? h.c : h.r;
+        var sg = segs.filter(function (x) { return x.cut && x.line === (x.row ? h.r : h.c) && (x.row ? h.c : h.r) >= Math.min(x.from, x.to) && (x.row ? h.c : h.r) <= Math.max(x.from, x.to); })[0];
+        var along = sg.row ? h.c : h.r, fwd = sg.to > sg.from ? 1 : -1;
         h.hit = sg.t0 + (along - sg.from) / (sg.to - sg.from) * (sg.t1 - sg.t0);
         h.side = (n % 2 ? 1 : -1);
-        h.dir = byRow ? { x: (sg.to > sg.from ? 1 : -1) * 0.5, y: h.side } : { x: h.side, y: (sg.to > sg.from ? 1 : -1) * 0.5 };
-        if (n % 2 === 0) sfx(h.hit, function (when, S) { S.bite(when, n); });
+        h.dir = sg.row ? { x: fwd * 0.5, y: h.side } : { x: h.side, y: fwd * 0.5 };
+        sfx(h.hit, function (when, S) { S.bite(when, n); });
       });
       g.at(0, function () {
         return holes.map(function (h) {
@@ -272,17 +292,16 @@ export var ENTRANCES = [
         var total = endT - (GO - 0.3), kf = [], rot = 0, prev = GO - 0.3;
         kf.push({ transform: "translate(" + (start.x - home.x) + "px," + (start.y - home.y) + "px) scale(.4)", opacity: 0, offset: 0 });
         for (var tt = GO; tt <= endT + 0.0001; tt += 0.025) {
-          var p = pos(tt), slow = tt > endT - 0.5 ? (endT - tt) / 0.5 : 1;
-          rot += (tt - prev) * 2400 * slow; prev = tt;
-          var over = p.seg.cut && real(Math.round((p.y - half) / step), Math.round((p.x - half) / step));
-          kf.push({ transform: "translate(" + (p.x - home.x) + "px," + (p.y - home.y) + "px) rotate(" + rot + "deg) scale(" + (over ? 1.22 : 1) + ")", opacity: 1, offset: (tt - (GO - 0.3)) / total });
+          var p = pos(tt), cutting = p.seg.cut;
+          rot += (tt - prev) * (cutting ? 2400 : 260); prev = tt;
+          var over = !cutting || real(Math.round((p.y - half) / step), Math.round((p.x - half) / step)); // lifted when off, or over a puzzle box
+          kf.push({ transform: "translate(" + (p.x - home.x) + "px," + (p.y - home.y) + "px) rotate(" + rot + "deg) scale(" + (over ? 1.2 : 1) + ")", opacity: 1, offset: (tt - (GO - 0.3)) / total });
         }
         kf[kf.length - 1] = { transform: "translate(0,0) rotate(" + Math.round(rot / 90) * 90 + "deg) scale(" + g.size / sz + ")", opacity: 1, offset: 1 };
         var an = d.animate(kf, { duration: total * 1000, easing: "linear" });
         an.onfinish = an.oncancel = function () { d.remove(); };
         return an;
       });
-      sfx(GO - 0.2, function (when, S) { S.saw(when, endT - GO + 0.2); });
       ringOn(g, endT, sfx, false);
       sfx(endT - 0.02, function (when, S) { S.clickin(when); });
       return a;
