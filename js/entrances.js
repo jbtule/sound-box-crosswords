@@ -459,6 +459,51 @@ export var ENTRANCES = [
       });
       return a;
     } },
+  { id: "unfold", name: "Unfold", icon: "🗺️", premium: false,
+    // The whole puzzle starts folded up into a single square in the corner, like a map, and
+    // unfolds fold by fold, across and down in turn: at each fold the boxes on the folded-over
+    // half flip out over the crease in 3D, the square doubling each time, a paper swish and a
+    // crease as each lands, until every box lies in its place.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, half = g.size / 2, POP = 0.35, FLIP = 0.42, GAPT = 0.08;
+      var Kx = Math.ceil(Math.log2(Math.max(1, g.cols))), Ky = Math.ceil(Math.log2(Math.max(1, g.rows)));
+      // where a column (or row) sits when the map is folded to width 2^k: fold the far half back over
+      function folded(c, K) { var out = [c]; for (var k = K - 1; k >= 0; k--) { var w = 1 << k, p = out[0]; out.unshift(p >= w ? 2 * w - 1 - p : p); } return out; } // out[k] = place at width 2^k
+      // the folds, across and down in turn, from the smallest
+      var steps = [], kx = 0, ky = 0;
+      while (kx < Kx || ky < Ky) { if (kx < Kx) steps.push({ axis: "x", k: kx++ }); if (ky < Ky) steps.push({ axis: "y", k: ky++ }); }
+      steps.forEach(function (st, i) { st.t = POP + i * (FLIP + GAPT); });
+      var end = POP + steps.length * (FLIP + GAPT);
+      g.order.forEach(function (key) {
+        var o = g.cells[key], fx = o.c * step + half, fy = o.r * step + half, X = folded(o.c, Kx), Y = folded(o.r, Ky);
+        var kf = [], cx = 0, cy = 0; // its place now, in columns and rows (starts folded to 0, 0)
+        var T = function (px, py, z, rot) { return "translate3d(" + (px - fx) + "px," + (py - fy) + "px," + z + "px) " + rot; };
+        kf.push({ transform: T(half, half, 0, "scale(.4)"), opacity: 0, offset: 0 });
+        kf.push({ transform: T(half, half, 0, "scale(1)"), opacity: 1, offset: POP * 0.8 / end, easing: "ease-out" });
+        steps.forEach(function (st) {
+          var from = st.axis === "x" ? cx : cy, to = st.axis === "x" ? X[st.k + 1] : Y[st.k + 1];
+          var px0 = cx * step + half, py0 = cy * step + half;
+          kf.push({ transform: T(px0, py0, 0, "rotate(0deg)"), opacity: 1, offset: st.t / end });
+          if (to !== from) { // this box flips over the crease at the fold line
+            var hingeIdx = 1 << st.k, h = hingeIdx * step - g.gap / 2, u = to > from ? 1 : -1, d = Math.abs((to * step + half) - h);
+            for (var q = 1; q <= 8; q++) {
+              var b = q / 8 * Math.PI, e = (1 - Math.cos(b)) / 2, beta = Math.PI * (b / Math.PI); // the flip angle, 0..pi
+              var pos = h - u * d * Math.cos(beta), z = d * Math.sin(beta), deg = beta <= Math.PI / 2 ? beta * 180 / Math.PI : beta * 180 / Math.PI - 180; // up to edge-on, then down from the other side, face up
+              var rot = st.axis === "x" ? "rotateY(" + u * deg + "deg)" : "rotateX(" + -u * deg + "deg)";
+              kf.push({ transform: st.axis === "x" ? T(pos, py0, z, rot) : T(px0, pos, z, rot), opacity: 1, zIndex: 3, offset: (st.t + FLIP * q / 8) / end });
+            }
+            if (st.axis === "x") cx = to; else cy = to;
+          }
+        });
+        kf.push({ transform: "translate3d(0,0,0) rotate(0deg)", opacity: 1, zIndex: 1, offset: 1 });
+        a[key] = { kf: kf, delay: 0, dur: end, ease: "linear" };
+      });
+      steps.forEach(function (st, i) {
+        sfx(st.t, function (at, S) { S.whoosh(at, FLIP * 0.8); });
+        sfx(st.t + FLIP, function (at, S) { S.click(at, i); });
+      });
+      return a;
+    } },
   { id: "zoom", name: "Zoom", icon: "🔍", premium: false,
     // Boxes grow outward from the crossings, past their size, then settle. A pop as each
     // ring grows, a soft tap as it settles.
