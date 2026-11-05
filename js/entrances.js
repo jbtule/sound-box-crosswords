@@ -309,9 +309,9 @@ export var ENTRANCES = [
   { id: "kaleidoscope", name: "Kaleidoscope", icon: "🔮", premium: false,
     // The boxes form a mandala in the middle of the board: the first word, in its colors, the
     // inner ring, the plain boxes in rings around it, every box turned to point outward. Like
-    // twisting a kaleidoscope, the rings turn fast opposite ways, each box spinning, the pattern
-    // breathing and rippling into a morphing star, with a soft whirr. Then it blooms: boxes fly
-    // out to their places, outer rings first, the colored center last.
+    // twisting a kaleidoscope, the rings turn opposite ways, a good few turns, and the pattern
+    // breathes in and out, with glass beads tumbling. Then it blooms in a shower of beads: boxes
+    // fly out to their places, outer rings first, the colored center last.
     plan: function (g, sfx) {
       var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
       var cx = W / 2, cy = H / 2, SC = 0.62, sp = g.size * SC * 1.12, FORM = 0.8, TURN = 2.2, BLOOM = 0.9;
@@ -327,10 +327,9 @@ export var ENTRANCES = [
       rings.forEach(function (ring) { ring.r *= fit; }); SC *= fit; sp *= fit;
       var bloomAt = FORM + TURN, landEnd = 0;
       function spot(ring, j, n, t, ri) {
-        var dir = ri % 2 ? -1 : 1, twist = dir * (1.5 * t + 0.7 * Math.sin(t * 2.2 + ri)); // turning fast, with a twist that ebbs and flows
-        var a0 = j / n * Math.PI * 2, th = a0 + twist + ri * 0.4;
-        var rr = ring.r * (1 + 0.18 * Math.sin(t * 3)) + sp * 0.5 * Math.sin(6 * a0 + t * 4 + ri) * Math.min(1, t / 0.8); // breathing, and rippling into a morphing star
-        return { x: cx + rr * Math.cos(th), y: cy + rr * Math.sin(th), rot: th * 180 / Math.PI + 45 + dir * t * 160 }; // each box spinning too
+        var dir = ri % 2 ? -1 : 1, twist = dir * (1.7 * t + 0.35 * Math.sin(t * 1.6 + ri)); // turning (a good few turns), with a twist that ebbs and flows
+        var th = j / n * Math.PI * 2 + twist + ri * 0.4, rr = ring.r * (1 + 0.1 * Math.sin(t * 2.4)); // the whole pattern breathes together
+        return { x: cx + rr * Math.cos(th), y: cy + rr * Math.sin(th), rot: th * 180 / Math.PI + 45 };
       }
       rings.forEach(function (ring, ri) {
         var n = ring.keys.length, order = rings.length - 1 - ri; // outer rings bloom first
@@ -351,10 +350,9 @@ export var ENTRANCES = [
           landEnd = Math.max(landEnd, total);
         });
       });
-      // a soft whirr while it turns, a whoosh as it blooms, a light rattle as the boxes land
-      sfx(0.1, function (when, S) { S.whirr(when, bloomAt + 0.2); });
-      sfx(bloomAt, function (when, S) { S.whoosh(when, 0.7); });
-      for (var q = 0; q < 4; q++) (function (q) { sfx(bloomAt + BLOOM * 0.85 + q * 0.28, function (when, S) { S.settle(when, q); }); })(q);
+      // glass beads tumbling as it turns, and a shower of them as it blooms
+      sfx(0.2, function (when, S) { S.beads(when, bloomAt - 0.2, 12); });
+      sfx(bloomAt, function (when, S) { S.beads(when, landEnd - bloomAt, 30); });
       return a;
     } },
   { id: "zoom", name: "Zoom", icon: "🔍", premium: false,
