@@ -1471,6 +1471,11 @@ document.addEventListener("keydown", function (e) {
   if ($("#startOverlay").hidden || !safeToReload() || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
   e.preventDefault(); e.stopPropagation(); start();
 }, true);
+// The letter pad stays hidden (its space kept, and a tap there still starts) while Start or
+// Continue waits, so the button is the one thing to tap.
+new MutationObserver(function () { kbEl.classList.toggle("asleep", !$("#startOverlay").hidden); })
+  .observe($("#startOverlay"), { attributes: true, attributeFilter: ["hidden"] });
+kbEl.classList.toggle("asleep", !$("#startOverlay").hidden);
 kbEl.addEventListener("click", function (e) {
   if ($("#startOverlay").hidden) return;
   e.preventDefault(); e.stopPropagation(); start();
