@@ -606,7 +606,10 @@ export function geometry(P, board, clueOrder) {
     W.cells.forEach(function (k, j) {
       if (!g.cells[k]) {
         var rc = k.split(",").map(Number);
-        var el = board.querySelector('[data-k="' + k + '"]'), cs = el && getComputedStyle(el);
+        var el = board.querySelector('[data-k="' + k + '"]'), cs = null;
+        // Its settled look, not partway through .cell's color fade (a new board's first word is
+        // still fading in from plain): reading it with the transition off ends the fade.
+        if (el) { el.style.transition = "none"; cs = getComputedStyle(el); cs = { backgroundColor: cs.backgroundColor, borderColor: cs.borderColor, boxShadow: cs.boxShadow }; el.style.transition = ""; }
         // `look`: how the box starts the puzzle (its colors and the cursor's ring), read before the
         // entrance hides the selection; `sel` / `cursor`: it's in the first word / it's the cursor.
         g.cells[k] = { r: rc[0], c: rc[1], el: el, band: W.sylOf[j] % 2 ? "b" : "a", owner: n, words: [],
