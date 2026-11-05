@@ -348,7 +348,7 @@ export var ENTRANCES = [
           kf[kf.length - 3].easing = "ease-in";
           a[key] = { kf: kf, delay: 0, dur: total, ease: "linear" };
           landEnd = Math.max(landEnd, total);
-          var b = ri * 31 + j; sfx(total - 0.02, function (when, S) { S.bead(when, b); }); // a glass click as it lands
+          var b = ri * 31 + j; sfx(go + BLOOM * 0.72, function (when, S) { S.bead(when, b); }); // a glass click as it lands (its last stretch arrives fast, then settles)
         });
       });
       // glass beads tumbling as it turns; then a click for each box as it lands (above)
