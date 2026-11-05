@@ -355,6 +355,45 @@ export var ENTRANCES = [
       sfx(0.2, function (when, S) { S.beads(when, bloomAt - 0.2, 12); });
       return a;
     } },
+  { id: "star", name: "Shooting star", icon: "🌠", premium: false,
+    // Word by word, a shooting star: the box at its leading end is its head, spinning, and the rest
+    // stream behind as its tail, twisting like a ribbon, flying in along its own line (across
+    // words from the left or right, down words from the top or bottom), with a whistling streak.
+    // At the word, each box flattens into its own space with a squash. The first word comes last.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      var FLY = 0.75, LAG = 0.07, t = 0;
+      var D = Math.hypot(W, H) * 0.75 + g.size * 3;
+      var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]); // the first word last
+      order.forEach(function (wi, n) {
+        var w = g.words[wi], mine = w.cells.filter(function (k) { return g.cells[k].owner === wi; });
+        if (!mine.length) return;
+        // it flies in along its own line: across words from the left or right, down words from the
+        // top or bottom (alternating sides); the box at the leading end is the head
+        var fwd = Math.floor(n / 2) % 2 === 0 ? 1 : -1, across = w.dir === "A", ux = across ? fwd : 0, uy = across ? 0 : fwd; // moving along u
+        mine = mine.slice().sort(function (p, q) { var A = g.cells[p], B = g.cells[q]; return across ? (B.c - A.c) * fwd : (B.r - A.r) * fwd; });
+        sfx(t, function (at, S) { S.streak(at, FLY + mine.length * LAG); });
+        mine.forEach(function (k, j) {
+          var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, head = j === 0;
+          var sx = fx - ux * D, sy = fy - uy * D; // straight along its line from off the edge; the tail strung out behind by time
+          var delay = t + j * LAG, kf = [], N = 14, twistX = (j % 2 ? 1 : -1) * 70, spin = head ? 720 : 360; // whole turns, so numbers land upright
+          var base = head ? 1 : 0.85 - 0.35 * Math.min(1, j / 6); // the tail tapers
+          for (var q = 0; q <= N; q++) {
+            var u = q / N, e = u < 0.8 ? u / 0.8 * 0.92 : 0.92 + (u - 0.8) / 0.2 * 0.08; // straight and fast, easing only at the very end
+            var x = sx + (fx - sx) * e, y = sy + (fy - sy) * e, fade = 1 - u;
+            var rx = head ? 0 : twistX * Math.sin(u * Math.PI * 3 + j * 0.9) * fade, ry = head ? 0 : 50 * Math.cos(u * Math.PI * 2.5 + j) * fade;
+            kf.push({ transform: "translate(" + (x - fx) + "px," + (y - fy) + "px) rotateX(" + rx + "deg) rotateY(" + ry + "deg) rotate(" + spin * (1 - fade * fade) + "deg) scale(" + (base + (1 - base) * Math.max(0, (u - 0.75) / 0.25)) + ")",
+              opacity: q === 0 ? 0 : 1, zIndex: 3, filter: head && u < 0.85 ? "brightness(1.3)" : "brightness(1)", offset: u * 0.86 });
+          }
+          kf.push({ transform: "translate(0,2px) rotate(" + spin + "deg) scale(1.22,.72)", opacity: 1, zIndex: 1, filter: "brightness(1)", offset: 0.92 }); // flattening into its space
+          kf.push({ transform: "translate(0,0) rotate(" + spin + "deg) scale(1)", opacity: 1, zIndex: 1, filter: "brightness(1)", offset: 1 });
+          a[k] = { kf: kf, delay: delay, dur: FLY + 0.2, ease: "linear" };
+          sfx(delay + (FLY + 0.2) * 0.86, function (at, S) { S.pop(at, j + n); });
+        });
+        t += 0.42;
+      });
+      return a;
+    } },
   { id: "zoom", name: "Zoom", icon: "🔍", premium: false,
     // Boxes grow outward from the crossings, past their size, then settle. A pop as each
     // ring grows, a soft tap as it settles.
