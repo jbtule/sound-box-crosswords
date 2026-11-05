@@ -245,8 +245,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   (`showBoardCard`) and the letter pad fades out while it plays (`.keyboard.resting`) and back in after; physical keys still type, and nothing
   cuts it short but a new puzzle. Its sounds are
   `js/sfx.js` (`makeSfx`, Web Audio like the chime, through `audioOut()` in `chime.js`) and
-  follow the Sound effects setting. To refine them, open the app with `?backstage` (it stays on in that tab until its Exit
-  button; ↻ Reload picks up code changes) (`js/entrance-tester.js`,
+  follow the Sound effects setting. To refine them, open the app with `?backstage` (it stays on, on that device, until its
+  Exit button; ↻ reloads to pick up code changes) (`js/entrance-tester.js`,
   loaded only then; nothing links to it): a bar replays any entrance on the real board (this
   puzzle or a new shape), at ½× or ¼× (no sound then), looped, with its running time; it leaves
   the cycle, the queue and Front Row Seat alone, and plays even with reduced motion. Each entrance seen to the end is saved (`seenEntrances`,

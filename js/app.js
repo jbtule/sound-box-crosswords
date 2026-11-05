@@ -258,10 +258,10 @@ function runEntrance(turn) {
 // The entrance tester: open the app with ?backstage for a bar that replays any entrance on the real
 // board (js/entrance-tester.js), to refine them where they'll be seen. Nothing links to it.
 var tester = null;
-// It stays on for this browser tab once opened (sessionStorage), so a plain reload keeps it.
+// It stays on (this device) once opened, until its Exit button, so a reload always keeps it.
 if ((function () {
   var on = new URLSearchParams(location.search).has("backstage");
-  try { if (on) sessionStorage.setItem("sbx:backstage", "1"); else on = sessionStorage.getItem("sbx:backstage") === "1"; } catch (e) {}
+  try { if (on) localStorage.setItem("sbx:backstage-on", "1"); else on = localStorage.getItem("sbx:backstage-on") === "1"; } catch (e) {}
   return on;
 })()) {
   import("./entrance-tester.js").then(function (m) {
