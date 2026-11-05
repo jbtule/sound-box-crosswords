@@ -466,7 +466,7 @@ export var ENTRANCES = [
       var plain = others(g), word = firstWord(g), L = Math.max(4, Math.min(9, Math.round(Math.sqrt(plain.length) * 1.4)));
       var tall = Math.max(H * 0.95, g.size * 7), sp = tall / L, SC = Math.min(0.7, Math.max(0.48, sp / g.size)), ground = H;
       var rTip = g.size * 0.3, rTop = Math.min(W * 0.48, g.size * 4.6, tall * 0.55);
-      var FORM = 0.6, FLING = 3.4, flight = 0.95, landEnd = 0;
+      var FORM = 0.6, FLING = 3.4, flight = 1.05, landEnd = 0;
       // boxes per level grow with its width (the top holds the most)
       var wsum = L * (L + 1) / 2, counts = [];
       for (var lv = 0; lv < L; lv++) counts.push(Math.max(1, Math.round((lv + 1) / wsum * plain.length)));
@@ -494,12 +494,18 @@ export var ENTRANCES = [
             opacity: grow * (eye ? 1 : 0.7 + 0.3 * (q.z + 1) / 2), zIndex: eye || q.z > 0 ? 3 : 2, offset: t / total });
         }
         kf[0].opacity = 0;
-        // flung out along the spin, then curving home
-        var p0 = at(level, release, phase, rad), dir = eye ? (fx > p0.x ? 1 : -1) : (-Math.sin(p0.th) >= 0 ? 1 : -1);
-        var c1 = { x: p0.x + dir * g.size * (eye ? 1 : 2.6), y: p0.y - g.size * (eye ? 2.2 : 1.4) }, endRot = Math.round((spinRot + (eye ? 0 : 360)) / 360) * 360;
-        for (var j = 1; j <= 10; j++) {
-          var u = j / 10, m = 1 - u, x = m * m * p0.x + 2 * m * u * c1.x + u * u * fx, y = m * m * p0.y + 2 * m * u * c1.y + u * u * fy;
-          kf.push({ transform: T(x, y, fx, fy, spinRot + (endRot - spinRot) * u, SC + (1 - SC) * u), opacity: 1, zIndex: 3, offset: (release + flight * u * 0.9) / total });
+        // flung: it leaves fast, the way it was whirling plus outward (a slingshot), shoots well
+        // out spinning hard, then slows and swoops down home (a cubic curve, fast at the start)
+        var p0 = at(level, release, phase, rad), th = p0.th, sx = -Math.sin(th) + 0.8 * Math.cos(th), len = Math.max(0.6, Math.abs(sx));
+        var dir = eye ? (fx > p0.x ? 1 : -1) : sx / len, reach = eye ? g.size * 1.8 : g.size * (5 + Math.random() * 3);
+        var c1 = { x: p0.x + dir * reach, y: p0.y - g.size * (eye ? 2.6 : 1.2 + Math.random() * 1.6) };
+        var c2 = { x: fx + (c1.x - fx) * 0.35, y: fy - g.size * (eye ? 1.8 : 2.2) };
+        var endRot = Math.round((spinRot + (eye ? 0 : 720)) / 360) * 360;
+        for (var j = 1; j <= 14; j++) {
+          var s0 = j / 14, u = 1 - Math.pow(1 - s0, 2.4), m = 1 - u; // fast out of the funnel, easing in to land
+          var x = m * m * m * p0.x + 3 * m * m * u * c1.x + 3 * m * u * u * c2.x + u * u * u * fx;
+          var y = m * m * m * p0.y + 3 * m * m * u * c1.y + 3 * m * u * u * c2.y + u * u * u * fy;
+          kf.push({ transform: T(x, y, fx, fy, spinRot + (endRot - spinRot) * (1 - Math.pow(1 - s0, 3)), SC + (1 - SC) * Math.min(1, s0 * 1.5)), opacity: 1, zIndex: 3, offset: (release + flight * s0 * 0.9) / total });
         }
         kf.push({ transform: "translate(0,3px) rotate(" + endRot + "deg) scale(1.08,.9)", opacity: 1, zIndex: 1, offset: (release + flight * 0.95) / total });
         kf.push({ transform: "translate(0,0) rotate(" + endRot + "deg) scale(1)", opacity: 1, zIndex: 1, offset: 1 });
@@ -507,8 +513,10 @@ export var ENTRANCES = [
         landEnd = Math.max(landEnd, total);
       }
       plain.forEach(function (k, p) {
-        var lv = levelOf[p];
-        ride(k, lv.level, lv.slot / lv.of * Math.PI * 2 + lv.level * 0.7, null, lv.level * 0.06, FLING + Math.random() * 0.12, false, p);
+        var lv = levelOf[p], phase = lv.slot / lv.of * Math.PI * 2 + lv.level * 0.7, w = 9.5 - lv.level * 0.45;
+        // let go when it next swings to the front-outer side (θ ≈ -π/4 + 2πn), within a third of a turn
+        var th = phase + w * FLING, wait = ((Math.PI * 1.75 - th) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) / w;
+        ride(k, lv.level, phase, null, lv.level * 0.06, FLING + Math.min(wait, 0.3), false, p);
       });
       // the eye: the first word stacked up the middle, flung a beat after the rest
       word.forEach(function (k, n) {
