@@ -756,6 +756,127 @@ export var ENTRANCES = [
       sfx(FLING, function (when, S) { S.whoosh(when, 0.6); });
       return a;
     } },
+  { id: "drone", name: "Drone delivery", icon: "🚁", premium: true,
+    // Box-built quadcopters deliver the puzzle: an orange body box with four little rotor boxes
+    // spinning, buzzing. Word by word, a drone flies in from an edge with that word's boxes
+    // clamped beneath it (swinging a little, the drone tilting into its flight), hovers over the
+    // word's spot, drops the boxes into place with a clunk, and zips off; the next one is already
+    // on its way. The first word comes on the last trip: that drone's rotors spin off and fly
+    // away, and its orange body settles onto box 1 as the cursor's ring.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      var IN = 0.65, HOVER = 0.45, DROP = 0.25, OUT = 0.55, bodySz = g.size * 0.7, CLAMP = bodySz * 0.5 + g.size * 1.1; // the word hangs on an (unseen) rope
+      var EVERY = HOVER + DROP + 0.25; // overlapping: the next flies in while this one hovers; the drops still come one at a time
+      var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]);
+      var trips = [], t = 0, n = 0;
+      order.forEach(function (wi) {
+        var w = g.words[wi], mine = w.cells.filter(function (k) { return g.cells[k].owner === wi; });
+        if (!mine.length) return;
+        var xs = mine.map(function (k) { return g.cells[k].c * step + half; }), ys = mine.map(function (k) { return g.cells[k].r * step + half; });
+        var cx = (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2, top = Math.min.apply(null, ys) - half;
+        var last = wi === 0, hover = { x: cx, y: top - CLAMP - g.size * 0.6 }; // payload hangs just above its spot
+        var side = n % 3, from = side === 0 ? { x: -g.size * 3, y: hover.y - g.size * 2 } : side === 1 ? { x: W + g.size * 3, y: hover.y - g.size * 2 } : { x: hover.x + g.size * 2, y: -g.size * 4 };
+        var to = side === 0 ? { x: W + g.size * 3, y: -g.size * 3 } : { x: -g.size * 3, y: -g.size * 3 };
+        trips.push({ wi: wi, mine: mine, t0: t, t1: t + IN, t2: t + IN + HOVER, t3: t + IN + HOVER + OUT, from: from, hover: hover, to: to, cx: cx, top: top, last: last });
+        t += EVERY; n++;
+      });
+      // the drone's place and tilt at time tt on its trip
+      function path(tr, tt) { // where the drone means to be
+        if (tt <= tr.t1) { var u = Math.max(0, (tt - tr.t0) / IN), e = 1 - Math.pow(1 - u, 3);
+          return { x: tr.from.x + (tr.hover.x - tr.from.x) * e, y: tr.from.y + (tr.hover.y - tr.from.y) * e + Math.sin(tt * 9) * 2, tilt: (tr.hover.x > tr.from.x ? 14 : -14) * (1 - u) }; }
+        if (tt <= tr.t2 || tr.last) return { x: tr.hover.x, y: tr.hover.y + Math.sin(tt * 9) * 2, tilt: 0 };
+        var v = Math.min(1, (tt - tr.t2) / OUT), e2 = v * v;
+        return { x: tr.hover.x + (tr.to.x - tr.hover.x) * e2, y: tr.hover.y + (tr.to.y - tr.hover.y) * e2, tilt: (tr.to.x > tr.hover.x ? 18 : -18) * Math.min(1, v * 3) };
+      }
+      // the load swings like a pendulum on its rope: it lags as the drone speeds up, swings on
+      // when it stops, and settles (simulated: the drone's sideways acceleration drives it)
+      // the load swings like a pendulum on its rope, and the drone keeps trying to get back over
+      // it, too hard: it darts toward the swing, overshoots, and the two wobble together until they
+      // settle (simulated: the drone's acceleration drives the swing; the swing pulls the drone)
+      var DT = 1 / 120;
+      trips.forEach(function (tr) {
+        var Lr = CLAMP + g.size, phi = 0, w = 0, c = 0, vc = 0, cAcc = 0, tt = tr.t0, prevX = path(tr, tt).x, prevV = 0;
+        tr.swing = []; tr.corr = []; tr.cAcc = [];
+        for (; tt <= tr.t2 + 0.001; tt += DT) {
+          var x = path(tr, tt).x, v = (x - prevX) / DT, acc = (v - prevV) / DT; prevX = x; prevV = v;
+          var alpha = -(2600 / Lr) * Math.sin(phi) - ((acc + cAcc) / Lr) * Math.cos(phi) - 1.0 * w;
+          w += alpha * DT; phi = Math.max(-0.7, Math.min(0.7, phi + w * DT));
+          cAcc = 150 * Lr * Math.sin(phi) - 2.0 * vc; // chasing the load, under-damped: it overshoots
+          vc += cAcc * DT; c = Math.max(-g.size * 1.2, Math.min(g.size * 1.2, c + vc * DT));
+          tr.swing.push(phi); tr.corr.push(c); tr.cAcc.push(cAcc);
+        }
+      });
+      function at120(arr, tr, tt) { var i = Math.round((tt - tr.t0) * 120); return arr[Math.max(0, Math.min(arr.length - 1, i))]; }
+      function swingAt(tr, tt) { return at120(tr.swing, tr, tt); }
+      function drone(tr, tt) { // where it is: its path, plus its (over)corrections, which die away once the load is dropped
+        var p = path(tr, tt), c = at120(tr.corr, tr, tt), ca = at120(tr.cAcc, tr, tt);
+        if (tt > tr.t2) { var k = Math.exp(-(tt - tr.t2) * 5), osc = Math.cos((tt - tr.t2) * 14); c *= k * osc; ca *= k; }
+        return { x: p.x + c, y: p.y, tilt: p.tilt + Math.max(-22, Math.min(22, ca * 0.012)) };
+      }
+      var cur = g.order.map(function (k) { return g.cells[k]; }).filter(function (o) { return o.cursor; })[0] || g.cells[g.order[0]];
+      var home = { x: cur.c * step + half, y: cur.r * step + half }, landEnd = 0;
+      trips.forEach(function (tr, ti) {
+        // the payload: the word's boxes clamped beneath, swinging a little, dropped at t2
+        tr.mine.forEach(function (k, j) {
+          var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, ox = fx - tr.cx, oy = fy - tr.top + CLAMP; // where it rides, from the drone's middle
+          var total = tr.t2 + DROP, kf = [];
+          kf.push({ transform: "translate(" + (tr.from.x + ox - fx) + "px," + (tr.from.y + oy - fy) + "px)", opacity: 0, offset: 0 });
+          for (var tt = tr.t0; tt <= tr.t2 + 0.001; tt += 0.04) {
+            var d = drone(tr, tt), rad = swingAt(tr, tt), sw = rad * 180 / Math.PI;
+            var rx = ox * Math.cos(rad) - oy * Math.sin(rad), ry = ox * Math.sin(rad) + oy * Math.cos(rad);
+            kf.push({ transform: "translate(" + (d.x + rx - fx) + "px," + (d.y + ry - fy) + "px) rotate(" + sw + "deg)", opacity: tt - tr.t0 < 0.03 ? 0 : 1, zIndex: 3, offset: tt / total }); // unseen until its drone sets off
+          }
+          kf.push({ transform: "translate(0,3px) scale(1.1,.86)", opacity: 1, zIndex: 1, offset: (tr.t2 + DROP * 0.8) / total, easing: "ease-out" });
+          kf.push({ transform: "translate(0,0) scale(1)", opacity: 1, zIndex: 1, offset: 1 });
+          kf[kf.length - 3].easing = "ease-in"; // released: it drops
+          a[k] = { kf: kf, delay: 0, dur: total, ease: "linear" };
+          if (j % 2 === 0) sfx(tr.t2 + DROP * 0.8, function (when, S) { S.clunk(when, j + ti); });
+          landEnd = Math.max(landEnd, total);
+        });
+        // the drone itself: a body box and four rotor boxes, a page piece that comes and goes
+        g.at(tr.t0, function () {
+          var box = document.createElement("div"); box.className = "entrance-cannon"; box.style.left = "0px"; box.style.top = "0px"; box.style.zIndex = 6;
+          var body = document.createElement("div"); body.className = "entrance-blk"; body.style.width = body.style.height = bodySz + "px"; body.style.left = -bodySz / 2 + "px"; body.style.top = -bodySz / 2 + "px";
+          box.appendChild(body);
+          // the rotors: flat squares spinning level at the body's top corners, tipped toward you
+          // enough to see they're squares, turning slowly enough to follow
+          var rot = bodySz * 0.72, rots = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(function (q) {
+            var px = q[0] * bodySz * (q[1] < 0 ? 0.42 : 0.62), py = -bodySz * (q[1] < 0 ? 0.78 : 0.6); // the back pair higher and further in
+            var r = document.createElement("div"); r.className = "entrance-blk"; r.style.width = r.style.height = rot + "px";
+            r.style.left = (px - rot / 2) + "px"; r.style.top = (py - rot / 2) + "px"; r.style.zIndex = q[1] < 0 ? 0 : 2;
+            box.appendChild(r); return { el: r, q: q };
+          });
+          g.board.appendChild(box);
+          var end = tr.last ? landEnd + 0.7 : tr.t3, dur = end - tr.t0, kf = [];
+          for (var tt = tr.t0; tt <= end + 0.001; tt += 0.04) {
+            var d = drone(tr, tt), settle = tr.last && tt > tr.t2 ? Math.min(1, (tt - tr.t2 - DROP) / 0.55) : 0, e = settle * settle * (3 - 2 * settle);
+            var x = d.x + (home.x - d.x) * e, y = d.y + (home.y - d.y) * e;
+            kf.push({ transform: "translate(" + x + "px," + y + "px) rotate(" + d.tilt + "deg)", opacity: tt === tr.t0 ? 0 : 1, offset: (tt - tr.t0) / dur });
+          }
+          kf[kf.length - 1].offset = 1;
+          var out = [box.animate(kf, { duration: dur * 1000, easing: "linear" })];
+          out[0].onfinish = out[0].oncancel = function () { box.remove(); };
+          var TILT = "rotateX(58deg) ", SPIN = 420; // degrees a second
+          rots.forEach(function (r) { // spinning level; on the last trip they spin off and fly away
+            var dirSpin = r.q[0] * r.q[1] > 0 ? 1 : -1, spinKf = [{ transform: TILT + "rotate(0deg)", opacity: 1, offset: 0 }];
+            if (tr.last) {
+              var off = (tr.t2 + DROP - tr.t0) / dur, away = "translate(" + r.q[0] * g.size * 3 + "px," + (-g.size * 4) + "px) ";
+              spinKf.push({ transform: TILT + "rotate(" + dirSpin * SPIN * off * dur + "deg)", opacity: 1, offset: off });
+              spinKf.push({ transform: away + TILT + "rotate(" + dirSpin * SPIN * dur + "deg) scale(.5)", opacity: 0, offset: Math.min(1, off + 0.5 / dur) });
+              spinKf.push({ transform: away + TILT + "rotate(0deg)", opacity: 0, offset: 1 });
+            } else spinKf.push({ transform: TILT + "rotate(" + dirSpin * SPIN * dur + "deg)", opacity: 1, offset: 1 });
+            out.push(r.el.animate(spinKf, { duration: dur * 1000, easing: "linear" }));
+          });
+          if (tr.last) out.push(body.animate([{ transform: "scale(1)" }, { transform: "scale(1)", offset: (tr.t2 + DROP + 0.3 - tr.t0) / dur }, { transform: "scale(" + g.size / bodySz + ")" }], { duration: dur * 1000, easing: "ease-in-out" }));
+          return out;
+        });
+        sfx(tr.t0, function (when, S) { S.rotor(when, (tr.last ? tr.t2 + DROP + 0.4 : tr.t3) - tr.t0); });
+      });
+      var lastTrip = trips[trips.length - 1], fin = landEnd + 0.7;
+      ringOn(g, fin, sfx, false);
+      sfx(fin - 0.02, function (when, S) { S.clickin(when); });
+      return a;
+    } },
   { id: "saucer", name: "Flying saucer", icon: "🛸", premium: true,
     // The boxes assemble into a block flying saucer that swoops in and hovers. A little cannon
     // at the bottom fires: miss, miss, hit! The saucer bursts and its pieces drift slowly into
