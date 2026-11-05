@@ -238,7 +238,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   turn a premium one (`PREMIUM_EVERY`), otherwise an everyday one, each kind from its own
   shuffled queue, never the same twice in a row (saved per edition as `entrances`). In `app.js`, `runEntrance` plays one for a new
   puzzle (not one restored at launch; at launch it waits for the Start tap, `.board.waiting`),
-  but only Next puzzle after finishing one moves the cycle on; otherwise the same one replays. As it ends, the first word is said (with auto-speak on;
+  but only the new puzzle after a finished one moves the cycle on (`entranceDue`, saved at the solve, so an update's reload in between keeps it); otherwise the same one replays. As it ends, the first word is said (with auto-speak on;
   `sayFirstWord`), unless the player already picked another word or typed. The
   selection is off while one plays (`.board.entering`), so the premium ones can deliver the highlight;
   skipped with reduced motion; the puzzle card scrolls into view
@@ -342,7 +342,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     first try, as pictures or sound stickers to tap and hear); recent puzzles. Like the rest
     of the sheet it isn't locked, so it never shows a spelling.
   - Start over (Settings): clears this edition's `achievements`, `progress`, `counts`, `days`,
-    `log`, `stars`, `puzzle`, `pending`, `slips`, `seenEntrances` and `entranceQueue` (`RESET_KEYS`) and the color scheme, once "start over" is
+    `log`, `stars`, `puzzle`, `pending`, `slips`, `seenEntrances`, `entranceQueue` and `entranceDue` (`RESET_KEYS`) and the color scheme, once "start over" is
     typed. Achievements, stars, pictures and colors are all worked out from progress, so
     clearing only achievements would bring them back. Settings and the Custom list stay.
 
