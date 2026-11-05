@@ -494,22 +494,28 @@ export var ENTRANCES = [
             opacity: grow * (eye ? 1 : 0.7 + 0.3 * (q.z + 1) / 2), zIndex: eye || q.z > 0 ? 3 : 2, offset: t / total });
         }
         kf[0].opacity = 0;
-        // flung: it leaves fast, the way it was whirling plus outward (a slingshot), shoots well
-        // out spinning hard, then slows and swoops down home (a cubic curve, fast at the start)
+        // flung out of the vortex in 3D: it comes at you (translateZ, looming larger) still
+        // whirling and now tumbling end over end, then slams flat into its spot on the board like
+        // a wall: no easing at the end, a quick squash, a smack
         var p0 = at(level, release, phase, rad), th = p0.th, sx = -Math.sin(th) + 0.8 * Math.cos(th), len = Math.max(0.6, Math.abs(sx));
-        var dir = eye ? (fx > p0.x ? 1 : -1) : sx / len, reach = eye ? g.size * 1.8 : g.size * (5 + Math.random() * 3);
-        var c1 = { x: p0.x + dir * reach, y: p0.y - g.size * (eye ? 2.6 : 1.2 + Math.random() * 1.6) };
-        var c2 = { x: fx + (c1.x - fx) * 0.35, y: fy - g.size * (eye ? 1.8 : 2.2) };
+        var dir = eye ? (fx > p0.x ? 1 : -1) : sx / len, reach = eye ? g.size * 1.2 : g.size * (2 + Math.random() * 2);
+        var c1 = { x: p0.x + dir * reach, y: p0.y - g.size * (eye ? 1.4 : 0.8 + Math.random()) }, c2 = { x: fx + (c1.x - fx) * 0.3, y: fy - g.size * 0.6 };
+        var Z = eye ? 160 : 200 + Math.random() * 160, tx = 360 * (eye ? 1 : 1 + Math.floor(Math.random() * 2)) * (Math.random() < 0.5 ? -1 : 1), ty = 360 * (Math.random() < 0.5 ? -1 : 1);
         var endRot = Math.round((spinRot + (eye ? 0 : 720)) / 360) * 360;
-        for (var j = 1; j <= 14; j++) {
-          var s0 = j / 14, u = 1 - Math.pow(1 - s0, 2.4), m = 1 - u; // fast out of the funnel, easing in to land
+        for (var j = 1; j <= 16; j++) {
+          var s0 = j / 16, u = s0 * s0 * (3 - 2 * s0), m = 1 - u, z = Z * (1 - Math.pow(s0, 2.6)) * Math.min(1, s0 * 4); // up close, then plunging in
           var x = m * m * m * p0.x + 3 * m * m * u * c1.x + 3 * m * u * u * c2.x + u * u * u * fx;
           var y = m * m * m * p0.y + 3 * m * m * u * c1.y + 3 * m * u * u * c2.y + u * u * u * fy;
-          kf.push({ transform: T(x, y, fx, fy, spinRot + (endRot - spinRot) * (1 - Math.pow(1 - s0, 3)), SC + (1 - SC) * Math.min(1, s0 * 1.5)), opacity: 1, zIndex: 3, offset: (release + flight * s0 * 0.9) / total });
+          kf.push({ transform: "translate(" + (x - fx) + "px," + (y - fy) + "px) translateZ(" + z + "px) rotateX(" + tx * s0 + "deg) rotateY(" + ty * s0 + "deg) rotate(" + (spinRot + (endRot - spinRot) * s0) + "deg) scale(" + (SC + (1 - SC) * Math.min(1, s0 * 1.4)) + ")",
+            opacity: 1, zIndex: 4, offset: (release + flight * s0 * 0.9) / total });
         }
-        kf.push({ transform: "translate(0,3px) rotate(" + endRot + "deg) scale(1.08,.9)", opacity: 1, zIndex: 1, offset: (release + flight * 0.95) / total });
+        // the smack: flat against the board, a squash and a little rebound
+        kf.push({ transform: "translate(0,0) rotate(" + endRot + "deg) scale(1.12,1.12)", opacity: 1, zIndex: 1, offset: (release + flight * 0.94) / total });
         kf.push({ transform: "translate(0,0) rotate(" + endRot + "deg) scale(1)", opacity: 1, zIndex: 1, offset: 1 });
         a[k] = { kf: kf, delay: 0, dur: total, ease: "linear" };
+        var hit = release + flight * 0.9;
+        sfx(hit, function (when, S) { S.smack(when, n); });
+        if (!eye && n % 5 === 0) g.at(hit, function () { return shake(g.board, 2); });
         landEnd = Math.max(landEnd, total);
       }
       plain.forEach(function (k, p) {
@@ -522,10 +528,8 @@ export var ENTRANCES = [
       word.forEach(function (k, n) {
         ride(k, (n + 0.5) * (L - 0.5) / word.length, n * 1.3, sp * 0.12, 0.1 + n * 0.04, FLING + 0.22 + n * 0.04, true, n);
       });
-      for (var c = 0; c < 6; c++) (function (c) { sfx(FLING + flight * 0.9 + c * 0.05, function (when, S) { S.settle(when, c); }); })(c);
       sfx(0, function (when, S) { S.wind(when, FLING + 0.5); S.whirr(when + 0.1, FLING + 0.1); });
       sfx(FLING, function (when, S) { S.whoosh(when, 0.6); });
-      g.at(FLING + flight * 0.92, function () { return shake(g.board, 3); });
       return a;
     } },
   { id: "saucer", name: "Flying saucer", icon: "🛸", premium: true,

@@ -128,6 +128,8 @@ export function makeSfx(ac, dest) {
     pew: function (t) { osc(t, 1700, "square", 0.1, 0.003, 0.2, 260); osc(t, 1300, "sawtooth", 0.05, 0.003, 0.18, 200); },
     boom: function (t) { noise(t, 0.8, "lowpass", 3200, 160, 0.8, 0.6); osc(t, 80, "sine", 0.7, 0.004, 0.7, 32); for (var j = 0; j < 9; j++) noise(t + 0.08 + Math.random() * 0.5, 0.03, "bandpass", 1500 + Math.random() * 3000, 0, 0.12, 2); },
     zwoop: function (t, dur) { osc(t, 280, "sine", 0.14, dur * 0.4, dur * 0.6, 1150); noise(t, dur, "bandpass", 600, 2400, 0.05, 3); },
+    // Cyclone: a box smacking flat against the board.
+    smack: function (t, i) { noise(t, 0.05, "highpass", 1800 + (i % 4) * 300, 0, 0.32, 0.8); osc(t, 170 - (i % 3) * 15, "sine", 0.35, 0.002, 0.09, 70); },
     rustle: function (t) { for (var j = 0; j < 3; j++) noise(t + j * 0.025 + Math.random() * 0.02, 0.03, "bandpass", 3200 + Math.random() * 2500, 0, 0.07, 1.5); }
   };
 }
