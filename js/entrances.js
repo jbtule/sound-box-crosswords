@@ -171,32 +171,28 @@ export var ENTRANCES = [
       return a;
     } },
   { id: "shutters", name: "Shutters", icon: "🪟", premium: false,
-    // Each word slides in slowly from the side in a straight line, its boxes turned edge-on like
-    // slats (across words from the left or right, down words from above or below); once it's in
-    // place its boxes turn, one after another, to face you, with a soft click each. The first
-    // word comes in last.
+    // Word by word: its boxes start in place turned edge-on (invisible), turn slightly so they
+    // show as thin lines, pause, then flip really fast, several turns, slowing down until they
+    // face you, with a whirring rattle that slows too. Across words flip one way, down words the
+    // other. The first word goes last.
     plan: function (g, sfx) {
-      var a = {}, step = g.size + g.gap, t = 0, SLIDE = 1.0, TURN = 0.5, GAP = 0.07;
+      var a = {}, t = 0, LINE = 0.3, HOLD = 0.3, FLIP = 1.3, EACH = 0.62;
       var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]); // the first word last
       order.forEach(function (wi, n) {
         var w = g.words[wi], mine = w.cells.filter(function (k) { return g.cells[k].owner === wi; });
         if (!mine.length) return;
-        var across = w.dir === "A", from = n % 2 ? 1 : -1, axis = across ? "rotateY" : "rotateX";
-        sfx(t, function (at, S) { S.whoosh(at, SLIDE * 0.9); });
+        var axis = w.dir === "A" ? "rotateY" : "rotateX", turns = 3 + (n % 2), sign = n % 2 ? -1 : 1;
         mine.forEach(function (k, j) {
-          var o = g.cells[k], far = (across ? g.cols : g.rows) * step + step * 2;
-          var dx = across ? from * far : 0, dy = across ? 0 : from * far;
-          var total = SLIDE + j * GAP + TURN, edge = axis + "(" + (84 * -from) + "deg)";
+          var lag = j * 0.03, total = LINE + HOLD + lag + FLIP, R = function (d) { return axis + "(" + d * sign + "deg)"; };
           a[k] = { kf: [
-              { transform: "translate(" + dx + "px," + dy + "px) " + edge, opacity: 0, offset: 0 },
-              { transform: "translate(" + dx * 0.88 + "px," + dy * 0.88 + "px) " + edge, opacity: 1, offset: 0.12 * SLIDE / total, easing: "cubic-bezier(.25,.5,.35,1)" },
-              { transform: "translate(0,0) " + edge, opacity: 1, offset: SLIDE / total, easing: "linear" },
-              { transform: "translate(0,0) " + edge, opacity: 1, offset: (SLIDE + j * GAP) / total, easing: "cubic-bezier(.3,1.5,.5,1)" },
-              { transform: "translate(0,0) " + axis + "(0deg)", opacity: 1, offset: 1 }],
+              { transform: R(90), opacity: 0, offset: 0, easing: "ease-out" },
+              { transform: R(80), opacity: 1, offset: LINE / total },
+              { transform: R(80), opacity: 1, offset: (LINE + HOLD + lag) / total, easing: "cubic-bezier(.05,.85,.25,1)" }, // fast, then slowing
+              { transform: R(turns * 360), opacity: 1, offset: 1 }],
             delay: t, dur: total, ease: "linear" };
-          sfx(t + SLIDE + j * GAP + TURN * 0.35, function (at, S) { S.click(at, j); });
         });
-        t += 0.55;
+        sfx(t + LINE + HOLD, function (at, S) { S.settle(at, n); S.whoosh(at, 0.35); });
+        t += EACH;
       });
       return a;
     } },
