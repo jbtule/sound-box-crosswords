@@ -84,7 +84,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   spelling (goal 3), and it covers half the screen. Physical keyboards are handled directly.
 - **Target: iPad Safari**, also phones and desktop. Touch first; physical keyboards work too.
   Must fit ~380px wide; the grid sizes cells to fit (`sizeBoard`, 24–50px).
-- **Recorded audio** for pack words, Break it down syllables, sentences, "You solved it!" and "Great job!",
+- **Recorded audio** for pack words, Break it down syllables, sentences, "You solved it!" and "Way to go!",
   what achievement cards say ("New achievement!", every title and detail: `spokenLines` in
   `achievements.js`, which the check keeps in step with `catalog`),
   and the 46 single sounds for Sound it out (kind `f`; each made the way
@@ -159,7 +159,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `?edition=<id>&pack=<id>` one pack's page (no `edition` means `packs.toml`'s).
   In editions with Sound it out, a word that lists its sounds also gets a *Sound it out* row
   that plays them with the app's pauses, then the word; one mark for the run. Sounds and Phrases cards
-  hold what every grade shares: the 46 single sounds, and "You solved it!", "Great job!" and the
+  hold what every grade shares: the 46 single sounds, and "You solved it!", "Way to go!" and the
   achievement pieces.
   It reads `packs.toml` and `audio.json` like the app (locally it falls back to the live
   `audio.json`), and `clipsFor` in `crossword.js` decides each word's clips for both it and
@@ -288,8 +288,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   theme (app name, emoji, title, detail, date, up to 6 collected pictures, site address;
   never spelling words or a name). A pack's Champion or Legend shows that pack's pictures
   plus a "+N" tile for the rest of its words, so a big pack looks big (`sharePics` in
-  `app.js`); its detail gives the size ("All 23 words in Blends"), though what's said
-  stays "Every word in this pack"; `shareCard` opens the share sheet, or downloads where
+  `app.js`); its detail gives the size ("Cleared all 23 words in Blends"), though what's said
+  stays "Cleared every word in this pack"; `shareCard` opens the share sheet, or downloads where
   file sharing isn't supported. The big award card shows Share; earned achievements in the
   🏆 sheet reopen in it. The PNG is made when the card shows, since iPad Safari only opens
   the share sheet straight from a tap.
