@@ -160,8 +160,9 @@ html.standalone { touch-action: pan-x pan-y; }
 .award-close { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; border: none; border-radius: 999px; background: transparent; color: var(--muted); font-size: 1.1rem; }
 .award-close:focus-visible { outline: 3px solid var(--accent); }
 .award { touch-action: pan-y; }
-.tabs { display: flex; gap: 4px; background: var(--key); border-radius: 999px; padding: 4px; align-self: flex-start; }
-.tabs button { border: none; background: transparent; border-radius: 999px; padding: 8px 12px; min-height: 40px; font-weight: 600; font-size: 0.92rem; color: var(--muted); }
+.tabs { display: flex; gap: 4px; background: var(--key); border-radius: 999px; padding: 4px; align-self: flex-start; max-width: 100%; overflow-x: auto; scrollbar-width: none; } /* scrolls sideways when the tabs don't fit (🏆 with Entrances on a phone) */
+.tabs::-webkit-scrollbar { display: none; }
+.tabs button { flex: none; white-space: nowrap; border: none; background: transparent; border-radius: 999px; padding: 8px 12px; min-height: 40px; font-weight: 600; font-size: 0.92rem; color: var(--muted); }
 .tabs button[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
 /* Picture collection: a sticker page per pack. */
 .col-pack { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
@@ -176,6 +177,14 @@ html.standalone { touch-action: pan-x pan-y; }
 .pal[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .pal:disabled { opacity: 0.45; color: var(--muted); }
 .pal-boxes { display: flex; gap: 3px; }
+/* Entrances tab (🏆 sheet, after Front Row Seat): the queue as removable chips, then every entrance. */
+.ent-queue { display: flex; flex-wrap: wrap; gap: 6px; }
+.ent-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 10px; border-radius: 999px; border: 1.5px solid var(--accent); background: var(--accent-soft); color: var(--ink); font-weight: 600; font-size: 0.9rem; }
+.ent-chip b { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 0.8rem; }
+#entClear { align-self: flex-start; }
+.ent-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 12px; }
+.ent { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px 10px; border-radius: 12px; border: 1.5px solid var(--key-edge); background: var(--key); color: var(--ink); font-weight: 600; text-align: left; }
+.ent-icon { font-size: 1.4rem; line-height: 1; }
 .pal-boxes i { width: 24px; height: 24px; border-radius: 5px; border: 2px solid; }
 .pal-boxes .a { background: var(--sylA); border-color: var(--sylA-edge); }
 .pal-boxes .b { background: var(--sylB); border-color: var(--sylB-edge); }

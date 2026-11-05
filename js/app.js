@@ -1,7 +1,7 @@
 // Game state, play logic, rendering, and the settings sheet.
 import { confetti } from "./confetti.js";
 import { chime, sparkle, audioAwake, audioOut } from "./chime.js";
-import { geometry, playEntrance, nextEntrance } from "./entrances.js";
+import { ENTRANCES, geometry, playEntrance, nextEntrance } from "./entrances.js";
 import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
@@ -239,15 +239,18 @@ function runEntrance(turn) {
   var p = P, after = function () { sayFirstWord(p); };
   if (!P || document.hidden) return;
   if (reducedMotion()) { after(); return; }
-  var saved = store.get("entrances", null), id = saved && saved.last;
-  if (turn || !id) { var pick = nextEntrance(saved); store.set("entrances", pick.state); id = pick.id; }
+  var saved = store.get("entrances", null), id = saved && saved.last, queue = entranceQueue();
+  if (turn && queue.length) { // the player's own order (the Entrances tab) comes first
+    id = queue.shift(); store.set("entranceQueue", queue);
+    store.set("entrances", Object.assign({}, saved, { last: id }));
+  } else if (turn || !id) { var pick = nextEntrance(saved); store.set("entrances", pick.state); id = pick.id; }
   var run = playEntrance(id, geometry(P, board, order()), { audio: settings.chime ? audioOut() : null });
   entrance = run;
   showBoardCard();
   kbEl.classList.add("resting"); // the letter pad fades out while the boxes arrive, and back in
   run.done.then(function (skipped) {
     if (entrance === run) { entrance = null; kbEl.classList.remove("resting"); }
-    if (!skipped) after();
+    if (!skipped) { after(); sawEntrance(run.id); }
   });
 }
 // Brings the whole puzzle card into view for an entrance (its top, if it's taller than the screen).
@@ -257,6 +260,24 @@ function showBoardCard() {
   card.scrollIntoView({ block: r.height <= window.innerHeight - 24 ? "nearest" : "start", behavior: "smooth" });
 }
 function skipEntrance() { if (entrance) entrance.skip(); }
+// Entrances seen to the end, for Front Row Seat (every one), which opens the Entrances tab.
+function sawEntrance(id) {
+  var seen = store.get("seenEntrances", []);
+  if (seen.indexOf(id) >= 0) return;
+  seen.push(id); store.set("seenEntrances", seen);
+  counts.entrances = seen.filter(function (x) { return ENTRANCES.some(function (e) { return e.id === x; }); }).length;
+  store.set("counts", counts);
+  var fresh = checkAchievements();
+  if (!fresh.length) return;
+  fresh.forEach(function (a) { if (pending.indexOf(a.id) < 0) pending.push(a.id); });
+  store.set("pending", pending);
+  pillChime = true;
+  refreshPill();
+}
+// The player's chosen order (ids), played one per finished puzzle before the usual cycle.
+function entranceQueue() {
+  return (store.get("entranceQueue", []) || []).filter(function (x) { return ENTRANCES.some(function (e) { return e.id === x; }); });
+}
 // Word indexes in clue order: by number, across before down.
 function order() {
   return P.words.map(function (_, i) { return i; }).sort(function (a, b) {
@@ -870,7 +891,7 @@ $("#editionSel").addEventListener("change", function (e) {
 // achievements would bring them straight back. Typing the phrase keeps it from happening
 // by accident.
 var RESET_PHRASE = "start over";
-var RESET_KEYS = ["achievements", "progress", "counts", "days", "log", "stars", "puzzle", "pending", "slips"];
+var RESET_KEYS = ["achievements", "progress", "counts", "days", "log", "stars", "puzzle", "pending", "slips", "seenEntrances", "entranceQueue"];
 function resetMatches() { return $("#resetText").value.trim().toLowerCase() === RESET_PHRASE; }
 $("#resetOpen").addEventListener("click", function () {
   $("#resetOpen").hidden = true; $("#resetBox").hidden = false; $("#resetText").focus();
@@ -917,7 +938,7 @@ function achState() {
       return { id: id, name: PACKS[id].name, done: c.done, total: c.total, firsts: firsts };
     }),
     clean: counts.clean, comeback: counts.comeback, days: days, edition: EDITION.short,
-    secret: { listener: counts.listener, twofer: counts.twofer, shared: counts.shared, look: counts.look, peek: counts.peek, qwerty: counts.qwerty, weekend: counts.weekend, words: wordsRight() }
+    secret: { listener: counts.listener, twofer: counts.twofer, shared: counts.shared, look: counts.look, peek: counts.peek, qwerty: counts.qwerty, weekend: counts.weekend, words: wordsRight(), entrances: counts.entrances }
   };
 }
 // Words spelled right (typed, not finished by a crossing word), in every pack.
@@ -1132,12 +1153,42 @@ function renderColors() {
     wrap.appendChild(b);
   });
 }
+// Entrances tab (once Front Row Seat is earned): every entrance; tapping one adds it to the
+// order played after the next finished puzzles (one each), before the usual shuffle.
+function renderEntrances() {
+  var queue = entranceQueue(), q = $("#entQueue"), list = $("#entList");
+  q.innerHTML = "";
+  $("#entQueueHelp").textContent = queue.length ? "Up next, one per finished puzzle:" : "Tap entrances to pick what plays after your next puzzles.";
+  $("#entClear").hidden = !queue.length;
+  queue.forEach(function (id, i) {
+    var e = ENTRANCES.find(function (x) { return x.id === id; }), b = document.createElement("button");
+    b.type = "button"; b.className = "ent-chip";
+    b.setAttribute("aria-label", "Remove " + e.name + " (number " + (i + 1) + ")");
+    b.innerHTML = '<b></b><span aria-hidden="true"></span> ×';
+    b.querySelector("b").textContent = i + 1;
+    b.querySelector("span").textContent = e.icon + " " + e.name;
+    b.addEventListener("click", function () { queue.splice(i, 1); store.set("entranceQueue", queue); renderEntrances(); });
+    q.appendChild(b);
+  });
+  list.innerHTML = "";
+  ENTRANCES.forEach(function (e) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "ent";
+    b.innerHTML = '<span class="ent-icon" aria-hidden="true"></span><span class="ent-name"></span>';
+    b.querySelector(".ent-icon").textContent = e.icon;
+    b.querySelector(".ent-name").textContent = e.name + (e.premium ? " ⭐" : "");
+    b.addEventListener("click", function () { queue.push(e.id); store.set("entranceQueue", queue); renderEntrances(); });
+    list.appendChild(b);
+  });
+}
+$("#entClear").addEventListener("click", function () { store.set("entranceQueue", []); renderEntrances(); });
 // Tabs: { name: [tab button, panel] }; shows one, hides the rest.
 function selectTab(tabs, name) {
   Object.keys(tabs).forEach(function (k) {
     $(tabs[k][0]).setAttribute("aria-selected", String(k === name));
     $(tabs[k][1]).hidden = k !== name;
   });
+  $(tabs[name][0]).scrollIntoView({ block: "nearest", inline: "nearest" }); // a tab row that scrolls sideways
 }
 // A sheet sits at the bottom of the screen and fits its content, so a shorter tab would drop
 // its top edge (a jump on a desktop). Once it's showing, this sizes it for its tallest tab, so
@@ -1152,11 +1203,12 @@ function steadyHeight(tabs, name) {
   selectTab(tabs, name);
   panel.style.minHeight = tallest + "px";
 }
-var TABS = { ach: ["#tabAch", "#achPanel"], col: ["#tabCol", "#colPanel"], pal: ["#tabPal", "#palPanel"] };
+var TABS = { ach: ["#tabAch", "#achPanel"], col: ["#tabCol", "#colPanel"], pal: ["#tabPal", "#palPanel"], ent: ["#tabEnt", "#entPanel"] };
 function showTab(name) {
   selectTab(TABS, name);
   if (name === "col") renderCollection();
   if (name === "pal") renderColors();
+  if (name === "ent") renderEntrances();
 }
 function openAchievements() {
   var now = Date.now(), all = catalog(achState());
@@ -1185,9 +1237,10 @@ function openAchievements() {
     }
     list.appendChild(li);
   });
+  $("#tabEnt").hidden = !earned["secret:entrances"];
   showTab("ach");
   $("#achSheet").hidden = false;
-  renderCollection(); renderColors(); // measured below, so draw them now
+  renderCollection(); renderColors(); renderEntrances(); // measured below, so draw them now
   steadyHeight(TABS, "ach");
   $("#achClose").focus();
 }

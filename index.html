@@ -139,10 +139,11 @@
 <section class="sheet" id="achSheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="achTitle">
     <div class="row" style="justify-content:space-between"><h2 id="achTitle">Achievements</h2><button class="ghost" id="achClose" type="button">Done</button></div>
-    <div class="tabs" role="tablist" aria-label="Achievements, collection and colors">
+    <div class="tabs" role="tablist" aria-label="Achievements, collection, colors and entrances">
       <button type="button" role="tab" id="tabAch" aria-selected="true" aria-controls="achPanel">Achievements</button>
       <button type="button" role="tab" id="tabCol" aria-selected="false" aria-controls="colPanel">Collection</button>
       <button type="button" role="tab" id="tabPal" aria-selected="false" aria-controls="palPanel">Colors</button>
+      <button type="button" role="tab" id="tabEnt" aria-selected="false" aria-controls="entPanel" hidden>Entrances</button>
     </div>
     <div id="achPanel" role="tabpanel" aria-labelledby="tabAch">
       <p class="help" id="achDays"></p>
@@ -155,6 +156,12 @@
     <div id="palPanel" role="tabpanel" aria-labelledby="tabPal" hidden>
       <p class="help" id="palHelp"></p>
       <div class="pal-list" id="palList"></div>
+    </div>
+    <div id="entPanel" role="tabpanel" aria-labelledby="tabEnt" hidden>
+      <p class="help" id="entQueueHelp"></p>
+      <div class="ent-queue" id="entQueue"></div>
+      <button type="button" class="ghost" id="entClear" hidden>Clear</button>
+      <div class="ent-list" id="entList"></div>
     </div>
   </div>
 </section>
