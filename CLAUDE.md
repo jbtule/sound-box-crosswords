@@ -251,7 +251,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   puzzle or a new shape), at ½× or ¼× (no sound then), looped, with its running time; it leaves
   the cycle, the queue and Front Row Seat alone, and plays even with reduced motion. Each entrance seen to the end is saved (`seenEntrances`,
   `sawEntrance`); all of them earns the secret Front Row Seat, which shows the 🏆 sheet's
-  Entrances tab (`renderEntrances`): every entrance (`icon`, ⭐ for premium), tapped into an
+  Director tab (`renderEntrances`): every entrance (`icon`, ⭐ for premium), tapped into an
   order (`entranceQueue`) that finished puzzles play one each before the usual cycle.
 - `js/achievements.js`: no DOM. `catalog(state)` lists achievements (pack champion, then once that's reached a pack
   Legend, every word right on the first try, not for Custom, and unlocking no colors; tiered
