@@ -765,7 +765,8 @@ export var ENTRANCES = [
     // away, and its orange body settles onto box 1 as the cursor's ring.
     plan: function (g, sfx) {
       var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
-      var IN = 0.75, HOVER = 0.3, DROP = 0.28, OUT = 0.6, EVERY = 0.85, bodySz = g.size * 0.7, CLAMP = bodySz * 0.6 + 4;
+      var IN = 0.65, HOVER = 0.45, DROP = 0.25, OUT = 0.55, bodySz = g.size * 0.7, CLAMP = bodySz * 0.5 + g.size * 1.1; // the word hangs on an (unseen) rope
+      var EVERY = IN + HOVER + DROP + 0.1; // one drone at a time: the next comes as this one leaves
       var order = g.words.map(function (w, wi) { return wi; }).slice(1).concat([0]);
       var trips = [], t = 0, n = 0;
       order.forEach(function (wi) {
@@ -787,6 +788,20 @@ export var ENTRANCES = [
         var v = Math.min(1, (tt - tr.t2) / OUT), e2 = v * v;
         return { x: tr.hover.x + (tr.to.x - tr.hover.x) * e2, y: tr.hover.y + (tr.to.y - tr.hover.y) * e2, tilt: (tr.to.x > tr.hover.x ? 18 : -18) * Math.min(1, v * 3) };
       }
+      // the load swings like a pendulum on its rope: it lags as the drone speeds up, swings on
+      // when it stops, and settles (simulated: the drone's sideways acceleration drives it)
+      trips.forEach(function (tr) {
+        var Lr = CLAMP + g.size, phi = 0, w = 0, dt = 1 / 120, xs = [], tt = tr.t0, prevX = drone(tr, tt).x, prevV = 0;
+        tr.swing = [];
+        for (; tt <= tr.t2 + 0.001; tt += dt) {
+          var x = drone(tr, tt).x, v = (x - prevX) / dt, acc = (v - prevV) / dt; prevX = x; prevV = v;
+          var alpha = -(2600 / Lr) * Math.sin(phi) - (acc / Lr) * Math.cos(phi) - 2.2 * w;
+          w += alpha * dt; phi += w * dt;
+          phi = Math.max(-0.7, Math.min(0.7, phi));
+          tr.swing.push(phi);
+        }
+      });
+      function swingAt(tr, tt) { var i = Math.round((tt - tr.t0) * 120); return tr.swing[Math.max(0, Math.min(tr.swing.length - 1, i))]; }
       var cur = g.order.map(function (k) { return g.cells[k]; }).filter(function (o) { return o.cursor; })[0] || g.cells[g.order[0]];
       var home = { x: cur.c * step + half, y: cur.r * step + half }, landEnd = 0;
       trips.forEach(function (tr, ti) {
@@ -796,9 +811,9 @@ export var ENTRANCES = [
           var total = tr.t2 + DROP, kf = [];
           kf.push({ transform: "translate(" + (tr.from.x + ox - fx) + "px," + (tr.from.y + oy - fy) + "px)", opacity: 0, offset: 0 });
           for (var tt = tr.t0; tt <= tr.t2 + 0.001; tt += 0.04) {
-            var d = drone(tr, tt), sw = (tt < tr.t1 ? 9 : 9 * Math.max(0, 1 - (tt - tr.t1) / HOVER)) * Math.sin(tt * 7), rad = sw * Math.PI / 180;
+            var d = drone(tr, tt), rad = swingAt(tr, tt), sw = rad * 180 / Math.PI;
             var rx = ox * Math.cos(rad) - oy * Math.sin(rad), ry = ox * Math.sin(rad) + oy * Math.cos(rad);
-            kf.push({ transform: "translate(" + (d.x + rx - fx) + "px," + (d.y + ry - fy) + "px) rotate(" + (sw + d.tilt * 0.5) + "deg)", opacity: tt - tr.t0 < 0.03 ? 0 : 1, zIndex: 3, offset: tt / total }); // unseen until its drone sets off
+            kf.push({ transform: "translate(" + (d.x + rx - fx) + "px," + (d.y + ry - fy) + "px) rotate(" + sw + "deg)", opacity: tt - tr.t0 < 0.03 ? 0 : 1, zIndex: 3, offset: tt / total }); // unseen until its drone sets off
           }
           kf.push({ transform: "translate(0,3px) scale(1.1,.86)", opacity: 1, zIndex: 1, offset: (tr.t2 + DROP * 0.8) / total, easing: "ease-out" });
           kf.push({ transform: "translate(0,0) scale(1)", opacity: 1, zIndex: 1, offset: 1 });
@@ -812,18 +827,13 @@ export var ENTRANCES = [
           var box = document.createElement("div"); box.className = "entrance-cannon"; box.style.left = "0px"; box.style.top = "0px"; box.style.zIndex = 6;
           var body = document.createElement("div"); body.className = "entrance-blk"; body.style.width = body.style.height = bodySz + "px"; body.style.left = -bodySz / 2 + "px"; body.style.top = -bodySz / 2 + "px";
           box.appendChild(body);
-          // the rotors: flat squares spinning level, seen from a little above (tilted back, so they
-          // read as propeller discs), on posts over the body's corners; the back pair a little higher
-          var rot = bodySz * 0.8, rots = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(function (q) {
-            var px = q[0] * bodySz * (q[1] < 0 ? 0.3 : 0.42), lift = bodySz * (q[1] < 0 ? 0.62 : 0.42); // the back pair further in and higher (perspective)
-            var post = document.createElement("div"); post.className = "entrance-blk"; post.style.width = bodySz * 0.14 + "px"; post.style.height = lift + "px";
-            post.style.left = (px - bodySz * 0.07) + "px"; post.style.top = (-bodySz * 0.5 - lift + 2) + "px";
-            post.style.zIndex = q[1] < 0 ? 0 : 1;
-            box.appendChild(post);
+          // the rotors: flat squares spinning level at the body's top corners, tipped toward you
+          // enough to see they're squares, turning slowly enough to follow
+          var rot = bodySz * 0.72, rots = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(function (q) {
+            var px = q[0] * bodySz * (q[1] < 0 ? 0.42 : 0.62), py = -bodySz * (q[1] < 0 ? 0.78 : 0.6); // the back pair higher and further in
             var r = document.createElement("div"); r.className = "entrance-blk"; r.style.width = r.style.height = rot + "px";
-            r.style.left = (px - rot / 2) + "px"; r.style.top = (-bodySz * 0.5 - lift - rot / 2) + "px";
-            r.style.zIndex = q[1] < 0 ? 0 : 2;
-            box.appendChild(r); return { el: r, q: q, post: post };
+            r.style.left = (px - rot / 2) + "px"; r.style.top = (py - rot / 2) + "px"; r.style.zIndex = q[1] < 0 ? 0 : 2;
+            box.appendChild(r); return { el: r, q: q };
           });
           g.board.appendChild(box);
           var end = tr.last ? landEnd + 0.7 : tr.t3, dur = end - tr.t0, kf = [];
@@ -835,16 +845,15 @@ export var ENTRANCES = [
           kf[kf.length - 1].offset = 1;
           var out = [box.animate(kf, { duration: dur * 1000, easing: "linear" })];
           out[0].onfinish = out[0].oncancel = function () { box.remove(); };
-          var TILT = "rotateX(72deg) ";
-          rots.forEach(function (r) { // spinning level; on the last trip they spin off and fly away, posts and all
+          var TILT = "rotateX(58deg) ", SPIN = 420; // degrees a second
+          rots.forEach(function (r) { // spinning level; on the last trip they spin off and fly away
             var dirSpin = r.q[0] * r.q[1] > 0 ? 1 : -1, spinKf = [{ transform: TILT + "rotate(0deg)", opacity: 1, offset: 0 }];
             if (tr.last) {
               var off = (tr.t2 + DROP - tr.t0) / dur, away = "translate(" + r.q[0] * g.size * 3 + "px," + (-g.size * 4) + "px) ";
-              spinKf.push({ transform: TILT + "rotate(" + dirSpin * 1500 * off * dur + "deg)", opacity: 1, offset: off });
-              spinKf.push({ transform: away + TILT + "rotate(" + dirSpin * 1500 * dur + "deg) scale(.5)", opacity: 0, offset: Math.min(1, off + 0.5 / dur) });
+              spinKf.push({ transform: TILT + "rotate(" + dirSpin * SPIN * off * dur + "deg)", opacity: 1, offset: off });
+              spinKf.push({ transform: away + TILT + "rotate(" + dirSpin * SPIN * dur + "deg) scale(.5)", opacity: 0, offset: Math.min(1, off + 0.5 / dur) });
               spinKf.push({ transform: away + TILT + "rotate(0deg)", opacity: 0, offset: 1 });
-              out.push(r.post.animate([{ opacity: 1, transform: "translate(0,0)" }, { opacity: 1, transform: "translate(0,0)", offset: off }, { opacity: 0, transform: away, offset: Math.min(1, off + 0.5 / dur) }, { opacity: 0, transform: away }], { duration: dur * 1000 }));
-            } else spinKf.push({ transform: TILT + "rotate(" + dirSpin * 1500 * dur + "deg)", opacity: 1, offset: 1 });
+            } else spinKf.push({ transform: TILT + "rotate(" + dirSpin * SPIN * dur + "deg)", opacity: 1, offset: 1 });
             out.push(r.el.animate(spinKf, { duration: dur * 1000, easing: "linear" }));
           });
           if (tr.last) out.push(body.animate([{ transform: "scale(1)" }, { transform: "scale(1)", offset: (tr.t2 + DROP + 0.3 - tr.t0) / dur }, { transform: "scale(" + g.size / bodySz + ")" }], { duration: dur * 1000, easing: "ease-in-out" }));
