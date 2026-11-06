@@ -169,7 +169,7 @@ html.standalone { touch-action: pan-x pan-y; }
 .award-close { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; border: none; border-radius: 999px; background: transparent; color: var(--muted); font-size: 1.1rem; }
 .award-close:focus-visible { outline: 3px solid var(--accent); }
 .award { touch-action: pan-y; }
-.tabs { display: flex; gap: 4px; background: var(--key); border-radius: 999px; padding: 4px; align-self: flex-start; max-width: 100%; overflow-x: auto; scrollbar-width: none; } /* scrolls sideways when the tabs don't fit (🏆 with Entrances on a phone) */
+.tabs { flex: none; display: flex; gap: 4px; background: var(--key); border-radius: 999px; padding: 4px; align-self: flex-start; max-width: 100%; overflow-x: auto; scrollbar-width: none; } /* scrolls sideways when the tabs don't fit (🏆 with Director on a phone); flex: none, or a long sheet squeezes it flat (overflow lets it shrink) */
 .tabs::-webkit-scrollbar { display: none; }
 .tabs button { flex: none; white-space: nowrap; border: none; background: transparent; border-radius: 999px; padding: 8px 12px; min-height: 40px; font-weight: 600; font-size: 0.92rem; color: var(--muted); }
 .tabs button[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
