@@ -1679,7 +1679,7 @@ function reloadClean() {
   location.reload();
 }
 function nameOf(p) { return p.name || "Default"; }
-// The player picker (More, above the tabs) and the bar across the top with the name: only with two or more.
+// The player picker (More, above the tabs) and the quiet line with the name under the title: only with two or more.
 function renderWho() {
   var many = PROFILES.length > 1, me = PROFILES.find(function (p) { return p.id === PROFILE; });
   $("#whoSec").hidden = !many;

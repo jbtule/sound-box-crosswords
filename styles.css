@@ -218,8 +218,10 @@ html.standalone { touch-action: pan-x pan-y; }
 .nudge-x { flex: none; width: 40px; height: 40px; border: none; border-radius: 999px; background: transparent; color: var(--muted); font-size: 1rem; }
 /* A secret achievement earned outside a puzzle waits here until it's tapped. */
 .secret-pill { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 18px; border: none; border-radius: 999px; background: var(--ink); color: var(--card); font-weight: 600; font-size: 0.95rem; box-shadow: var(--shadow); }
-/* Who's playing (two or more players): a thin bar across the top of the page, edge to edge. */
-.who-bar { display: block; width: calc(100% + max(16px, env(safe-area-inset-left, 0px)) + max(16px, env(safe-area-inset-right, 0px))); margin: -12px 0 10px calc(-1 * max(16px, env(safe-area-inset-left, 0px))); min-height: 30px; padding: 4px 16px; border: none; background: var(--ink); color: var(--card); font: 600 0.82rem var(--body); letter-spacing: 0.01em; }
+/* Who's playing (two or more players): a quiet line between the title and the packs, the
+   name between two hairlines. */
+.who-bar { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 32px; margin: -6px 0; padding: 0; border: none; background: none; color: var(--muted); font: 600 0.8rem var(--body); letter-spacing: 0.01em; white-space: nowrap; }
+.who-bar::before, .who-bar::after { content: ""; flex: 1; height: 1px; background: var(--key-edge); }
 .who-bar[hidden] { display: none; }
 /* More → Link: one task at a time. */
 .link-view { display: grid; gap: 12px; }

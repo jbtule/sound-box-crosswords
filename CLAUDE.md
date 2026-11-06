@@ -396,7 +396,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   - `clap`: the Break it down scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
   - The More sheet (`#settingsBtn`, a quiet line gear + "More" in the muted color, no pill, so it
-    reads as the grown-ups' door beside the 🏆): above the tabs, the profile picker (two or more profiles; a thin bar across the top, "Playing as Sam", `#whoPill`, opens More) and Edition; tabs Settings, Stats, Link (two tasks, the players on this device, sync status, under a short note on how linking works; `renderLink`) and About (license, Home Screen steps); `openSheet(tab)` opens
+    reads as the grown-ups' door beside the 🏆): above the tabs, the profile picker (two or more profiles; a quiet line under the title, "Playing as Sam", `#whoPill`, opens More; not at the very top, where iOS blurs under the status bar) and Edition; tabs Settings, Stats, Link (two tasks, the players on this device, sync status, under a short note on how linking works; `renderLink`) and About (license, Home Screen steps); `openSheet(tab)` opens
     on Settings or the named tab (`SHEET_TABS`; the Home Screen tip's How? shows the same steps as About in a popover, `#installPop`), with
     `closeSheet` and the change handlers below them. `selectTab` switches tabs here and in 🏆.
   - Stats (`renderProgressSheet`): practice days, the last 4 weeks (`renderCalendar`); each
