@@ -2,22 +2,25 @@
 // Run by `npm run check`, or alone: node --test scripts/sync.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { handle, MAX_BYTES, networkOf } from "../sync/src/api.js";
-import { Profile, memoryStore, MAX_GRADES, Limiter, memoryLimiterStore, NEW_PER_NETWORK, NEW_PER_DAY } from "../sync/src/profile.js";
+import { handle, MAX_BYTES, networkOf, looksRandom } from "../sync/src/api.js";
+import { Profile, memoryStore, MAX_GRADES, Limiter, memoryLimiterStore, NEW_PER_NETWORK, NEW_PER_DAY, Space, memorySpaceStore, BLOCK, SPACE_BYTES, KEEP_DAYS } from "../sync/src/profile.js";
 import { newKey, keysFor, seal, unseal } from "../js/seal.js";
 import { toRecord, merge, fromRecord } from "../js/merge.js";
 
 const SITE = "https://tools.tuley.name";
 function service() {
-  const profiles = new Map(), limiters = new Map();
+  const profiles = new Map(), limiters = new Map(), space = new Space({ store: memorySpaceStore() });
+  // Each profile's Durable Object storage, for its alarm: when it's set to go off.
+  const alarmAt = (id) => profiles.get(id).storage.at;
   const env = {
     PROFILE: {
       idFromName: (name) => name,
       get: (id) => {
-        if (!profiles.has(id)) profiles.set(id, new Profile({ store: memoryStore() }, env));
+        if (!profiles.has(id)) profiles.set(id, new Profile({ store: memoryStore(), storage: { at: null, async setAlarm(t) { this.at = t; } } }, env));
         return { fetch: (req) => profiles.get(id).fetch(req) };
       }
     },
+    SPACE: { idFromName: (name) => name, get: () => ({ fetch: (url, init) => space.fetch(new Request(url, init)) }) },
     LIMITER: {
       idFromName: (name) => name,
       get: (id) => {
@@ -28,7 +31,7 @@ function service() {
   };
   const call = (path, init = {}) =>
     handle(new Request("https://sound-box-sync.asset-data.stream" + path, { ...init, headers: { origin: SITE, "x-write-token": TOKEN, ...init.headers } }), env);
-  return { call, profiles, limiters };
+  return { call, profiles, limiters, space, alarmAt };
 }
 const TOKEN = "T".repeat(43);
 const put = (call, lookup, grade, base, body, token = TOKEN, ip) =>
@@ -280,4 +283,70 @@ test("syncGrade sends the token, and says when the network is at its limit", asy
   limiters.set("net:unknown", full);
   const fresh = await keysFor(newKey()), c = deviceFor("c"); c.data.counts.clean = 1;
   await assert.rejects(syncGrade(c.opts(client(call2), fresh)), (e) => e.limited === true);
+});
+
+test("each successful save sets the 90-day alarm; refused ones don't", async () => {
+  const { call, alarmAt } = service();
+  const keys = await keysFor(newKey()), other = await keysFor(newKey());
+  const t0 = Date.now();
+  assert.equal((await put(call, keys.lookup, "g3", 0, await seal(keys, "g3", {}), keys.writeToken)).status, 200);
+  const at = alarmAt(keys.lookup);
+  assert.ok(at >= t0 + KEEP_DAYS * 86400000 && at <= Date.now() + KEEP_DAYS * 86400000);
+  const before = alarmAt(keys.lookup);
+  assert.equal((await put(call, keys.lookup, "g3", 0, await seal(keys, "g3", {}), keys.writeToken)).status, 409);
+  assert.equal((await put(call, keys.lookup, "g3", 1, await seal(keys, "g3", {}), other.writeToken)).status, 403);
+  assert.equal(alarmAt(keys.lookup), before);
+});
+
+test("a profile saved before tokens: its family can still read it, and claims it with its next save", async () => {
+  const { call, profiles } = service();
+  const old = await keysFor(newKey());
+  const p = new Profile({ store: memoryStore() }); profiles.set(old.lookup, p);
+  p.store.put("g3", 1, await seal(old, "g3", { n: 1 }));
+  const res = await call(`/v1/p/${old.lookup}/g3`, { headers: { "x-write-token": old.writeToken } });
+  assert.equal(res.status, 200);
+  assert.deepEqual(await unseal(old, "g3", new Uint8Array(await res.arrayBuffer())), { n: 1 });
+});
+
+test("everything stored fits in SPACE_BYTES; expiry gives the room back", async () => {
+  const { call, profiles, space } = service();
+  const a = await keysFor(newKey());
+  assert.equal((await put(call, a.lookup, "g3", 0, await seal(a, "g3", {}), a.writeToken)).status, 200);
+  assert.equal(space.store.used(), 1); // one block for a small record
+  assert.equal(profiles.get(a.lookup).store.reserved(), 1);
+  // Nearly full: one block left.
+  space.store.setUsed(SPACE_BYTES / BLOCK - 1);
+  const b = await keysFor(newKey()), c = await keysFor(newKey());
+  assert.equal((await put(call, b.lookup, "g3", 0, await seal(b, "g3", {}), b.writeToken)).status, 200);
+  assert.equal((await put(call, c.lookup, "g3", 0, await seal(c, "g3", {}), c.writeToken)).status, 507);
+  // An existing profile saving within its room is never refused.
+  assert.equal((await put(call, a.lookup, "g3", 1, await seal(a, "g3", { more: 1 }), a.writeToken)).status, 200);
+  // b expires: its block comes back, and c fits.
+  await profiles.get(b.lookup).alarm();
+  assert.equal(profiles.get(b.lookup).store.reserved(), 0);
+  assert.equal((await put(call, c.lookup, "g3", 0, await seal(c, "g3", {}), c.writeToken)).status, 200);
+  // The client names it.
+  space.store.setUsed(SPACE_BYTES / BLOCK);
+  const d = await keysFor(newKey()), dev = deviceFor("d"); dev.data.counts.clean = 1;
+  await assert.rejects(syncGrade(dev.opts(client(call), d)), (e) => e.full === true);
+});
+
+test("only encrypted-looking records are kept: plain text and files are refused", async () => {
+  const { call } = service();
+  const keys = await keysFor(newKey());
+  const text = new TextEncoder().encode("x".repeat(13) + "Not encrypted at all, just text someone wants kept here. ".repeat(60));
+  text[0] = 1;
+  assert.equal((await put(call, keys.lookup, "g3", 0, text, keys.writeToken)).status, 400);
+  const zeros = new Uint8Array(4096); zeros[0] = 1;
+  assert.equal((await put(call, keys.lookup, "g3", 0, zeros, keys.writeToken)).status, 400);
+  // A real, busy record passes.
+  const big = { log: Array.from({ length: 200 }, (_, t) => ({ t: 1790000000000 + t * 86400000, pack: "blends", n: 6, m: t % 3 })), days: Array.from({ length: 300 }, (_, i) => "2026-" + i) };
+  const sealed = await seal(keys, "g3", big);
+  assert.ok(sealed.length > 1024);
+  assert.equal((await put(call, keys.lookup, "g3", 0, sealed, keys.writeToken)).status, 200);
+  // Random bytes (what encryption looks like), thousands of sizes: never refused.
+  for (let i = 0; i < 3000; i++) {
+    const n = 1024 + Math.floor(Math.random() * (MAX_BYTES - 1024));
+    assert.ok(looksRandom(crypto.getRandomValues(new Uint8Array(n))), "random bytes of " + n + " refused");
+  }
 });

@@ -1662,7 +1662,7 @@ function syncAll() {
   if (!PROFILES.some(function (p) { return linkKey(p.id); })) return Promise.resolve();
   syncing = (async function () {
     for (var p of PROFILES) {
-      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) { syncErr[p.id] = e && e.newer ? "newer" : e && e.limited ? "limited" : true; }
+      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) { syncErr[p.id] = e && e.newer ? "newer" : e && e.limited ? "limited" : e && e.full ? "full" : true; }
     }
   })().finally(function () {
     syncing = null;
@@ -1713,6 +1713,7 @@ function renderLinkStatus() {
   el.classList.toggle("on", linked && !syncErr[PROFILE]);
   el.textContent = !linked ? "Not linked with another device yet"
     : syncErr[PROFILE] === "newer" ? "Linked · another device has a newer version; this one syncs once it updates"
+    : syncErr[PROFILE] === "limited" || syncErr[PROFILE] === "full" ? "Linked · the sync service is busy today, will try again"
     : syncErr[PROFILE] ? "Linked · couldn’t sync just now, will try again"
     : syncing ? "Linked · syncing…"
     : "Linked · synced " + (t ? ago(t) : "soon");
@@ -1785,8 +1786,8 @@ async function prepareSend() {
   if (syncing) await syncing;
   if ($("#linkSend").hidden) return;
   if (syncErr[PROFILE]) {
-    $("#sendMsg").textContent = syncErr[PROFILE] === "limited"
-      ? "Too many players were linked from this network today. Try again tomorrow."
+    $("#sendMsg").textContent = syncErr[PROFILE] === "limited" || syncErr[PROFILE] === "full"
+      ? "The sync service can’t take more today. Try again tomorrow."
       : "Couldn’t reach the sync service. Check the connection, then try again.";
     $("#sendRetry").hidden = false;
     return;
@@ -1894,6 +1895,13 @@ $("#recvGo").addEventListener("click", async function () {
   } catch (e) {
     $("#recvGo").disabled = false;
     $("#recvMsg").textContent = "Couldn’t reach the sync service. Check the connection, then try again.";
+    return;
+  }
+  // Nothing saved for it (an old code whose copy has expired, or the other device hasn't
+  // synced): linking now would bring nothing, and Replace would clear this device for nothing.
+  if (!grades.length) {
+    $("#recvGo").disabled = false;
+    $("#recvMsg").textContent = "Nothing is saved for that player yet. Open Sound Box on the other device, show the code again, then scan it.";
     return;
   }
   receiving = true;

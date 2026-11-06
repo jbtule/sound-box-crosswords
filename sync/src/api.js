@@ -13,18 +13,33 @@
 //                                key: only its devices have it); 409 { version } if another
 //                                device saved since: fetch, merge, and try again; 403 for
 //                                the wrong token; 429 if the network has made too many new
-//                                profiles today
+//                                profiles today; 507 if the service is full (SPACE_BYTES)
 //
 // It refuses anything that isn't a sealed record of a sensible size, and a profile no device
 // has saved in 90 days is deleted (profile.js): devices keep their own copies and send them again.
 
 // A busy year in one grade seals to about 6 KB.
-export const MAX_BYTES = 32 * 1024;
+export const MAX_BYTES = 16 * 1024;
 const MIN_BYTES = 1 + 12 + 16; // format byte, IV, GCM tag
 const ORIGINS = [/^https:\/\/tools\.tuley\.name$/, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/];
 const LOOKUP = /^[A-Za-z0-9_-]{43}$/;
 const GRADE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
+
+// Encrypted bytes look random: each of the 256 byte values about equally often. A chi-square
+// test on the sealed part, with a bar random data fails about once in 10^17 tries, turns away
+// anything stored unencrypted (text, most files). Encrypted junk passes, but then no one can
+// read it without its own key. Under 1 KB there's too little to judge, and too little to matter.
+export function looksRandom(bytes) {
+  const n = bytes.length;
+  if (n < 1024) return true;
+  const count = new Uint32Array(256);
+  for (const b of bytes) count[b]++;
+  const e = n / 256;
+  let x = 0;
+  for (const k of count) x += (k - e) * (k - e) / e;
+  return x < 255 + 12 * Math.sqrt(510);
+}
 
 // The network a request came from, for counting new profiles: the IPv4 address, or an IPv6
 // address's first 64 bits (one home or phone gets a whole /64 and can pick any address in it).
@@ -75,7 +90,7 @@ export async function handle(request, env) {
     body = await request.arrayBuffer();
     const b = new Uint8Array(body);
     if (b.length > MAX_BYTES) return reply(413, { error: "too big" }, allowed);
-    if (b.length < MIN_BYTES || b[0] !== 1) return reply(400, { error: "not a sealed record" }, allowed);
+    if (b.length < MIN_BYTES || b[0] !== 1 || !looksRandom(b.subarray(13))) return reply(400, { error: "not a sealed record" }, allowed);
   } else if (request.method !== "GET") {
     return reply(405, { error: "method" }, allowed);
   }

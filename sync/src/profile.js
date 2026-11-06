@@ -10,8 +10,13 @@
 // only be fetched or changed by the profile's own devices. A profile's first save also counts
 // toward its network's new profiles for the day and everyone's (Limiter), and a profile no
 // device has saved in 90 days is deleted (alarm): the server is only a relay, since every
-// device keeps its own copy and sends it again. So it's no use for keeping anything else.
+// device keeps its own copy and sends it again. And everything stored, by everyone, fits in
+// SPACE_BYTES: each profile reserves room in BLOCK-sized pieces from one shared count (Space)
+// as its records grow, and gives it back when it's deleted. A real profile fits in one or two
+// blocks; when it's full, saves that need more room are refused until some expire. So it's no
+// use for keeping anything else.
 export const MAX_GRADES = 8;
+export const BLOCK = 16 * 1024, SPACE_BYTES = 50 * 1024 * 1024;
 export const KEEP_DAYS = 90;
 export const NEW_PER_NETWORK = 20, NEW_PER_DAY = 1000;
 
@@ -19,7 +24,11 @@ export const NEW_PER_NETWORK = 20, NEW_PER_DAY = 1000;
 export function sqlStore(sql) {
   sql.exec("CREATE TABLE IF NOT EXISTS records (grade TEXT PRIMARY KEY, version INTEGER NOT NULL, body BLOB NOT NULL, saved INTEGER NOT NULL)");
   sql.exec("CREATE TABLE IF NOT EXISTS owner (one INTEGER PRIMARY KEY CHECK (one = 1), token TEXT NOT NULL)");
+  sql.exec("CREATE TABLE IF NOT EXISTS room (one INTEGER PRIMARY KEY CHECK (one = 1), blocks INTEGER NOT NULL)");
   return {
+    bytes: (except) => sql.exec("SELECT COALESCE(SUM(length(body)), 0) AS n FROM records WHERE grade <> ?", except).toArray()[0].n,
+    reserved: () => (sql.exec("SELECT blocks FROM room").toArray()[0] || {}).blocks || 0,
+    setReserved: (n) => { sql.exec("INSERT OR REPLACE INTO room (one, blocks) VALUES (1, ?)", n); },
     list: () => sql.exec("SELECT grade, version FROM records").toArray(),
     get: (grade) => sql.exec("SELECT version, body FROM records WHERE grade = ?", grade).toArray()[0] || null,
     put: (grade, version, body) => { sql.exec("INSERT OR REPLACE INTO records (grade, version, body, saved) VALUES (?, ?, ?, ?)", grade, version, body, Date.now()); },
@@ -30,8 +39,11 @@ export function sqlStore(sql) {
 }
 export function memoryStore() {
   const m = new Map();
-  let owner = null;
+  let owner = null, blocks = 0;
   return {
+    bytes: (except) => [...m].reduce((n, [g, r]) => n + (g === except ? 0 : r.body.byteLength), 0),
+    reserved: () => blocks,
+    setReserved: (n) => { blocks = n; },
     list: () => [...m].map(([grade, r]) => ({ grade, version: r.version })),
     get: (grade) => m.get(grade) || null,
     put: (grade, version, body) => { m.set(grade, { version, body }); },
@@ -53,8 +65,17 @@ export class Profile {
     this.storage = ctx.storage; // for the alarm (none in the tests)
     this.env = env;
   }
-  // 90 days after the last save: gone. Devices that come back send theirs again.
-  async alarm() { this.store.clear(); }
+  // 90 days after the last save: gone, and its room given back. Devices that come back send
+  // theirs again. (If giving the room back fails, the alarm runs again later.)
+  async alarm() {
+    const blocks = this.store.reserved();
+    if (blocks && this.env && this.env.SPACE) await this.room("release", blocks);
+    this.store.setReserved(0);
+    this.store.clear();
+  }
+  room(what, n) {
+    return this.env.SPACE.get(this.env.SPACE.idFromName("everyone")).fetch("https://space/" + what + "?blocks=" + n, { method: "POST" });
+  }
 
   // Every request: X-Write-Token must be the owner's (a profile with no owner yet has nothing
   // to read, or is from before tokens and is claimed by its next save).
@@ -84,6 +105,13 @@ export class Profile {
         if ((await take("net:" + net, NEW_PER_NETWORK)).status !== 200) return json(429, { error: "too many new profiles from this network today" });
         if ((await take("everyone", NEW_PER_DAY)).status !== 200) return json(429, { error: "too many new profiles today" });
       }
+      // Room: enough blocks for all its records with this one. Reserved before the save (and kept
+      // even if the save is then refused, to be used by the next try).
+      const need = Math.ceil((this.store.bytes(grade) + body.byteLength) / BLOCK), have = this.store.reserved();
+      if (need > have && this.env && this.env.SPACE) {
+        if ((await this.room("reserve", need - have)).status !== 200) return json(507, { error: "full" });
+        this.store.setReserved(this.store.reserved() + need - have);
+      }
       // No awaits from here on: the checks and the save happen together.
       const owner = this.store.owner();
       if (owner && owner !== token) return json(403, { error: "write token" });
@@ -92,6 +120,8 @@ export class Profile {
       const version = cur ? cur.version : 0;
       if (base !== version) return json(409, { version });
       if (!cur && this.store.list().length >= MAX_GRADES) return json(403, { error: "too many grades" });
+      // Grew meanwhile (another save of the same profile while this one waited): try again.
+      if (this.env && this.env.SPACE && Math.ceil((this.store.bytes(grade) + body.byteLength) / BLOCK) > this.store.reserved()) return json(409, { version });
       if (!owner) this.store.setOwner(token); // the first save, or one from before tokens
       this.store.put(grade, version + 1, body);
       if (this.storage) await this.storage.setAlarm(Date.now() + KEEP_DAYS * 86400000);
@@ -125,5 +155,33 @@ export class Limiter {
     if (n >= limit) return json(429, { error: "limit" });
     this.store.set(day, n + 1);
     return json(200, { n: n + 1 });
+  }
+}
+
+// Everyone's room: how many BLOCKs all profiles have reserved, in one SQLite Durable Object.
+export function spaceStore(sql) {
+  sql.exec("CREATE TABLE IF NOT EXISTS used (one INTEGER PRIMARY KEY CHECK (one = 1), blocks INTEGER NOT NULL)");
+  return {
+    used: () => (sql.exec("SELECT blocks FROM used").toArray()[0] || {}).blocks || 0,
+    setUsed: (n) => { sql.exec("INSERT OR REPLACE INTO used (one, blocks) VALUES (1, ?)", n); }
+  };
+}
+export function memorySpaceStore() {
+  let n = 0;
+  return { used: () => n, setUsed: (v) => { n = v; } };
+}
+export class Space {
+  constructor(ctx) {
+    this.store = ctx.store || spaceStore(ctx.storage.sql);
+  }
+  // POST /reserve?blocks=N → 200 if they fit under SPACE_BYTES (and counts them), else 507.
+  // POST /release?blocks=N → gives them back.
+  async fetch(request) {
+    const url = new URL(request.url), n = Math.max(0, Number(url.searchParams.get("blocks")) || 0);
+    const used = this.store.used();
+    if (url.pathname === "/release") { this.store.setUsed(Math.max(0, used - n)); return json(200, { used: Math.max(0, used - n) }); }
+    if ((used + n) * BLOCK > SPACE_BYTES) return json(507, { error: "full" });
+    this.store.setUsed(used + n);
+    return json(200, { used: used + n });
   }
 }
