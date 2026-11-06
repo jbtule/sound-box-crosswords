@@ -75,6 +75,8 @@ h1 span { color: var(--accent); }
 .chip { flex: none; min-height: 36px; border: 1.5px solid var(--key-edge); background: var(--card); border-radius: 999px; padding: 5px 12px; font-weight: 600; font-size: 0.84rem; display: flex; gap: 5px; align-items: center; }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--card); border-color: var(--ink); }
 .chip .n { font-size: 0.74rem; opacity: 0.8; font-variant-numeric: tabular-nums; }
+.chip.locked { border-style: dashed; color: var(--muted); background: transparent; } /* a hard mode pack (🥋) before its unlock */
+.chip .lock { font-size: 0.74rem; }
 .note { margin: -4px 0 0; color: var(--muted); font-size: 0.9rem; }
 .progress { display: flex; align-items: center; gap: 10px; margin-top: -6px; color: var(--muted); font-size: 0.8rem; }
 .progress .track { flex: 1; max-width: 220px; height: 6px; border-radius: 999px; background: var(--key-edge); overflow: hidden; }

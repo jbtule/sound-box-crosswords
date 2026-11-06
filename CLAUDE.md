@@ -195,7 +195,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `packs.toml`: the word packs, in display order (the 3rd grade edition; other editions'
   files use the same format). Each `[[pack]]` has `id` (saved progress
   is keyed by it; don't rename), `name`, `note` (shown under the chips), `words`, and optionally `school = true` (the school's own list, not
-  one of the app's phonics packs: its chip shows 🏫; `renderPacks`);
+  one of the app's phonics packs: its chip shows 🏫; `renderPacks`) or `hard = true` (a hard mode
+  pack, any number per edition: its chip shows 🥋 and sits last, locked (dashed, 🔒, a toast on
+  tap) until the edition's first Champion of another pack, Custom aside (`hardOpen`); named for its theme, never "Hard mode");
   `[custom] words` is the starter "Custom" list. **Word list format** (packs and the custom list share it): one entry per
   line, `syl-la-bles emoji`, e.g. `but-ter-fly 🦋`. Dashes mark syllables and drive the
   coloring and *Break it down*. Letters (plus apostrophes, e.g. `don't`; the
@@ -260,7 +262,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   away (no streaks). Inputs saved by `app.js`: `sbx:counts` { clean, comeback } and
   `sbx:days` (local "YYYY-MM-DD" with a finished puzzle), backfilled from `sbx:log` once.
   Champion of Champions and then Legend of Legends: every pack's Champion / Legend, in grades
-  with at least 5 packs (Custom doesn't count). Secret achievements (`SECRETS`: Good Listener,
+  with at least 5 packs (Custom and hard packs don't count). Hard Mode 🥋 (`HARD`, listed in
+  grades with a hard pack): a puzzle finished in one (`counts.hard`); its card, and a hard pack's
+  Champion and Legend cards, add "Hard mode" to the grade line (`gradeLine` in `app.js`, on the
+  big card and the share card). Secret achievements (`SECRETS`: Good Listener,
   Two for One, Triple Digits, Weekend Speller, Touch Typist, Show-Off, New Look, Collector's
   Eye, Front Row Seat) show as ??? in the 🏆 sheet until earned, with no hint, and their card says "Secret
   achievement!"; their counts are in `sbx:counts` too (puzzle ones from `pz`, this puzzle's
@@ -280,7 +285,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   mistaken for a pack picture, now or in future packs. The solved card shows "+N pictures".
 - `js/palettes.js`: no DOM. `PALETTES`, the grid color schemes (syllable bands, accent,
   selection; light and dark). Classic is everyone's and must match `styles.css`; finishing
-  a pack (a `pack:` achievement) unlocks the next (`unlockedCount`). `paletteCSS` makes the
+  a pack (a `pack:` achievement) unlocks the next (`unlockedCount`, `EVERYDAY` of them). Black
+  Belt (`secret`, last) is opened only by a hard pack's Champion, and shows as 🔒 ??? until then
+  (only in grades with a hard pack). `paletteCSS` makes the
   rules for `:root[data-palette]` and the picker swatches. Picked in the 🏆 sheet's Colors
   tab (`renderColors` in `app.js`), saved as `settings.palette`. Cosmetic only. The check
   holds every scheme to Classic's contrast and keeps the two syllable bands clearly apart.

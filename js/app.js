@@ -4,7 +4,7 @@ import { chime, sparkle, audioAwake, audioOut } from "./chime.js";
 import { ENTRANCES, geometry, playEntrance, nextEntrance } from "./entrances.js";
 import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
-import { PALETTES, unlockedCount, paletteCSS } from "./palettes.js";
+import { PALETTES, EVERYDAY, unlockedCount, paletteCSS } from "./palettes.js";
 import { catalog, award, dayKey, daysThisWeek, spokenParts } from "./achievements.js";
 import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle } from "./crossword.js";
 import { speak, say, sayAfter, sayRecorded, hasClip, splitOf, onClips, stopSpeech, speechEpoch, hasSpeech } from "./speech.js";
@@ -149,8 +149,11 @@ if (settings.custom === undefined) {
   var oldProg = store.get("progress", {}).mine;
   settings.custom = store.get("custom", null) !== null || packId === "mine" || !!(oldProg && oldProg.done && Object.keys(oldProg.done).length);
 }
-// Packs to offer: every pack, and Custom when it's on.
-function packIds() { return Object.keys(PACKS).filter(function (id) { return id !== "mine" || settings.custom; }); }
+// Packs to offer: every pack, and Custom when it's on; hard mode packs (🥋) last.
+function packIds() {
+  var ids = Object.keys(PACKS).filter(function (id) { return id !== "mine" || settings.custom; });
+  return ids.filter(function (id) { return !PACKS[id].hard; }).concat(ids.filter(function (id) { return PACKS[id].hard; }));
+}
 if (!PACKS[packId] || packIds().indexOf(packId) < 0) packId = packIds()[0];
 var recent = []; // words from recent puzzles, avoided in the next one
 // Per pack: `done` = words completed at least once (the % shown); `round` = words completed
@@ -167,6 +170,13 @@ var counts = store.get("counts", null), days = store.get("days", null);
 if (!counts) counts = { clean: log.filter(function (e) { return e.m === 0; }).length, comeback: 0 };
 if (!days) days = log.map(function (e) { return dayKey(e.t); }).filter(function (d, i, a) { return a.indexOf(d) === i; });
 var earned = store.get("achievements", {});
+// Hard mode packs open with the first Champion of an everyday pack in this grade (Custom doesn't
+// count); until then their chips show locked.
+function isHard(id) { return !!(PACKS[id] && PACKS[id].hard); }
+function hardOpen() {
+  return Object.keys(earned).some(function (k) { var id = k.slice(5); return k.indexOf("pack:") === 0 && id !== "mine" && PACKS[id] && !isHard(id); });
+}
+if (isHard(packId) && !hardOpen()) packId = packIds()[0];
 // Where wrong letters fall in try-agains (phonics.js slipSpots), counts only, for Stats.
 var SLIPS0 = { place: { start: 0, middle: 0, end: 0 }, kind: { vowel: 0, blend: 0, consonant: 0 } };
 var slips = store.get("slips", null) || JSON.parse(JSON.stringify(SLIPS0));
@@ -175,10 +185,13 @@ var slips = store.get("slips", null) || JSON.parse(JSON.stringify(SLIPS0));
 var paletteStyle = document.createElement("style");
 paletteStyle.textContent = paletteCSS();
 document.head.appendChild(paletteStyle);
-function packsFinished() { return Object.keys(earned).filter(function (id) { return id.indexOf("pack:") === 0; }).length; }
+// Everyday packs finished (each opens the next scheme); a hard pack finished opens Black Belt instead.
+function packsFinished() { return Object.keys(earned).filter(function (id) { return id.indexOf("pack:") === 0 && !isHard(id.slice(5)); }).length; }
+function hardFinished() { return Object.keys(earned).some(function (id) { return id.indexOf("pack:") === 0 && isHard(id.slice(5)); }); }
+function paletteOpen(i) { return PALETTES[i].secret ? hardFinished() : i < unlockedCount(packsFinished()); }
 function applyPalette() {
   var i = PALETTES.findIndex(function (p) { return p.id === settings.palette; });
-  if (i < 0 || i >= unlockedCount(packsFinished())) i = 0;
+  if (i < 0 || !paletteOpen(i)) i = 0;
   document.documentElement.dataset.palette = PALETTES[i].id;
 }
 applyPalette();
@@ -575,6 +588,7 @@ function finish() {
   log = log.slice(0, LOG_MAX);
   store.set("log", log);
   if (misses === 0) counts.clean++;
+  if (isHard(packId)) counts.hard = (counts.hard || 0) + 1;
   if (pz.twofer) counts.twofer = (counts.twofer || 0) + 1;
   if (settings.kb === "qwerty" || pz.keys) counts.qwerty = (counts.qwerty || 0) + 1;
   if (listenedToAll()) counts.listener = (counts.listener || 0) + 1;
@@ -761,9 +775,15 @@ function renderPacks() {
     b.type = "button"; b.className = "chip";
     b.setAttribute("aria-pressed", id === packId ? "true" : "false");
     // 🏫: the school's own list (school = true in its packs file), not one of the app's phonics packs.
+    // 🥋: a hard mode pack (hard = true), locked until a first everyday pack's Champion.
+    var locked = isHard(id) && !hardOpen();
     b.innerHTML = (PACKS[id].school ? '<span class="school" role="img" aria-label="From school">🏫</span> ' : "") +
-      PACKS[id].name + (stars[id] ? ' <span class="n">⭐' + stars[id] + "</span>" : "");
+      (isHard(id) ? '<span class="hard" role="img" aria-label="Hard mode">🥋</span> ' : "") +
+      PACKS[id].name + (locked ? ' <span class="lock" role="img" aria-label="Locked">🔒</span>' : "") +
+      (stars[id] ? ' <span class="n">⭐' + stars[id] + "</span>" : "");
+    if (locked) b.classList.add("locked");
     b.addEventListener("click", function () {
+      if (locked) { toast("🥋 Finish every word in a pack to unlock"); return; }
       if (packId === id) return;
       packId = id; store.set("pack", id); recent = [];
       // Its name, said (with auto-speak on) for players still learning to read the chips; the
@@ -799,7 +819,7 @@ function renderProgressSheet() {
     var c = coverage(id), stats = packProgress(id).stats;
     var firsts = entries(id).filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
     var li = document.createElement("li"), name = document.createElement("b");
-    name.textContent = PACKS[id].name;
+    name.textContent = (isHard(id) ? "🥋 " : "") + PACKS[id].name;
     li.append(name, ": " + c.done + " of " + c.total + " words · " + firsts + " right on the first try · " +
       (stars[id] || 0) + (stars[id] === 1 ? " puzzle" : " puzzles"));
     rows.appendChild(li);
@@ -971,9 +991,9 @@ function achState() {
     }).map(function (id) {
       var c = coverage(id), stats = packProgress(id).stats;
       var firsts = entries(id).filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
-      return { id: id, name: PACKS[id].name, done: c.done, total: c.total, firsts: firsts };
+      return { id: id, name: PACKS[id].name, done: c.done, total: c.total, firsts: firsts, hard: isHard(id) };
     }),
-    clean: counts.clean, comeback: counts.comeback, days: days, edition: EDITION.short,
+    hard: counts.hard || 0, clean: counts.clean, comeback: counts.comeback, days: days, edition: EDITION.short,
     secret: { listener: counts.listener, twofer: counts.twofer, shared: counts.shared, look: counts.look, peek: counts.peek, qwerty: counts.qwerty, weekend: counts.weekend, words: wordsRight(), entrances: counts.entrances }
   };
 }
@@ -1064,11 +1084,16 @@ function sharePics(a) {
   pics = shuffle(pics).slice(0, a.pack ? 5 : 6);
   return { pics: pics, more: a.pack ? Math.max(0, a.goal - pics.length) : 0 };
 }
+// The grade line on an achievement's cards: the grade when there's more than one, and "Hard
+// mode" on hard mode ones ("3rd grade · Hard mode").
+function gradeLine(a) {
+  return [EDITIONS.length > 1 ? EDITION.short : "", a.hard ? "Hard mode" : ""].filter(Boolean).join(" · ");
+}
 function prepareShare(a) {
   shareFor = a.id; shareBlob = null;
   $("#awardShare").hidden = true;
   var shown = sharePics(a);
-  renderCard(a, earned[a.id] || Date.now(), shown.pics, EDITIONS.length > 1 ? EDITION.short : "", shown.more).then(function (b) {
+  renderCard(a, earned[a.id] || Date.now(), shown.pics, gradeLine(a), shown.more).then(function (b) {
     if (shareFor !== a.id) return; // moved on to another card meanwhile
     shareBlob = b;
     $("#awardShare").hidden = false;
@@ -1080,7 +1105,7 @@ function showAward(first) {
   // its name, what it took. The first waits for "You solved it!"; moving to another card
   // replaces what's being said.
   var kicker = awardFrom ? "Achievement" : a.secret ? "Secret achievement!" : "New achievement!";
-  $("#awardKicker").textContent = kicker + (EDITIONS.length > 1 ? "\n" + EDITION.short : "");
+  $("#awardKicker").textContent = kicker + (gradeLine(a) ? "\n" + gradeLine(a) : "");
   if (!awardFrom) {
     if (!first) stopSpeech();
     if (settings.chime) sayAfter(sparkle);
@@ -1093,7 +1118,7 @@ function showAward(first) {
   $("#awardTitle").textContent = a.title;
   $("#awardDetail").textContent = a.detail;
   // A pack finished while there are still colors to unlock: say where to find them.
-  $("#awardExtra").hidden = !!awardFrom || a.id.indexOf("pack:") !== 0 || packsFinished() >= PALETTES.length;
+  $("#awardExtra").hidden = !!awardFrom || a.id.indexOf("pack:") !== 0 || (!a.hard && packsFinished() >= EVERYDAY);
   $("#awardCount").textContent = n > 1 ? (awardIndex + 1) + " of " + n : "";
   var dots = $("#awardDots"); dots.innerHTML = "";
   if (n > 1) awardQueue.forEach(function (_, i) { var d = document.createElement("span"); if (i === awardIndex) d.className = "on"; dots.appendChild(d); });
@@ -1169,16 +1194,18 @@ function renderCollection() {
 // swatch carries data-palette, so it gets that scheme's tokens). Locked ones show dimmed.
 function renderColors() {
   var open = unlockedCount(packsFinished()), wrap = $("#palList"), cur = document.documentElement.dataset.palette;
-  $("#palHelp").textContent = open < PALETTES.length
-    ? "Finish every word in a pack to unlock new colors. " + open + " of " + PALETTES.length + " unlocked."
-    : "All " + PALETTES.length + " unlocked!";
+  $("#palHelp").textContent = open < EVERYDAY
+    ? "Finish every word in a pack to unlock new colors. " + open + " of " + EVERYDAY + " unlocked."
+    : "All " + EVERYDAY + " unlocked!";
   wrap.innerHTML = "";
   PALETTES.forEach(function (pal, i) {
-    var locked = i >= open, b = document.createElement("button");
+    // A secret scheme (Black Belt) shows as ??? until earned, and only where it can be (a grade with a hard pack).
+    if (pal.secret && !hardFinished() && !packIds().some(isHard)) return;
+    var locked = !paletteOpen(i), b = document.createElement("button");
     b.type = "button"; b.className = "pal"; b.dataset.palette = pal.id; b.disabled = locked;
     b.setAttribute("aria-pressed", String(pal.id === cur));
     b.innerHTML = '<span class="pal-boxes" aria-hidden="true"><i class="a cur"></i><i class="a"></i><i class="b"></i><i class="b"></i></span><span class="pal-name"></span>';
-    b.querySelector(".pal-name").textContent = locked ? "🔒 Locked" : pal.name;
+    b.querySelector(".pal-name").textContent = locked ? (pal.secret ? "🔒 ???" : "🔒 Locked") : pal.name;
     b.addEventListener("click", function () {
       var changed = pal.id !== document.documentElement.dataset.palette;
       settings.palette = pal.id; saveSettings(); applyPalette();
