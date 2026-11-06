@@ -1797,12 +1797,16 @@ async function prepareSend() {
   await syncAll();
   if (syncing) await syncing;
   if ($("#linkSend").hidden) return;
-  if (syncErr[PROFILE]) {
-    $("#sendMsg").textContent = SEND_TROUBLE[syncErr[PROFILE]] || SEND_TROUBLE.other;
+  // A grade that's too big, or saved by a newer version elsewhere, doesn't stop the code: the
+  // player's other grades were saved, and the other device gets those. Anything else (no
+  // connection, full, a limit) means nothing may be saved yet, so the code waits.
+  var kind = syncErr[PROFILE];
+  if (kind && kind !== "big" && kind !== "newer") {
+    $("#sendMsg").textContent = SEND_TROUBLE[kind] || SEND_TROUBLE.other;
     $("#sendRetry").hidden = false;
     return;
   }
-  $("#sendMsg").textContent = "";
+  $("#sendMsg").textContent = kind ? SEND_TROUBLE[kind] : "";
   var url = linkFor(SHARE_BASE, key);
   $("#sendUrl").textContent = url;
   $("#sendBox").hidden = false;

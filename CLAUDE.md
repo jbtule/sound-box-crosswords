@@ -299,8 +299,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `Limiter` counts new profiles a day: 20 per network (an IPv4 address or IPv6 /64,
   `networkOf`) and 1,000 for everyone (429); and `Space` caps everything stored at 50 MB:
   it keeps how many 16 KB blocks each profile holds ("hold at least N", "release": both safe to
-  repeat, so a lost reply or retried alarm never counts twice), grown as records grow and
-  released at expiry (507 when full). It's built so it can't serve as storage for anything else; denial of
+  repeat, and numbered per profile so they apply in the order sent, whatever order they arrive
+  in), grown as records grow and released at expiry (507 when full). Room is checked before
+  the new-profile limits, a new profile is counted once (saves arriving together share one
+  count), and a save whose room reply is out of date (expired meanwhile: `gen`) gets 409. It's built so it can't serve as storage for anything else; denial of
   service is accepted. `src/index.js` only exports them (the runtime refuses other exports there). Tests:
   `scripts/sync.test.mjs` (in memory). To try it in the real runtime: `npx wrangler dev`
   in `sync/`. It can't read what it stores and holds no names or accounts.
