@@ -126,16 +126,19 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   copyrighted characters or images. A word with no emoji is listen-only: the app draws a
   sound-wave icon (`WAVE` / `setPic` in `app.js`).
 - **State** (settings, custom list, stars, selected pack) lives in `localStorage`, always
-  wrapped in try/catch. No accounts. Each edition's data is under its own prefix
-  (`storagePrefix` in `words.js`: plain `sbx:` for `packs.toml`'s edition, `sbx:<id>:` for
-  others), through `store` in `app.js`; `device` (plain `sbx:`) holds what's shared: the
-  profiles (`profiles`, `profile`), the device id and the Home Screen tip.
-  **Profiles**: one player's progress each. The default keeps the plain keys above; others
-  (which only arrive by Receive, never made here) add `@<id>:` (`gradePrefix`,
-  `profilePrefix`), and `who` holds a profile's own: its grade (`edition`) and link key.
-  Names are the device's own and never sync. Any player but the one playing can be removed
-  (`removeProfile` / `wipeProfile`: the default's keys by name, since they sit beside the
-  device's own; then the first player left is the fallback). **Linking** (More → Link, which says "player",
+  wrapped in try/catch. No accounts. **Profiles** (one player's progress each) are all kept
+  the same way: `sbx:@<id>:` (`profilePrefix`), then each edition's own prefix
+  (`storagePrefix` in `words.js`: none for `packs.toml`'s edition, `<id>:` for others;
+  together `gradePrefix`), through `store` in `app.js`; `who` holds a profile's own: its grade
+  (`edition`), link key and sync time (`OWN_KEYS`; per grade, `GRADE_KEYS`: add a new saved
+  key there). `device` (plain `sbx:`) holds what's the device's: `profiles` (id and name),
+  `profile` (the one playing), the device id, the storage version and the Home Screen tip.
+  Every device starts with one profile, `default`; others only arrive by Receive. Names are
+  the device's own and never sync (empty shows as "Default"). Any player but the one playing
+  can be removed (`removeProfile` / `wipeProfile`: everything under its prefix).
+  **Storage versions** (`upgradeStorage`, device `storage`): 2 moved the first player's data
+  from the plain keys (`sbx:` and `sbx:<edition>:`, from before profiles) to `sbx:@default:`,
+  one key at a time, so a move cut short carries on at the next launch. **Linking** (More → Link, which says "player",
   one task at a time, `linkView`): Send ("Play on another device too") shows the active
   profile's link code (`linkFor`: the site's address + `#link=<key>`, also as a QR code);
   Receive ("Get a player from another device") starts the camera (`js/scan.js`), or pastes
@@ -149,7 +152,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   points at `npx wrangler dev` in `sync/`. A page opened with `#link=` drops it from the
   address and opens Link (`welcomeLink`). (The chime was the device's until
   it became each edition's; `moveChime` in `app.js` copied the device's choice into every
-  edition once.)
+  edition once, before the storage upgrade.)
 - Light and dark themes via CSS custom properties on `:root`, with
   `prefers-color-scheme` and `[data-theme]` overrides. Define new colors as tokens.
 - Respect `prefers-reduced-motion`.
