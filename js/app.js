@@ -157,7 +157,8 @@ function packIds() {
 if (!PACKS[packId] || packIds().indexOf(packId) < 0) packId = packIds()[0];
 var recent = []; // words from recent puzzles, avoided in the next one
 // Per pack: `done` = words completed at least once (the % shown); `round` = words completed
-// since the pack was last fully covered, so new puzzles bring in the rest first;
+// since the pack was last fully covered, so new puzzles bring in the rest first (`rounds`:
+// how many rounds have started);
 // `stats[word]` = { n: times spelled (typed, not finished by a crossing word),
 // ok: times right on the first try, miss: wrong tries }.
 var progress = store.get("progress", {});
@@ -225,7 +226,8 @@ function newPuzzle(solved) {
   if (pool.length < 3) { P = null; renderEmpty(); return; }
   var pp = packProgress(packId), words = pool.map(function (e) { return e.w; });
   var fresh = words.filter(function (w) { return pp.round.indexOf(w) < 0; });
-  if (!fresh.length) { pp.round = []; fresh = words; store.set("progress", progress); } // new round
+  // A new round. `rounds` counts them, so when two devices' copies are combined (merge.js) the later round wins.
+  if (!fresh.length) { pp.round = []; pp.rounds = (pp.rounds || 0) + 1; fresh = words; store.set("progress", progress); }
   P = makePuzzle(pool, recent, fresh);
   recent = P.words.map(function (p) { return p.w; }).concat(recent).slice(0, 8);
   renderBoard();
