@@ -1630,7 +1630,7 @@ $("#shareCopy").addEventListener("click", function () {
 var SYNC_KEYS = ["progress", "log", "counts", "days", "achievements", "slips", "stars", "guessing", "seenEntrances", "settings", "custom"];
 var ME = device.get("deviceId", "");
 if (!ME) { ME = newKey().slice(0, 12); device.set("deviceId", ME); }
-var syncing = null, syncAgain = false, syncErr = {}, receiving = false;
+var syncing = null, syncAgain = false, syncErr = {}, syncedGrades = {}, receiving = false;
 // Local testing only: ?sync=<address> (remembered) points at `npx wrangler dev` in sync/
 // instead of the live service.
 var SYNC_AT;
@@ -1687,9 +1687,15 @@ async function syncProfile(id) {
   var keys = await keysFor(key), net = function (u, o) { return fetch(u, o); };
   var remote = await remoteGrades({ fetch: net, url: SYNC_AT, keys: keys });
   // Each grade on its own: one that can't sync (a record from a newer app) doesn't hold up the rest.
-  var failed = null;
+  // Each grade on its own; the error reported is the most serious one (a too-big grade or a
+  // newer version elsewhere matter less than not being able to save at all), with how many
+  // grades did sync.
+  var failed = null, synced = 0;
+  var serious = function (e) { return e && (e.big || e.newer) ? 1 : 2; };
   for (var ed of EDITIONS) {
-    if (remote.indexOf(ed.id) < 0 && !hasData(id, ed)) continue;
+    // The grade being played always syncs, even with no progress yet: then a player sent from a
+    // brand-new device still has something saved (its settings) for the other device to link to.
+    if (remote.indexOf(ed.id) < 0 && !hasData(id, ed) && !isLive(id, ed)) continue;
     var g = gradeStore(id, ed);
     try {
       await syncGrade({
@@ -1700,9 +1706,10 @@ async function syncProfile(id) {
           writeGrade(id, ed, data); g.set("syncBase", rec);
         }
       });
-    } catch (e) { failed = failed || e; }
+      synced++;
+    } catch (e) { if (!failed || serious(e) > serious(failed)) failed = e; }
   }
-  if (failed) throw failed;
+  if (failed) { failed.synced = synced; throw failed; }
   whoOf(id).set("syncedAt", Date.now());
 }
 function syncAll() {
@@ -1711,7 +1718,10 @@ function syncAll() {
   if (!PROFILES.some(function (p) { return linkKey(p.id); })) return Promise.resolve();
   syncing = (async function () {
     for (var p of PROFILES) {
-      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) { syncErr[p.id] = e && e.newer ? "newer" : e && e.limited ? "limited" : true; }
+      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) {
+        syncErr[p.id] = e && e.newer ? "newer" : e && e.limited ? "limited" : e && e.full ? "full" : e && e.big ? "big" : true;
+        syncedGrades[p.id] = (e && e.synced) || 0;
+      }
     }
   })().finally(function () {
     syncing = null;
@@ -1762,6 +1772,9 @@ function renderLinkStatus() {
   el.classList.toggle("on", linked && !syncErr[PROFILE]);
   el.textContent = !linked ? "Not linked with another device yet"
     : syncErr[PROFILE] === "newer" ? "Linked · another device has a newer version; this one syncs once it updates"
+    : syncErr[PROFILE] === "limited" ? "Linked · the sync service is busy today, will try again"
+    : syncErr[PROFILE] === "full" ? "Linked · the sync service is full for now, will try again"
+    : syncErr[PROFILE] === "big" ? "Linked · this player’s progress is too big to sync; it’s still saved on this device"
     : syncErr[PROFILE] ? "Linked · couldn’t sync just now, will try again"
     : syncing ? "Linked · syncing…"
     : "Linked · synced " + (t ? ago(t) : "soon");
@@ -1823,6 +1836,14 @@ document.querySelectorAll("#linkPanel [data-back]").forEach(function (b) { b.add
 $("#goSend").addEventListener("click", function () { linkView("Send"); prepareSend(); });
 $("#goRecv").addEventListener("click", function () { linkView("Recv"); showScan(); startScan(); });
 
+// What Send says when the player couldn't be saved first (syncErr's kinds).
+var SEND_TROUBLE = {
+  limited: "Too many players were linked from this network today. Try again tomorrow.",
+  full: "The sync service is full for now. Try again in a few days.",
+  big: "This player’s progress is too big to sync. It’s still saved on this device.",
+  newer: "Another device has a newer version of Sound Box. Close Sound Box and open it again to update, then try again.",
+  other: "Couldn’t reach the sync service. Check the connection, then try again."
+};
 // Send: makes the player's key the first time (that links it), saves their progress to the
 // server, then shows the code.
 async function prepareSend() {
@@ -1833,14 +1854,16 @@ async function prepareSend() {
   await syncAll();
   if (syncing) await syncing;
   if ($("#linkSend").hidden) return;
-  if (syncErr[PROFILE]) {
-    $("#sendMsg").textContent = syncErr[PROFILE] === "limited"
-      ? "Too many players were linked from this network today. Try again tomorrow."
-      : "Couldn’t reach the sync service. Check the connection, then try again.";
+  // A grade that's too big, or saved by a newer version elsewhere, doesn't stop the code when
+  // another grade did sync: the other device gets that one. Anything else (no
+  // connection, full, a limit) means nothing may be saved yet, so the code waits.
+  var kind = syncErr[PROFILE];
+  if (kind && ((kind !== "big" && kind !== "newer") || !syncedGrades[PROFILE])) {
+    $("#sendMsg").textContent = SEND_TROUBLE[kind] || SEND_TROUBLE.other;
     $("#sendRetry").hidden = false;
     return;
   }
-  $("#sendMsg").textContent = "";
+  $("#sendMsg").textContent = kind ? SEND_TROUBLE[kind] : "";
   var url = linkFor(SHARE_BASE, key);
   $("#sendUrl").textContent = url;
   $("#sendBox").hidden = false;
@@ -1943,6 +1966,13 @@ $("#recvGo").addEventListener("click", async function () {
   } catch (e) {
     $("#recvGo").disabled = false;
     $("#recvMsg").textContent = "Couldn’t reach the sync service. Check the connection, then try again.";
+    return;
+  }
+  // Nothing saved for it (an old code whose copy has expired; a code just shown always has at
+  // least its grade saved): linking now would bring nothing, and Replace would clear this device.
+  if (!grades.length) {
+    $("#recvGo").disabled = false;
+    $("#recvMsg").textContent = "Nothing is saved for that player yet. Open Sound Box on the other device, show the code again, then scan it.";
     return;
   }
   receiving = true;

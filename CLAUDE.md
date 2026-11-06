@@ -281,16 +281,32 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `js/seal.js`: no DOM. Seals sync records with the browser's own Web
   Crypto: a profile key (`newKey`, 43 base64url characters, carried only after `#link=` in a
   link: `linkFor` / `keyFromLink`) gives, by HKDF, the lookup ID the server sees, an
-  AES-256-GCM key, and a write token sent with every save (`keysFor`); `seal` / `unseal` gzip the JSON and bind it to its profile and
+  AES-256-GCM key, and a token sent with every request (`keysFor`); `seal` / `unseal` gzip the JSON and bind it to its profile and
   grade. Tests: `scripts/seal.test.mjs`.
 - `sync/`: the sync service, a Cloudflare Worker at `sound-box-sync.asset-data.stream`
   (`wrangler.jsonc`; deployed by the `sync-deploy` job, not part of the site). `src/api.js`
-  checks requests (CORS to the site and localhost, sealed records up to 32 KB, a write token
-  on saves) and routes them; `src/profile.js` is one SQLite Durable Object per profile, keeping
-  each grade's latest record (up to 8 grades) and refusing a save from an out-of-date version
-  (409: fetch, merge, try again) or without the profile's write token (403: the first save
-  sets its owner, a hash of the token), and `Limiter`, one per network (an IPv4 address or an
-  IPv6 /64, `networkOf`), allowing it 50 new profiles a day (429); `src/index.js` only exports them (the runtime refuses other exports there). Tests:
+  checks requests (only from the site and localhost, with the profile's token on every
+  request, sealed records up to 16 KB whose encrypted part looks random, `looksRandom`, which
+  refuses anything that isn't encrypted, including many compressed formats: a speed bump, not
+  a guarantee (encrypted data can't be told apart by design; the 50 MB cap is the real bound);
+  replies `no-store`, `nosniff`, `attachment`) and routes
+  them; `src/profile.js` is one SQLite Durable Object per profile, keeping each grade's latest
+  record (up to 8 grades), answering only the profile's token (403; the first save sets its
+  owner, a hash of the token), refusing a save from an out-of-date version (409: fetch, merge,
+  try again), and its records deleted 90 days after its last save, reads not counting
+  (`alarm`; its owner stays, and devices send theirs again; a profile holding room always has
+  an alarm, and a save that's going to be refused reserves and counts nothing; tables are made
+  on the first write, so reading an unknown lookup leaves nothing behind);
+  `Limiter` counts new profiles a day: 20 per network (an IPv4 address or IPv6 /64,
+  `networkOf`) and 1,000 for everyone (429); and `Space` caps everything stored at 50 MB:
+  it keeps how many 16 KB blocks each profile holds ("hold at least N", "release": both safe to
+  repeat, and numbered per profile so they apply in the order sent, whatever order they arrive
+  in), grown as records grow and released at expiry (507 when full). Room is checked before
+  the new-profile limits, a new profile is counted once (saves arriving together share one
+  count; a Limiter that can't be reached is 503, not a limit), a save whose room reply is out
+  of date (expired meanwhile: `gen`) gets 409, and an alarm that finds a save newer than 90 days
+  (a retried expiry) waits for that save's 90 days instead. It's built so it can't serve as storage for anything else; denial of
+  service is accepted. `src/index.js` only exports them (the runtime refuses other exports there). Tests:
   `scripts/sync.test.mjs` (in memory). To try it in the real runtime: `npx wrangler dev`
   in `sync/`. It can't read what it stores and holds no names or accounts.
 - `js/confetti.js`: `confetti(host)`, the solve celebration (skipped with reduced motion).

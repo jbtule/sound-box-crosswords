@@ -25,7 +25,7 @@ export function canon(v) {
 
 // The grades the server has for this profile.
 export async function remoteGrades({ fetch, url = SYNC_URL, keys }) {
-  const res = await fetch(`${url}/v1/p/${keys.lookup}`, { cache: "no-store" });
+  const res = await fetch(`${url}/v1/p/${keys.lookup}`, { cache: "no-store", headers: { "x-write-token": keys.writeToken } });
   if (!res.ok) throw new Error("sync: " + res.status);
   return Object.keys((await res.json()).grades || {});
 }
@@ -38,7 +38,7 @@ export async function syncGrade({ fetch, url = SYNC_URL, keys, grade, me, read, 
   const at = `${url}/v1/p/${keys.lookup}/${grade}`;
   for (let i = 0; i < TRIES; i++) {
     const mine = toRecord(read(), base, me);
-    const res = await fetch(at, { cache: "no-store" });
+    const res = await fetch(at, { cache: "no-store", headers: { "x-write-token": keys.writeToken } });
     if (res.status !== 200 && res.status !== 404) throw new Error("sync: " + res.status);
     const version = res.status === 404 ? 0 : Number(res.headers.get("x-version"));
     const server = version ? await unseal(keys, grade, new Uint8Array(await res.arrayBuffer())) : null;
@@ -52,6 +52,8 @@ export async function syncGrade({ fetch, url = SYNC_URL, keys, grade, me, read, 
       });
       if (put.status === 409) continue;
       if (put.status === 429) throw Object.assign(new Error("sync: too many new players from this network today"), { limited: true });
+      if (put.status === 507) throw Object.assign(new Error("sync: the sync service is full"), { full: true });
+      if (put.status === 413) throw Object.assign(new Error("sync: this grade's progress is too big to sync"), { big: true });
       if (!put.ok) throw new Error("sync: " + put.status);
     }
     // Anything played meanwhile is added on top, so nothing is lost by keeping the result.
