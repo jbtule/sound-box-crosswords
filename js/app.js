@@ -269,7 +269,7 @@ var newPics = 0;  // pictures added to the collection in this puzzle
 var pz = { helped: {}, crossed: {}, twofer: false, keys: false, guess: {}, nudged: {} };
 
 function newPuzzle(solved) {
-  if (updateReady) { location.reload(); return; }
+  if (updateReady || syncedSettings) { location.reload(); return; }
   skipEntrance();
   $("#done").hidden = true; $("#cluebar").classList.remove("spent"); $(".board-card").style.minHeight = "";
   finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {}; newPics = 0; pz = { helped: {}, crossed: {}, twofer: false, keys: false, guess: {}, nudged: {} };
@@ -1628,7 +1628,7 @@ function applyLive(d) {
   store.set("achievements", earned); store.set("slips", slips); store.set("stars", stars); store.set("guessing", guessing);
   store.set("seenEntrances", d.seenEntrances); store.set("settings", settings);
   if (d.custom != null) { customText = d.custom; store.set("custom", d.custom); }
-  if (canon([settings, store.get("custom", null)]) !== was) updateReady = true;
+  if (canon([settings, store.get("custom", null)]) !== was) syncedSettings = true;
   checkAchievements();
   renderPacks();
 }
@@ -2010,12 +2010,17 @@ document.addEventListener("visibilitychange", function () {
 // live page's. If it changed, reload now (the puzzle in progress is saved and comes back)
 // unless a sheet or popup is open, or else at the next new puzzle. Unstamped (local) builds skip it.
 var BUILD = new URL(import.meta.url).searchParams.get("v"), updateReady = false;
+// A setting or Custom list changed on another device (applyLive): shown fresh at the next
+// puzzle. Kept apart from updateReady, so it never stops the check for a new version.
+var syncedSettings = false;
 // The puzzle in progress is saved (savePuzzle), so only an open sheet or popup waits.
 function safeToReload() {
   return $("#sheet").hidden && $("#achSheet").hidden && $("#shareSheet").hidden && $("#award").hidden;
 }
 document.addEventListener("visibilitychange", function () {
-  if (!BUILD || updateReady || document.visibilityState !== "visible") return;
+  if (!BUILD || document.visibilityState !== "visible") return;
+  // Already found earlier while a sheet was open: reload now if it's safe.
+  if (updateReady) { if (safeToReload()) location.reload(); return; }
   fetch(new URL("../", import.meta.url), { cache: "no-store" })
     .then(function (r) { return r.ok ? r.text() : ""; })
     .then(function (html) {
