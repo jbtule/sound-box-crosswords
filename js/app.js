@@ -43,14 +43,46 @@ function storage(prefix) {
 var PREFIX = "sbx:";
 var device = storage(function () { return "sbx:"; });
 var store = storage(function () { return PREFIX; });
-// Profiles: one player's progress each, in every grade. Every device starts with one, the
-// default, whose keys are the plain ones above, so nothing moved when profiles came. Others
-// arrive only by Receive (More → Link) and keep theirs under "sbx:@<id>:". Names are this
-// device's own and never sync. `who` is the active profile's own data: its grade and link key.
-var PROFILES = device.get("profiles", null) || [{ id: "", name: "" }];
-var PROFILE = device.get("profile", "");
-if (!PROFILES.some(function (p) { return p.id === PROFILE; })) PROFILE = "";
-function profilePrefix(id) { return id ? "sbx:@" + id + ":" : "sbx:"; }
+// Profiles: one player's progress each, in every grade, all kept the same way: under
+// "sbx:@<id>:", then the grade's prefix. Every device starts with one, "default"; others
+// arrive only by Receive (More → Link). Names are this device's own and never sync, and an
+// empty one shows as "Default". `who` is the active profile's own data: its grade and link
+// key. Set by loadProfiles, after upgradeStorage.
+var PROFILES = [], PROFILE = "default";
+// Everything a profile keeps in each grade, and of its own.
+var GRADE_KEYS = ["progress", "log", "counts", "days", "achievements", "slips", "stars", "guessing", "seenEntrances", "settings", "custom",
+  "puzzle", "pending", "entranceQueue", "entranceDue", "pack", "entrances", "syncBase"];
+var OWN_KEYS = ["edition", "linkKey", "syncedAt"];
+function loadProfiles() {
+  PROFILES = device.get("profiles", null) || [];
+  if (!PROFILES.length) PROFILES = [{ id: "default", name: "" }];
+  PROFILE = device.get("profile", PROFILES[0].id);
+  if (!PROFILES.some(function (p) { return p.id === PROFILE; })) PROFILE = PROFILES[0].id; // removed meanwhile
+}
+// Storage versions (device "storage"). 2: the first player's data moved from the plain keys
+// ("sbx:" and "sbx:<grade>:", from before there were profiles) to "sbx:@default:", like every
+// other player's. One key at a time, copied then removed, so a move cut short just carries on
+// at the next launch; the version is saved only once all of it has moved.
+function upgradeStorage(eds) {
+  if (device.get("storage", 1) >= 2) return;
+  try {
+    var moves = OWN_KEYS.map(function (k) { return ["sbx:" + k, "sbx:@default:" + k]; });
+    eds.forEach(function (ed) {
+      GRADE_KEYS.forEach(function (k) { moves.push([storagePrefix(ed) + k, "sbx:@default:" + storagePrefix(ed).slice(4) + k]); });
+    });
+    moves.forEach(function (m) {
+      var v = localStorage.getItem(m[0]);
+      if (v == null) return;
+      localStorage.setItem(m[1], v);
+      localStorage.removeItem(m[0]);
+    });
+    var list = device.get("profiles", null);
+    if (list) { list.forEach(function (p) { if (p.id === "") p.id = "default"; }); device.set("profiles", list); }
+    if (device.get("profile", null) === "") device.set("profile", "default");
+    device.set("storage", 2);
+  } catch (e) {}
+}
+function profilePrefix(id) { return "sbx:@" + id + ":"; }
 var who = storage(function () { return profilePrefix(PROFILE); });
 function whoOf(id) { return storage(function () { return profilePrefix(id); }); }
 // A grade's keys for a profile: the profile's prefix, then the grade's (words.js storagePrefix).
@@ -88,7 +120,7 @@ async function chooseEdition(eds) {
   if (saved) return saved;
   var start = byId(params.get("start") || "");
   if (start) { who.set("edition", start.id); return start; }
-  var before = !PROFILE && ["progress", "log", "settings", "achievements"].some(function (k) { return device.get(k, null) != null; });
+  var before = ["progress", "log", "settings", "achievements"].some(function (k) { return who.get(k, null) != null; });
   var original = eds.find(function (e) { return e.file === "packs.toml"; });
   if (before && original) { who.set("edition", original.id); return original; }
   if (eds.length === 1) return eds[0];
@@ -129,6 +161,9 @@ try {
   // failed static import would stop this whole module before it could show Try again.
   var { loadPacks, loadEditions, storagePrefix } = await import("./words.js");
   EDITIONS = await loadEditions();
+  moveChime();
+  upgradeStorage(EDITIONS);
+  loadProfiles();
   EDITION = await pickEdition(EDITIONS);
   PREFIX = gradePrefix(PROFILE, EDITION);
   ({ packs: PACKS, starter: DEFAULT_CUSTOM } = await loadPacks(EDITION.file));
@@ -142,8 +177,9 @@ try {
 
 // Settings are the edition's own (each child's), the chime too. The chime used to be the
 // device's ("sbx:shared", before that the plain "sbx:settings"), so once, that choice is copied
-// into every edition's settings: a device that had it off keeps it off everywhere.
-(function moveChime() {
+// into every edition's settings: a device that had it off keeps it off everywhere. (Run at
+// startup, before upgradeStorage, while those were the plain keys.)
+function moveChime() {
   if (device.get("chimeMoved", false)) return;
   var was = (device.get("shared", {}) || {}).chime;
   if (was === undefined) was = (device.get("settings", {}) || {}).chime;
@@ -153,7 +189,7 @@ try {
   });
   try { localStorage.removeItem("sbx:shared"); } catch (e) {}
   device.set("chimeMoved", true);
-})();
+}
 var settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true }, store.get("settings", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
@@ -1543,8 +1579,6 @@ $("#shareCopy").addEventListener("click", function () {
 // on coming back to the screen, after a puzzle, after a settings or Custom list change, on
 // leaving, and when the network comes back. Unlinked, nothing goes over the network.
 var SYNC_KEYS = ["progress", "log", "counts", "days", "achievements", "slips", "stars", "guessing", "seenEntrances", "settings", "custom"];
-// Everything a profile keeps in a grade, for Replace (which takes another profile's place).
-var GRADE_KEYS = SYNC_KEYS.concat(RESET_KEYS, ["pack", "entrances", "syncBase"]);
 var ME = device.get("deviceId", "");
 if (!ME) { ME = newKey().slice(0, 12); device.set("deviceId", ME); }
 var syncing = null, syncAgain = false, syncErr = {}, receiving = false;
@@ -1644,7 +1678,7 @@ function reloadClean() {
   history.replaceState(null, "", location.pathname + (new URLSearchParams(location.search).has("backstage") ? "?backstage" : ""));
   location.reload();
 }
-function nameOf(p) { return p.name || "Unnamed"; }
+function nameOf(p) { return p.name || "Default"; }
 // The player picker (More, above the tabs) and the bar across the top with the name: only with two or more.
 function renderWho() {
   var many = PROFILES.length > 1, me = PROFILES.find(function (p) { return p.id === PROFILE; });
@@ -1691,7 +1725,7 @@ function renderProfiles() {
     if (p.id === PROFILE) {
       var now = document.createElement("span"); now.className = "help"; now.textContent = "playing now";
       li.appendChild(now);
-    } else if (p.id) {
+    } else {
       var rm = document.createElement("button"); rm.type = "button"; rm.className = "ghost"; rm.textContent = "Remove";
       rm.addEventListener("click", function () {
         if (rm.dataset.sure !== "1") { rm.dataset.sure = "1"; rm.textContent = "Remove from this device?"; return; }
@@ -1702,14 +1736,18 @@ function renderProfiles() {
     list.appendChild(li);
   });
 }
-// From this device only: other devices holding it keep it and keep syncing.
-function removeProfile(id) {
-  var pre = profilePrefix(id);
+// Everything a player keeps on this device: all of it is under its prefix.
+function wipeProfile(id) {
   try {
-    var gone = [];
+    var pre = profilePrefix(id), gone = [];
     for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf(pre) === 0) gone.push(k); }
     gone.forEach(function (k) { localStorage.removeItem(k); });
   } catch (e) {}
+}
+// From this device only: other devices holding it keep it and keep syncing. Any player but
+// the one playing now.
+function removeProfile(id) {
+  wipeProfile(id);
   PROFILES = PROFILES.filter(function (p) { return p.id !== id; });
   saveProfiles();
   renderProfiles(); renderWho();
@@ -1859,8 +1897,7 @@ $("#recvGo").addEventListener("click", async function () {
     saveProfiles();
   } else {
     // Replace: this player's own progress goes, in every grade, and the sent one takes its place.
-    unlink(PROFILE);
-    EDITIONS.forEach(function (ed) { GRADE_KEYS.forEach(function (k) { try { localStorage.removeItem(gradePrefix(PROFILE, ed) + k); } catch (e) {} }); });
+    wipeProfile(PROFILE);
   }
   whoOf(target).set("linkKey", key);
   try { await syncProfile(target); } catch (e) {} // otherwise it syncs at the next launch
