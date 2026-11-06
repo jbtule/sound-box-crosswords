@@ -77,9 +77,12 @@ test("two devices syncing at once both end up with everything", async () => {
   const a = { id: "a", data: blank(), base: null }, b = { id: "b", data: blank(), base: null };
   play(a, 3); play(b, 2);
   await Promise.all([sync(a), sync(b)]);
-  await sync(a);
+  // Whichever finished first hasn't seen the other's yet: one more sync each, in either order.
+  await sync(a); await sync(b);
   assert.equal(a.data.counts.clean, 5);
   assert.equal(b.data.stars.blends, 5);
+  assert.equal(a.data.stars.blends, 5);
+  assert.equal(b.data.counts.clean, 5);
 });
 
 test("refuses other sites, bad paths, and anything that isn't a sealed record", async () => {
