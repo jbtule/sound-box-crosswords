@@ -1640,7 +1640,9 @@ async function syncProfile(id) {
   // Each grade on its own: one that can't sync (a record from a newer app) doesn't hold up the rest.
   var failed = null;
   for (var ed of EDITIONS) {
-    if (remote.indexOf(ed.id) < 0 && !hasData(id, ed)) continue;
+    // The grade being played always syncs, even with no progress yet: then a player sent from a
+    // brand-new device still has something saved (its settings) for the other device to link to.
+    if (remote.indexOf(ed.id) < 0 && !hasData(id, ed) && !isLive(id, ed)) continue;
     var g = gradeStore(id, ed);
     try {
       await syncGrade({
@@ -1897,8 +1899,8 @@ $("#recvGo").addEventListener("click", async function () {
     $("#recvMsg").textContent = "Couldn’t reach the sync service. Check the connection, then try again.";
     return;
   }
-  // Nothing saved for it (an old code whose copy has expired, or the other device hasn't
-  // synced): linking now would bring nothing, and Replace would clear this device for nothing.
+  // Nothing saved for it (an old code whose copy has expired; a code just shown always has at
+  // least its grade saved): linking now would bring nothing, and Replace would clear this device.
   if (!grades.length) {
     $("#recvGo").disabled = false;
     $("#recvMsg").textContent = "Nothing is saved for that player yet. Open Sound Box on the other device, show the code again, then scan it.";
