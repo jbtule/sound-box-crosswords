@@ -227,7 +227,7 @@ function newPuzzle(solved) {
 // already moved on: picked another word or typed.
 function sayFirstWord(p) {
   if (P !== p || finished || !settings.speakSel || cur !== order()[0] || Object.keys(fill).length) return;
-  sayWord(P.words[cur], 0.85);
+  sayWord(P.words[cur], 0.85, true);
 }
 // New-puzzle entrances (entrances.js): the boxes arrive in one of several ways, with sounds
 // (the Sound effects setting covers them). Every new puzzle gets one (not one restored at launch),
@@ -447,8 +447,9 @@ function firstEmpty(i, from) {
 }
 // Says the word; if it has a context sentence, spelling-test style: word, sentence, word.
 // say() queues, so the three play in order.
-function sayWord(W, rate) {
-  say("w", W.w, rate, true);
+// `after` queues it behind what's being said (a pack's name) instead of cutting that off.
+function sayWord(W, rate, after) {
+  say("w", W.w, rate, !after);
   if (W.sentence) { say("t", W.sentence, 0.9); say("w", W.w, rate); }
 }
 // Select word i with the cursor at letter p (or its first empty box). `say` speaks the
@@ -757,6 +758,9 @@ function renderPacks() {
     b.addEventListener("click", function () {
       if (packId === id) return;
       packId = id; store.set("pack", id); recent = [];
+      // Its name, said (with auto-speak on) for players still learning to read the chips; the
+      // achievement cards already record every pack name. The first word follows it.
+      if (settings.speakSel) say("p", PACKS[id].name, 0.95, true);
       renderPacks(); startNewPuzzle();
     });
     wrap.appendChild(b);
