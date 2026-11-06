@@ -251,7 +251,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   letters fall, for Stats).
 - `js/crossword.js`: no DOM, runs in Node. `parseList` reads word lists. `makePuzzle(pool,
   recent)` builds a crossword: greedy placement with crossing checks, many random attempts,
-  keeps the layout with the most words and smallest area (always at least 3 words: covering a
+  keeps the layout with the most words, then a varied shape (some words each way, words crossing
+  more than one other, not a comb of one long word), then the smallest area (always at least 3 words: covering a
   not-yet-done word never wins over that; the check also fails a word that shares no letter with
   the rest of its pack, since it could never cross in), max 11 columns × 12 rows so it
   fits a phone, avoids `recent` words. Returns `P` (`words`, `cells`, `rows`, `cols`); each

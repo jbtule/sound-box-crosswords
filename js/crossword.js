@@ -153,9 +153,15 @@ function build(pool, recent, fresh) {
     // A real crossword first (at least 3 words, or the whole pool if smaller): covering a fresh
     // word never wins over that, or a word that crosses nothing ends up a puzzle on its own.
     var full = p.length >= need ? 1e6 : 0;
-    var score = full + nFresh * 10000 + p.length * 1000 - area;
+    // Then, among layouts with as many words, a varied shape: some words each way (not one long
+    // word with the rest hanging off it like a comb) and words crossing more than one other.
+    var across = p.filter(function (q) { return q.dir === "A"; }).length, balanced = Math.min(across, p.length - across) >= 2;
+    var seen = {}, crossings = 0;
+    p.forEach(function (q) { for (var j = 0; j < q.w.length; j++) { var kk = (q.r + (q.dir === "D" ? j : 0)) + "," + (q.c + (q.dir === "A" ? j : 0)); if (seen[kk]) crossings++; seen[kk] = 1; } });
+    var shape = (balanced ? 400 : 0) + Math.max(0, crossings - (p.length - 1)) * 250;
+    var score = full + nFresh * 10000 + p.length * 1000 + shape - area;
     if (score > bestScore) { bestScore = score; bestSet = p; }
-    if (p.length >= target && nFresh >= Math.min(target, first.length) && t > 20) break;
+    if (p.length >= target && nFresh >= Math.min(target, first.length) && (balanced || t > 60) && t > 20) break;
   }
   return bestSet;
 }
