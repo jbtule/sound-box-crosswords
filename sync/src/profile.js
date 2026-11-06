@@ -9,8 +9,8 @@
 // hash of that token, and every later request must bring the same token, so what's stored can
 // only be fetched or changed by the profile's own devices. A profile's first save also counts
 // toward its network's new profiles for the day and everyone's (Limiter), and a profile no
-// device has saved in 90 days is deleted (alarm): the server is only a relay, since every
-// device keeps its own copy and sends it again. And everything stored, by everyone, fits in
+// device has saved in 90 days has its records deleted (alarm): the server is only a relay,
+// since every device keeps its own copy and sends it again. And everything stored, by everyone, fits in
 // SPACE_BYTES: each profile reserves room in BLOCK-sized pieces from one shared count (Space)
 // as its records grow, and gives it back when it's deleted. A real profile fits in one or two
 // blocks; when it's full, saves that need more room are refused until some expire. So it's no
@@ -34,7 +34,7 @@ export function sqlStore(sql) {
     put: (grade, version, body) => { sql.exec("INSERT OR REPLACE INTO records (grade, version, body, saved) VALUES (?, ?, ?, ?)", grade, version, body, Date.now()); },
     owner: () => (sql.exec("SELECT token FROM owner").toArray()[0] || {}).token || null,
     setOwner: (token) => { sql.exec("INSERT OR REPLACE INTO owner (one, token) VALUES (1, ?)", token); },
-    clear: () => { sql.exec("DELETE FROM records"); sql.exec("DELETE FROM owner"); }
+    clear: () => { sql.exec("DELETE FROM records"); }
   };
 }
 export function memoryStore() {
@@ -49,7 +49,7 @@ export function memoryStore() {
     put: (grade, version, body) => { m.set(grade, { version, body }); },
     owner: () => owner,
     setOwner: (token) => { owner = token; },
-    clear: () => { m.clear(); owner = null; }
+    clear: () => { m.clear(); }
   };
 }
 
@@ -65,13 +65,18 @@ export class Profile {
     this.storage = ctx.storage; // for the alarm (none in the tests)
     this.env = env;
   }
-  // 90 days after the last save: gone, and its room given back. Devices that come back send
-  // theirs again. (If giving the room back fails, the alarm runs again later.)
+  // 90 days after the last save (reads don't count): its records are gone, and its room given
+  // back. Its owner stays, so when its devices come back and send theirs again, it's the same
+  // profile, not a new one counted against today's limits. The records and this profile's
+  // count go first, so if giving the room back then fails, those blocks are lost to the shared
+  // count (it reads a little fuller than it is), never given back twice.
   async alarm() {
     const blocks = this.store.reserved();
-    if (blocks && this.env && this.env.SPACE) await this.room("release", blocks);
     this.store.setReserved(0);
     this.store.clear();
+    if (blocks && this.env && this.env.SPACE) {
+      try { await this.room("release", blocks); } catch (e) { /* lost to the count; see above */ }
+    }
   }
   room(what, n) {
     return this.env.SPACE.get(this.env.SPACE.idFromName("everyone")).fetch("https://space/" + what + "?blocks=" + n, { method: "POST" });

@@ -350,3 +350,73 @@ test("only encrypted-looking records are kept: plain text and files are refused"
     assert.ok(looksRandom(crypto.getRandomValues(new Uint8Array(n))), "random bytes of " + n + " refused");
   }
 });
+
+test("expiry: only saves count, not reads; a returning profile isn't a new one", async () => {
+  const { call, profiles, limiters, alarmAt } = service();
+  const keys = await keysFor(newKey()), as = { headers: { "x-write-token": keys.writeToken } };
+  assert.equal((await put(call, keys.lookup, "g3", 0, await seal(keys, "g3", {}), keys.writeToken)).status, 200);
+  const at = alarmAt(keys.lookup);
+  await new Promise((r) => setTimeout(r, 5));
+  await call(`/v1/p/${keys.lookup}`, as); await call(`/v1/p/${keys.lookup}/g3`, as);
+  assert.equal(alarmAt(keys.lookup), at, "a read moved the expiry");
+  // 90 days on: the records go, the owner stays.
+  await profiles.get(keys.lookup).alarm();
+  assert.deepEqual(await (await call(`/v1/p/${keys.lookup}`, as)).json(), { grades: {} });
+  assert.equal((await call(`/v1/p/${keys.lookup}`, { headers: { "x-write-token": (await keysFor(newKey())).writeToken } })).status, 403);
+  // Its network has used up today's new profiles, but coming back isn't new.
+  const full = new Limiter({ store: memoryLimiterStore() });
+  full.store.set(new Date().toISOString().slice(0, 10), NEW_PER_NETWORK);
+  limiters.set("net:unknown", full);
+  assert.equal((await put(call, keys.lookup, "g3", 0, await seal(keys, "g3", { back: 1 }), keys.writeToken)).status, 200);
+});
+
+test("room: a profile from before blocks reserves its room at its next save; a failed give-back errs toward fuller", async () => {
+  const { call, profiles, space } = service();
+  const old = await keysFor(newKey());
+  const sealed = await seal(old, "g3", { log: Array.from({ length: 200 }, (_, t) => ({ t, pack: "blends", n: 6 })) });
+  const p = new Profile({ store: memoryStore(), storage: { async setAlarm() {} } }, { SPACE: { idFromName: (n) => n, get: () => ({ fetch: (u, i) => space.fetch(new Request(u, i)) }) } });
+  profiles.set(old.lookup, p);
+  p.store.put("g3", 1, sealed);
+  assert.equal(p.store.reserved(), 0);
+  assert.equal((await put(call, old.lookup, "g3", 1, sealed, old.writeToken)).status, 200);
+  assert.equal(p.store.reserved(), 1);
+  assert.equal(space.store.used(), 1);
+  // Giving the room back fails: the records and the profile's count still go, and the shared
+  // count stays as it was (fuller than it is, never below).
+  p.env = { SPACE: { idFromName: (n) => n, get: () => ({ fetch: async () => { throw new Error("unreachable"); } }) } };
+  await p.alarm();
+  assert.equal(p.store.reserved(), 0);
+  assert.deepEqual(p.store.list(), []);
+  assert.equal(space.store.used(), 1);
+});
+
+test("a deliberately oversized, realistic record still fits in MAX_BYTES", async () => {
+  // Twice today's 3rd-grade packs, every word with every tally on, split over 4 devices, the
+  // log full, a year of days, every kind of count, and a long Custom list.
+  const { readFileSync } = await import("node:fs");
+  const { parse } = await import("smol-toml");
+  const { parseList } = await import("../js/crossword.js");
+  const packs = parse(readFileSync(new URL("../packs.toml", import.meta.url), "utf8")).pack;
+  const progress = {};
+  for (const copy of ["", "x"]) for (const p of packs) {
+    const ws = parseList(p.words).map((e) => e.w + copy);
+    progress[p.id + copy] = { done: Object.fromEntries(ws.map((w) => [w, true])), round: ws, rounds: 9, stats: Object.fromEntries(ws.map((w) => [w, { n: 40, ok: 30, miss: 25, cb: true }])) };
+  }
+  const data = {
+    progress, log: Array.from({ length: 200 }, (_, i) => ({ t: 1790000000000 + i * 86400000, pack: packs[i % packs.length].id, n: 6, m: i % 4 })),
+    counts: { clean: 300, comeback: 80, hard: 40, twofer: 30, qwerty: 200, listener: 50, weekend: 90, shared: 3, look: 2, peek: 1, entrances: 30 },
+    days: Array.from({ length: 365 }, (_, i) => new Date(1760000000000 + i * 86400000).toISOString().slice(0, 10)),
+    achievements: Object.fromEntries(Array.from({ length: 80 }, (_, i) => ["achievement-" + i, 1790000000000 + i])),
+    slips: { place: { start: 90, middle: 300, end: 200 }, kind: { vowel: 250, blend: 200, consonant: 140 } },
+    stars: Object.fromEntries(Object.keys(progress).map((p) => [p, 60])),
+    guessing: { t: Array.from({ length: 200 }, (_, i) => 1790000000000 + i), words: Object.fromEntries(Object.keys(progress.blends.stats).map((w) => [w, 3])) },
+    seenEntrances: Array.from({ length: 40 }, (_, i) => "entrance" + i), settings: { syl: true, kb: "abc", speakSel: true, chime: true, custom: true, palette: "ocean" },
+    custom: Array.from({ length: 200 }, (_, i) => "wor-dnum" + i.toString(36) + " 🐸 \"A sentence that uses the word in context.\"").join("\n")
+  };
+  let rec = null;
+  for (const dev of ["deviceA0001", "deviceB0002", "deviceC0003", "deviceD0004"]) { rec = toRecord(data, rec, dev); data.counts.clean += 7; }
+  const keys = await keysFor(newKey());
+  const sealed = await seal(keys, "g3", rec);
+  assert.ok(sealed.length < MAX_BYTES, `a busy record sealed to ${sealed.length} bytes, over MAX_BYTES (${MAX_BYTES}): raise it in sync/src/api.js`);
+  assert.ok(looksRandom(sealed.subarray(13)));
+});

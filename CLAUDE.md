@@ -286,12 +286,14 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `sync/`: the sync service, a Cloudflare Worker at `sound-box-sync.asset-data.stream`
   (`wrangler.jsonc`; deployed by the `sync-deploy` job, not part of the site). `src/api.js`
   checks requests (only from the site and localhost, with the profile's token on every
-  request, sealed records up to 16 KB whose encrypted part looks random, `looksRandom`;
+  request, sealed records up to 16 KB whose encrypted part looks random, `looksRandom`, which
+  stops plain text but not compressed files;
   replies `no-store`, `nosniff`, `attachment`) and routes
   them; `src/profile.js` is one SQLite Durable Object per profile, keeping each grade's latest
   record (up to 8 grades), answering only the profile's token (403; the first save sets its
   owner, a hash of the token), refusing a save from an out-of-date version (409: fetch, merge,
-  try again), and deleted 90 days after its last save (`alarm`; devices send theirs again);
+  try again), and its records deleted 90 days after its last save, reads not counting
+  (`alarm`; its owner stays, and devices send theirs again);
   `Limiter` counts new profiles a day: 20 per network (an IPv4 address or IPv6 /64,
   `networkOf`) and 1,000 for everyone (429); and `Space` caps everything stored at 50 MB:
   each profile reserves 16 KB blocks as its records grow and gives them back when it expires

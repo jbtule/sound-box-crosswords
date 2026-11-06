@@ -28,8 +28,9 @@ const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 
 // Encrypted bytes look random: each of the 256 byte values about equally often. A chi-square
 // test on the sealed part, with a bar random data fails about once in 10^17 tries, turns away
-// anything stored unencrypted (text, most files). Encrypted junk passes, but then no one can
-// read it without its own key. Under 1 KB there's too little to judge, and too little to matter.
+// plain text and other uncompressed data. Compressed files (gzip, JPEG, ZIP) look random too and
+// pass, as does encrypted junk; the 50 MB cap (profile.js) is what bounds those. Under 1 KB
+// there's too little to judge, and too little to matter.
 export function looksRandom(bytes) {
   const n = bytes.length;
   if (n < 1024) return true;
