@@ -49,7 +49,8 @@ var store = storage(function () { return PREFIX; });
 // device's own and never sync. `who` is the active profile's own data: its grade and link key.
 var PROFILES = device.get("profiles", null) || [{ id: "", name: "" }];
 var PROFILE = device.get("profile", "");
-if (!PROFILES.some(function (p) { return p.id === PROFILE; })) PROFILE = "";
+if (!PROFILES.length) PROFILES = [{ id: "", name: "" }];
+if (!PROFILES.some(function (p) { return p.id === PROFILE; })) PROFILE = PROFILES[0].id; // the default may have been removed
 function profilePrefix(id) { return id ? "sbx:@" + id + ":" : "sbx:"; }
 var who = storage(function () { return profilePrefix(PROFILE); });
 function whoOf(id) { return storage(function () { return profilePrefix(id); }); }
@@ -1691,7 +1692,7 @@ function renderProfiles() {
     if (p.id === PROFILE) {
       var now = document.createElement("span"); now.className = "help"; now.textContent = "playing now";
       li.appendChild(now);
-    } else if (p.id) {
+    } else {
       var rm = document.createElement("button"); rm.type = "button"; rm.className = "ghost"; rm.textContent = "Remove";
       rm.addEventListener("click", function () {
         if (rm.dataset.sure !== "1") { rm.dataset.sure = "1"; rm.textContent = "Remove from this device?"; return; }
@@ -1702,14 +1703,25 @@ function renderProfiles() {
     list.appendChild(li);
   });
 }
-// From this device only: other devices holding it keep it and keep syncing.
-function removeProfile(id) {
-  var pre = profilePrefix(id);
+// Everything a player keeps on this device: each grade's keys, and its own (grade, link).
+// The default's keys are the plain ones, beside the device's own, so they go by name; any
+// other's are everything under its prefix.
+function wipeProfile(id) {
   try {
-    var gone = [];
-    for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf(pre) === 0) gone.push(k); }
-    gone.forEach(function (k) { localStorage.removeItem(k); });
+    if (id) {
+      var pre = profilePrefix(id), gone = [];
+      for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf(pre) === 0) gone.push(k); }
+      gone.forEach(function (k) { localStorage.removeItem(k); });
+      return;
+    }
+    EDITIONS.forEach(function (ed) { GRADE_KEYS.forEach(function (k) { localStorage.removeItem(gradePrefix(id, ed) + k); }); });
+    ["edition", "linkKey", "syncedAt"].forEach(function (k) { localStorage.removeItem(profilePrefix(id) + k); });
   } catch (e) {}
+}
+// From this device only: other devices holding it keep it and keep syncing. Any player but
+// the one playing now.
+function removeProfile(id) {
+  wipeProfile(id);
   PROFILES = PROFILES.filter(function (p) { return p.id !== id; });
   saveProfiles();
   renderProfiles(); renderWho();
@@ -1859,8 +1871,7 @@ $("#recvGo").addEventListener("click", async function () {
     saveProfiles();
   } else {
     // Replace: this player's own progress goes, in every grade, and the sent one takes its place.
-    unlink(PROFILE);
-    EDITIONS.forEach(function (ed) { GRADE_KEYS.forEach(function (k) { try { localStorage.removeItem(gradePrefix(PROFILE, ed) + k); } catch (e) {} }); });
+    wipeProfile(PROFILE);
   }
   whoOf(target).set("linkKey", key);
   try { await syncProfile(target); } catch (e) {} // otherwise it syncs at the next launch

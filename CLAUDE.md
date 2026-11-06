@@ -133,7 +133,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   **Profiles**: one player's progress each. The default keeps the plain keys above; others
   (which only arrive by Receive, never made here) add `@<id>:` (`gradePrefix`,
   `profilePrefix`), and `who` holds a profile's own: its grade (`edition`) and link key.
-  Names are the device's own and never sync. **Linking** (More → Link, which says "player",
+  Names are the device's own and never sync. Any player but the one playing can be removed
+  (`removeProfile` / `wipeProfile`: the default's keys by name, since they sit beside the
+  device's own; then the first player left is the fallback). **Linking** (More → Link, which says "player",
   one task at a time, `linkView`): Send ("Play on another device too") shows the active
   profile's link code (`linkFor`: the site's address + `#link=<key>`, also as a QR code);
   Receive ("Get a player from another device") starts the camera (`js/scan.js`), or pastes
