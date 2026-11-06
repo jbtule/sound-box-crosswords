@@ -133,10 +133,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   **Profiles**: one player's progress each. The default keeps the plain keys above; others
   (which only arrive by Receive, never made here) add `@<id>:` (`gradePrefix`,
   `profilePrefix`), and `who` holds a profile's own: its grade (`edition`) and link key.
-  Names are the device's own and never sync. **Linking** (More → Link): Send shows the active
+  Names are the device's own and never sync. **Linking** (More → Link, which says "player",
+  one task at a time, `linkView`): Send ("Play on another device too") shows the active
   profile's link code (`linkFor`: the site's address + `#link=<key>`, also as a QR code);
-  Receive scans it (`js/scan.js`) or pastes it, then Replace (this profile becomes that one;
-  its progress here goes) or Add (a new profile, named; the first time, the default is named
+  Receive ("Get a player from another device") starts the camera (`js/scan.js`), or pastes
+  the link, then asks "Who is this?": the same player as this device (Replace: its progress
+  here goes) or someone else (Add: a new, named profile; the first time, the default is named
   too). A linked profile syncs every grade it has (`syncAll` / `syncProfile`, `sync.js`) at
   launch, on visibility changes, when back online, and shortly after a puzzle, a setting or
   a Custom list change (`syncSoon`); each grade keeps the last merged record as `syncBase`.
@@ -389,7 +391,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   - `clap`: the Break it down scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
   - The More sheet (`#settingsBtn`, a quiet line gear + "More" in the muted color, no pill, so it
-    reads as the grown-ups' door beside the 🏆): above the tabs, the profile picker (two or more profiles; the name pill under the title, `#whoPill`, opens More) and Edition; tabs Settings, Stats, Link (Send, Receive, the profiles on this device, sync status and a privacy note; `renderLink`) and About (license, Home Screen steps); `openSheet(tab)` opens
+    reads as the grown-ups' door beside the 🏆): above the tabs, the profile picker (two or more profiles; the name pill under the title, `#whoPill`, opens More) and Edition; tabs Settings, Stats, Link (two tasks, the players on this device, sync status, and "How linking works"; `renderLink`) and About (license, Home Screen steps); `openSheet(tab)` opens
     on Settings or the named tab (`SHEET_TABS`; the Home Screen tip's How? shows the same steps as About in a popover, `#installPop`), with
     `closeSheet` and the change handlers below them. `selectTab` switches tabs here and in 🏆.
   - Stats (`renderProgressSheet`): practice days, the last 4 weeks (`renderCalendar`); each

@@ -184,8 +184,8 @@
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <div class="row" style="justify-content:space-between"><h2 id="sheetTitle">More</h2><button class="ghost" id="closeBtn" type="button">Done</button></div>
     <div id="whoSec" hidden>
-      <h3>Profile</h3>
-      <div class="row"><select id="profileSel" aria-label="Profile"></select></div>
+      <h3>Player</h3>
+      <div class="row"><select id="profileSel" aria-label="Player"></select></div>
     </div>
     <div id="gradeSec" hidden>
       <h3>Edition</h3>
@@ -269,56 +269,61 @@
       </div>
     </div>
     <div class="tabpanel" id="linkPanel" role="tabpanel" aria-labelledby="tabLink" hidden>
-      <div id="arriveSec" hidden>
-        <h3>A link code</h3>
-        <p class="help">This page opened with a link code from another device. If Sound Box is on your Home Screen, copy the link, open Sound Box there, then More → Link → Paste link. Or receive it here, below, if you play in this browser.</p>
-        <div class="row"><button class="ghost" id="arriveCopy" type="button">Copy link</button></div>
+      <!-- One task at a time (linkView in app.js). -->
+      <div class="link-view" id="linkHome">
+        <p class="link-status" id="linkStatus" role="status"></p>
+        <button class="task" id="goSend" type="button"><span class="task-ico" aria-hidden="true">📲</span><span><b>Play on another device too</b><small>Show a code for the other device to scan.</small></span></button>
+        <button class="task" id="goRecv" type="button"><span class="task-ico" aria-hidden="true">📥</span><span><b>Get a player from another device</b><small>Scan the code it shows, or paste its link.</small></span></button>
+        <div id="profilesSec" hidden>
+          <h3>Players on this device</h3>
+          <ul class="plain" id="profileList"></ul>
+          <p class="help">Names stay on this device.</p>
+        </div>
+        <details class="link-about">
+          <summary>How linking works</summary>
+          <p class="help">Linked devices share a player’s progress, settings and Custom words, through a small server that keeps a sealed copy. Without the code no one can read it, the server included, and it holds no names. Each device keeps its own copy and plays offline.</p>
+        </details>
       </div>
-      <div>
-        <h3>Send</h3>
-        <p class="help">Shows this profile’s link code, for another device to receive. Linked devices share its progress, settings and Custom words.</p>
-        <button class="primary" id="sendBtn" type="button">Show link code</button>
+      <div class="link-view" id="linkSend" hidden>
+        <button class="back" type="button" data-back>‹ Back</button>
+        <p class="step">Scan this on the other device</p>
         <p class="help" id="sendMsg" role="status"></p>
+        <button class="primary" id="sendRetry" type="button" hidden>Try again</button>
         <div id="sendBox" hidden>
           <div class="share-qr" id="sendQr" role="img" aria-label="Link code" hidden></div>
-          <p class="help">On the other device: More → Link → Scan a code. Or send it this link: <code id="sendUrl"></code></p>
-          <div class="row"><button class="ghost" id="sendShare" type="button">Share…</button><button class="ghost" id="sendCopy" type="button">Copy link</button></div>
-          <p class="help">Anyone with this code can see and change this profile’s progress. Show it only to your own devices.</p>
+          <p class="help center">On the other device: More → Link → <b>Get a player from another device</b>.</p>
+          <div class="row center"><button class="ghost" id="sendShare" type="button">Share…</button><button class="ghost" id="sendCopy" type="button">Copy link</button></div>
+          <p class="help center fine">Anyone with this code can change this player’s progress. Show it only on your own devices.</p>
+          <code id="sendUrl" hidden></code>
         </div>
       </div>
-      <div>
-        <h3>Receive</h3>
-        <div class="row"><button class="primary" id="scanBtn" type="button">Scan a code</button><button class="ghost" id="pasteBtn" type="button">Paste link</button></div>
-        <div id="scanBox" hidden>
-          <video id="scanVideo" playsinline muted aria-label="Camera"></video>
-          <div class="row"><button class="ghost" id="scanStop" type="button">Cancel</button></div>
+      <div class="link-view" id="linkRecv" hidden>
+        <button class="back" type="button" data-back>‹ Back</button>
+        <div class="arrive" id="arriveSec" hidden>
+          <p class="help">This page opened with a link code. If Sound Box is on your Home Screen, copy the link, then open Sound Box there: More → Link → Get a player → Paste link. Or link it right here, if you play in this browser.</p>
+          <button class="ghost" id="arriveCopy" type="button">Copy link</button>
         </div>
-        <p class="help" id="receiveMsg" role="status"></p>
+        <div id="recvScan">
+          <p class="step">Scan the code on the other device</p>
+          <div id="scanBox" hidden><video id="scanVideo" playsinline muted aria-label="Camera"></video></div>
+          <p class="help" id="receiveMsg" role="status"></p>
+          <div class="row center"><button class="ghost" id="scanAgain" type="button" hidden>Use the camera</button><button class="ghost" id="pasteBtn" type="button">Paste link instead</button></div>
+        </div>
         <div id="receiveBox" hidden>
-          <div class="opt">
-            <label><input type="radio" name="recv" id="recvReplace" value="replace"> Replace this profile <span class="help" id="recvWarn"></span></label>
-            <label><input type="radio" name="recv" id="recvAdd" value="add"> Add as a new profile</label>
-          </div>
-          <div id="recvNames">
-            <label class="help" for="recvName">Name for the new profile</label>
+          <p class="step">Who is this?</p>
+          <label class="task choice"><input type="radio" name="recv" id="recvReplace" value="replace"><span><b>The same player as this device</b><small id="recvWarn"></small></span></label>
+          <label class="task choice"><input type="radio" name="recv" id="recvAdd" value="add"><span><b>Someone else</b><small>Adds them to this device; switch players from More.</small></span></label>
+          <div id="recvNames" hidden>
+            <label class="help" for="recvName">Their name</label>
             <input id="recvName" type="text" maxlength="24" autocomplete="off" autocorrect="off" spellcheck="false">
             <div id="recvMineBox" hidden>
-              <label class="help" for="recvMine">And a name for this device’s own profile</label>
+              <label class="help" for="recvMine">And who plays on this device now?</label>
               <input id="recvMine" type="text" maxlength="24" autocomplete="off" autocorrect="off" spellcheck="false">
             </div>
           </div>
-          <div class="row"><button class="primary" id="recvGo" type="button">Link</button><button class="ghost" id="recvCancel" type="button">Cancel</button></div>
+          <p class="help" id="recvMsg" role="status"></p>
+          <button class="primary wide" id="recvGo" type="button">Link</button>
         </div>
-      </div>
-      <div id="profilesSec" hidden>
-        <h3>Profiles on this device</h3>
-        <ul class="plain" id="profileList"></ul>
-        <p class="help">Names stay on this device. Removing a profile here leaves it on other devices.</p>
-      </div>
-      <div>
-        <h3>Syncing</h3>
-        <p class="help" id="linkStatus"></p>
-        <p class="help">Linked devices share a sealed copy of a profile’s progress through a small server. Without the link code no one can read it, the server included, and it holds no names. Each device keeps its own copy and plays offline.</p>
       </div>
     </div>
     <div class="tabpanel" id="aboutPanel" role="tabpanel" aria-labelledby="tabAbout" hidden>

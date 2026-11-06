@@ -1534,10 +1534,12 @@ $("#shareCopy").addEventListener("click", function () {
 });
 
 /* ---------- profiles and linked devices ---------- */
-// More → Link. Send shows the active profile's link code: a QR code and a link carrying its
-// key after # (seal.js). Receive scans or pastes one, then either replaces this profile with
-// it (from then on both devices are the same player) or adds it as a new profile, which
-// brings the profile picker and the name pill. A linked profile syncs (sync.js) at launch,
+// More → Link (called "players" there; "profiles" in the code). "Play on another device
+// too" (Send) shows the active profile's link code: a QR code and a link carrying its key
+// after # (seal.js). "Get a player from another device" (Receive) scans or pastes one, then
+// asks who it is: the same player as this device (Replace: from then on both devices are the
+// same player) or someone else (Add: a new, named profile, which brings the player picker
+// and the name pill). A linked profile syncs (sync.js) at launch,
 // on coming back to the screen, after a puzzle, after a settings or Custom list change, on
 // leaving, and when the network comes back. Unlinked, nothing goes over the network.
 var SYNC_KEYS = ["progress", "log", "counts", "days", "achievements", "slips", "stars", "guessing", "seenEntrances", "settings", "custom"];
@@ -1668,12 +1670,13 @@ function ago(t) {
   return m < 1 ? "just now" : m < 60 ? m + " min ago" : m < 1440 ? Math.round(m / 60) + " h ago" : "on " + new Date(t).toLocaleDateString();
 }
 function renderLinkStatus() {
-  var t = who.get("syncedAt", 0);
-  $("#linkStatus").textContent = !linkKey(PROFILE) ? "This profile isn’t linked. Send or Receive to link it with another device."
-    : syncErr[PROFILE] ? "Linked. Couldn’t reach the sync service; it will try again."
-    : syncing ? "Linked. Syncing…"
-    : "Linked. Last synced " + (t ? ago(t) : "not yet") + ".";
-  $("#resetLinked").hidden = !linkKey(PROFILE);
+  var t = who.get("syncedAt", 0), linked = !!linkKey(PROFILE), el = $("#linkStatus");
+  el.classList.toggle("on", linked && !syncErr[PROFILE]);
+  el.textContent = !linked ? "Not linked with another device yet"
+    : syncErr[PROFILE] ? "Linked · couldn’t sync just now, will try again"
+    : syncing ? "Linked · syncing…"
+    : "Linked · synced " + (t ? ago(t) : "soon");
+  $("#resetLinked").hidden = !linked;
 }
 function renderProfiles() {
   var list = $("#profileList"); list.innerHTML = "";
@@ -1682,7 +1685,7 @@ function renderProfiles() {
     var li = document.createElement("li"); li.className = "profile-row";
     var input = document.createElement("input");
     input.type = "text"; input.value = p.name; input.placeholder = "Name"; input.maxLength = 24;
-    input.setAttribute("aria-label", "Profile name");
+    input.setAttribute("aria-label", "Player’s name");
     input.addEventListener("change", function () { p.name = input.value.trim(); saveProfiles(); renderWho(); });
     li.appendChild(input);
     if (p.id === PROFILE) {
@@ -1711,59 +1714,94 @@ function removeProfile(id) {
   saveProfiles();
   renderProfiles(); renderWho();
 }
+// The Link tab shows one task at a time: Home (the two tasks, the players here, the
+// status), Send ("Play on another device too") or Recv ("Get a player from another device").
+function linkView(name) {
+  ["Home", "Send", "Recv"].forEach(function (v) { $("#link" + v).hidden = v !== name; });
+  if (name !== "Recv") endScan();
+  if (name === "Home") { incoming = null; $("#arriveSec").hidden = true; renderLinkStatus(); }
+}
 function renderLink() {
   renderProfiles();
   renderLinkStatus();
-  $("#sendBox").hidden = true; $("#sendBtn").hidden = false; $("#sendMsg").textContent = "";
-  if (!incoming) { $("#receiveBox").hidden = true; $("#receiveMsg").textContent = ""; }
+  if (!incoming) linkView("Home");
 }
+document.querySelectorAll("#linkPanel [data-back]").forEach(function (b) { b.addEventListener("click", function () { linkView("Home"); }); });
+$("#goSend").addEventListener("click", function () { linkView("Send"); prepareSend(); });
+$("#goRecv").addEventListener("click", function () { linkView("Recv"); showScan(); startScan(); });
 
-// Send: makes the profile's key the first time (that links it), saves its progress to the
+// Send: makes the player's key the first time (that links it), saves their progress to the
 // server, then shows the code.
-$("#sendBtn").addEventListener("click", async function () {
+async function prepareSend() {
+  $("#sendBox").hidden = true; $("#sendRetry").hidden = true;
+  $("#sendMsg").textContent = "Getting the code ready…";
   var key = linkKey(PROFILE);
   if (!key) { key = newKey(); who.set("linkKey", key); }
-  $("#sendBtn").disabled = true; $("#sendMsg").textContent = "Getting it ready…";
   await syncAll();
   if (syncing) await syncing;
-  $("#sendBtn").disabled = false;
-  if (syncErr[PROFILE]) { $("#sendMsg").textContent = "Couldn’t reach the sync service. Check the connection and try again."; return; }
+  if ($("#linkSend").hidden) return;
+  if (syncErr[PROFILE]) {
+    $("#sendMsg").textContent = "Couldn’t reach the sync service. Check the connection, then try again.";
+    $("#sendRetry").hidden = false;
+    return;
+  }
   $("#sendMsg").textContent = "";
   var url = linkFor(SHARE_BASE, key);
   $("#sendUrl").textContent = url;
-  $("#sendBtn").hidden = true; $("#sendBox").hidden = false;
+  $("#sendBox").hidden = false;
   // Drawn its own way (linkqr.js), so it isn't mistaken for the share sheet's QR code.
   loadQR().then(function (Q) { $("#sendQr").innerHTML = linkQR(Q, url); $("#sendQr").hidden = false; }, function () { $("#sendQr").hidden = true; });
-});
+}
+$("#sendRetry").addEventListener("click", prepareSend);
 $("#sendShare").hidden = typeof navigator.share !== "function";
 $("#sendShare").addEventListener("click", function () { navigator.share({ url: $("#sendUrl").textContent }).catch(function () {}); });
 function copyButton(btn, text) {
+  var was = btn.textContent;
   Promise.resolve().then(function () { return navigator.clipboard.writeText(text); })
     .then(function () { btn.textContent = "Copied!"; }, function () { btn.textContent = "Couldn't copy"; })
-    .then(function () { setTimeout(function () { btn.textContent = "Copy link"; }, 2000); });
+    .then(function () { setTimeout(function () { btn.textContent = was; }, 2000); });
 }
 $("#sendCopy").addEventListener("click", function () { copyButton($("#sendCopy"), $("#sendUrl").textContent); });
 
-// Receive: a key from the scanner, a pasted link, or a link this page was opened with.
+// Receive: the camera starts at once; a key can also come from a pasted link, or a link
+// this page was opened with. Then one question: who is this?
 var incoming = null, stopScan = null;
 function endScan() { if (stopScan) stopScan(); stopScan = null; $("#scanBox").hidden = true; }
+function showScan() { incoming = null; $("#recvScan").hidden = false; $("#receiveBox").hidden = true; $("#receiveMsg").textContent = ""; }
+async function startScan() {
+  endScan();
+  $("#scanBox").hidden = false; $("#scanAgain").hidden = true;
+  try {
+    var { scan } = await import("./scan.js");
+    var stop = await scan($("#scanVideo"), function (text) {
+      var k = keyFromLink(text);
+      if (k) gotKey(k);
+      return !!k;
+    });
+    if ($("#linkRecv").hidden || incoming || $("#sheet").hidden) stop(); // left meanwhile
+    else stopScan = stop;
+  } catch (e) {
+    endScan();
+    $("#scanAgain").hidden = false;
+    $("#receiveMsg").textContent = "Couldn’t use the camera. Paste the link instead, or allow the camera and try again.";
+  }
+}
+$("#scanAgain").addEventListener("click", startScan);
 function gotKey(key) {
   endScan();
   if (PROFILES.some(function (p) { return linkKey(p.id) === key; })) {
-    incoming = null; $("#receiveBox").hidden = true;
-    $("#receiveMsg").textContent = "This device already has that profile.";
+    $("#receiveMsg").textContent = "That player is already on this device.";
+    $("#scanAgain").hidden = false;
     return;
   }
   incoming = key;
+  $("#recvScan").hidden = true; $("#receiveBox").hidden = false; $("#recvMsg").textContent = "";
   var mine = EDITIONS.some(function (ed) { return hasData(PROFILE, ed); });
-  $(mine ? "#recvAdd" : "#recvReplace").checked = true;
-  $("#recvWarn").textContent = mine ? "(its progress on this device is replaced)" : "";
+  $("#recvReplace").checked = !mine; $("#recvAdd").checked = mine;
+  $("#recvWarn").textContent = mine ? "This device’s progress is replaced by theirs." : "Nothing is played here yet, so nothing is lost.";
   $("#recvName").value = "";
-  var me = PROFILES.find(function (p) { return p.id === PROFILE; });
-  $("#recvMine").value = me.name;
-  $("#receiveMsg").textContent = "Got a link code.";
+  $("#recvMine").value = PROFILES.find(function (p) { return p.id === PROFILE; }).name;
   showRecvNames();
-  $("#receiveBox").hidden = false;
 }
 function showRecvNames() {
   var add = $("#recvAdd").checked;
@@ -1771,45 +1809,27 @@ function showRecvNames() {
   $("#recvMineBox").hidden = !add || PROFILES.length > 1;
 }
 ["recvAdd", "recvReplace"].forEach(function (id) { $("#" + id).addEventListener("change", showRecvNames); });
-$("#recvCancel").addEventListener("click", function () { incoming = null; $("#receiveBox").hidden = true; $("#receiveMsg").textContent = ""; });
-$("#scanBtn").addEventListener("click", async function () {
-  $("#receiveMsg").textContent = "";
-  endScan();
-  $("#scanBox").hidden = false;
-  try {
-    var { scan } = await import("./scan.js");
-    stopScan = await scan($("#scanVideo"), function (text) {
-      var k = keyFromLink(text);
-      if (k) gotKey(k);
-      return !!k;
-    });
-  } catch (e) {
-    endScan();
-    $("#receiveMsg").textContent = "Couldn’t use the camera. Paste the link instead.";
-  }
-});
-$("#scanStop").addEventListener("click", endScan);
 $("#pasteBtn").addEventListener("click", async function () {
   endScan();
   var text = null;
   try { text = await navigator.clipboard.readText(); } catch (e) { text = window.prompt("Paste the link from the other device:"); }
   var k = keyFromLink(text);
   if (k) gotKey(k);
-  else $("#receiveMsg").textContent = "No link code there. On the other device, More → Link → Send → Copy link.";
+  else { $("#scanAgain").hidden = false; $("#receiveMsg").textContent = "No link code there. On the other device: More → Link → Play on another device too → Copy link."; }
 });
 $("#recvGo").addEventListener("click", async function () {
   var key = incoming, add = $("#recvAdd").checked;
   var name = $("#recvName").value.trim(), mineName = $("#recvMine").value.trim();
-  if (add && !name) { $("#receiveMsg").textContent = "Give the new profile a name."; $("#recvName").focus(); return; }
-  if (add && PROFILES.length < 2 && !mineName) { $("#receiveMsg").textContent = "Give this device’s profile a name too."; $("#recvMine").focus(); return; }
-  $("#recvGo").disabled = true; $("#receiveMsg").textContent = "Linking…";
+  if (add && !name) { $("#recvMsg").textContent = "What’s the new player’s name?"; $("#recvName").focus(); return; }
+  if (add && PROFILES.length < 2 && !mineName) { $("#recvMsg").textContent = "And who plays on this device now?"; $("#recvMine").focus(); return; }
+  $("#recvGo").disabled = true; $("#recvMsg").textContent = "Linking…";
   var grades;
   try {
     if (syncing) await syncing;
     grades = await remoteGrades({ fetch: function (u, o) { return fetch(u, o); }, url: SYNC_AT, keys: await keysFor(key) });
   } catch (e) {
     $("#recvGo").disabled = false;
-    $("#receiveMsg").textContent = "Couldn’t reach the sync service. Check the connection and try again.";
+    $("#recvMsg").textContent = "Couldn’t reach the sync service. Check the connection, then try again.";
     return;
   }
   receiving = true;
@@ -1820,7 +1840,7 @@ $("#recvGo").addEventListener("click", async function () {
     PROFILES.push({ id: target, name: name });
     saveProfiles();
   } else {
-    // Replace: this profile's own progress goes, in every grade, and the sent one takes its place.
+    // Replace: this player's own progress goes, in every grade, and the sent one takes its place.
     unlink(PROFILE);
     EDITIONS.forEach(function (ed) { GRADE_KEYS.forEach(function (k) { try { localStorage.removeItem(gradePrefix(PROFILE, ed) + k); } catch (e) {} }); });
   }
@@ -1831,7 +1851,7 @@ $("#recvGo").addEventListener("click", async function () {
   device.set("profile", target);
   reloadClean();
 });
-// Opened with a link code (#link=…, from the camera app or a pasted link): out of the
+// Opened with a link code (#link=…, from the Camera app or a pasted link): out of the
 // address bar at once. In a browser tab that isn't the Home Screen app, say how to take it
 // there; it can still be received here, for someone who plays in the browser.
 var arrived = keyFromLink(location.hash);
@@ -1840,6 +1860,7 @@ $("#arriveCopy").addEventListener("click", function () { copyButton($("#arriveCo
 function welcomeLink() {
   if (!arrived) return;
   openSheet("link");
+  linkView("Recv");
   $("#arriveSec").hidden = installed;
   gotKey(arrived);
 }
