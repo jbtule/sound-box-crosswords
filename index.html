@@ -271,6 +271,7 @@
     <div class="tabpanel" id="linkPanel" role="tabpanel" aria-labelledby="tabLink" hidden>
       <!-- One task at a time (linkView in app.js). -->
       <div class="link-view" id="linkHome">
+        <p class="help">Linked devices share a player’s progress, settings and Custom words, through a small server that keeps a sealed copy. Without the code no one can read it, the server included, and it holds no names. Each device keeps its own copy and plays offline.</p>
         <p class="link-status" id="linkStatus" role="status"></p>
         <button class="task" id="goSend" type="button"><span class="task-ico" aria-hidden="true">📲</span><span><b>Play on another device too</b><small>Show a code for the other device to scan.</small></span></button>
         <button class="task" id="goRecv" type="button"><span class="task-ico" aria-hidden="true">📥</span><span><b>Get a player from another device</b><small>Scan the code it shows, or paste its link.</small></span></button>
@@ -279,10 +280,6 @@
           <ul class="plain" id="profileList"></ul>
           <p class="help">Names stay on this device.</p>
         </div>
-        <details class="link-about">
-          <summary>How linking works</summary>
-          <p class="help">Linked devices share a player’s progress, settings and Custom words, through a small server that keeps a sealed copy. Without the code no one can read it, the server included, and it holds no names. Each device keeps its own copy and plays offline.</p>
-        </details>
       </div>
       <div class="link-view" id="linkSend" hidden>
         <button class="back" type="button" data-back>‹ Back</button>
@@ -305,7 +302,10 @@
         </div>
         <div id="recvScan">
           <p class="step">Scan the code on the other device</p>
-          <div id="scanBox" hidden><video id="scanVideo" playsinline muted aria-label="Camera"></video></div>
+          <div id="scanBox" hidden>
+            <div class="scan-view"><video id="scanVideo" playsinline muted aria-label="Camera"></video><div class="scan-got" role="status"><span aria-hidden="true">✓</span>Got it!</div></div>
+            <p class="help center">Blurry? Hold it a little farther away.</p>
+          </div>
           <p class="help" id="receiveMsg" role="status"></p>
           <div class="row center"><button class="ghost" id="scanAgain" type="button" hidden>Use the camera</button><button class="ghost" id="pasteBtn" type="button">Paste link instead</button></div>
         </div>

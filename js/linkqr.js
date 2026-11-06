@@ -1,6 +1,6 @@
 // No DOM. Send's link code (More → Link), drawn from the qrcode library's grid so it doesn't
 // look like the share sheet's plain QR code: round dots, rounded corner eyes with an orange
-// box in each, and the app icon's empty box with sound waves in the middle. The middle
+// box in each, and a key in the middle, since the code carries the player's key. The middle
 // covers a few percent of the code, which error correction H (up to 30%) reads through.
 // Fixed colors, since it always sits on white: dark enough for any camera to read as dark.
 const INK = "#14213d", ORANGE = "#c4470a";
@@ -26,12 +26,12 @@ export function linkQR(Q, text) {
     return `<rect x="${x + 0.5}" y="${y + 0.5}" width="6" height="6" rx="2" fill="none" stroke="${INK}" stroke-width="1"/>` +
       `<rect x="${x + 2}" y="${y + 2}" width="3" height="3" rx="0.9" fill="${ORANGE}"/>`;
   }).join("");
-  // The icon in the middle: an empty orange box and two sound waves.
-  const m = lo + pad, s = k, b = s * 0.42, bx = m + s * 0.14, by = m + (s - b) / 2;
-  const wx = bx + b + s * 0.1, cy = m + s / 2;
+  // The key in the middle: an orange ring, then the shaft and two teeth.
+  const m = lo + pad, s = k, cy = m + s / 2, w = s * 0.09;
+  const rx = m + s * 0.3, r = s * 0.15, end = m + s * 0.86;
   const middle = `<rect x="${m}" y="${m}" width="${s}" height="${s}" rx="${s * 0.22}" fill="#fff"/>` +
-    `<rect x="${bx}" y="${by}" width="${b}" height="${b}" rx="${b * 0.2}" fill="none" stroke="${ORANGE}" stroke-width="${s * 0.09}"/>` +
-    `<path d="M${wx} ${cy - s * 0.12}q${s * 0.08} ${s * 0.12} 0 ${s * 0.24}M${wx + s * 0.13} ${cy - s * 0.22}q${s * 0.14} ${s * 0.22} 0 ${s * 0.44}" fill="none" stroke="${INK}" stroke-width="${s * 0.07}" stroke-linecap="round"/>`;
+    `<circle cx="${rx}" cy="${cy}" r="${r}" fill="none" stroke="${ORANGE}" stroke-width="${w * 1.2}"/>` +
+    `<path d="M${rx + r + w * 0.6} ${cy}H${end}M${end - w / 2} ${cy}v${s * 0.15}M${end - s * 0.16} ${cy}v${s * 0.11}" fill="none" stroke="${INK}" stroke-width="${w}" stroke-linecap="round"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="geometricPrecision">` +
     `<rect width="${size}" height="${size}" fill="#fff"/><path fill="${INK}" d="${dots.join("")}"/>${eyes}${middle}</svg>`;
 }

@@ -223,6 +223,7 @@ html.standalone { touch-action: pan-x pan-y; }
 .who-bar[hidden] { display: none; }
 /* More → Link: one task at a time. */
 .link-view { display: grid; gap: 12px; }
+.link-view > .help { margin: 0; }
 .link-status { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--muted); font-size: 0.9rem; font-weight: 600; }
 .link-status::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--key-edge); flex: none; }
 .link-status.on::before { background: var(--ok); }
@@ -234,13 +235,21 @@ html.standalone { touch-action: pan-x pan-y; }
 .task.choice:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
 .step { margin: 0; font-family: var(--display); font-size: 1.2rem; font-weight: 600; }
 .back { justify-self: start; min-height: 44px; padding: 0; background: none; border: none; color: var(--muted); font: 600 0.95rem var(--body); }
-.link-about summary { min-height: 44px; display: flex; align-items: center; color: var(--muted); font-weight: 600; cursor: pointer; }
 .arrive { display: grid; gap: 8px; justify-items: start; padding: 12px 14px; border-radius: 14px; background: var(--accent-soft); }
 .arrive .help { margin: 0; color: var(--ink); }
 .center { text-align: center; justify-content: center; }
 .fine { font-size: 0.8rem; }
 .primary.wide { width: 100%; }
-#scanVideo { display: block; width: 100%; max-width: 360px; margin: 0 auto; border-radius: 16px; background: #000; aspect-ratio: 4 / 3; object-fit: cover; }
+.scan-view { position: relative; width: 100%; max-width: 360px; margin: 0 auto; }
+#scanVideo, .scan-still { display: block; width: 100%; border-radius: 16px; background: #000; aspect-ratio: 4 / 3; object-fit: cover; }
+/* Found: the still frame (the code outlined) in place of the camera, and "Got it!" over it. */
+.scan-still { position: absolute; inset: 0; height: 100%; }
+.scan-got { display: none; position: absolute; inset: 0; place-content: center; justify-items: center; gap: 6px; border-radius: 16px; outline: 4px solid var(--ok); outline-offset: -4px; color: #fff; font: 600 1.15rem var(--display); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }
+.scan-got span { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--ok); font-size: 2.2rem; text-shadow: none; animation: award-pop 0.45s cubic-bezier(.2, 1.4, .4, 1) both; }
+#scanBox.found .scan-got { display: grid; }
+#scanBox.found > .help { visibility: hidden; }
+#receiveBox.arrive-in { animation: fade-up 0.35s ease-out both; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(8px); } }
 .profile-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
 .profile-row input { flex: 1 1 auto; }
 #recvNames { display: grid; gap: 6px; }
@@ -364,5 +373,5 @@ textarea { width: 100%; min-height: 170px; border: 1.5px solid var(--key-edge); 
   .cell.wiggle, .cell.pop { animation: none; }
   .cell.beat { transform: none; }
   .cell, .key, .progress .fill, .keyboard { transition: none; }
-  .toast.show, .award-card.pop, .secret-pill.show, .keyboard.rise { animation: none; }
+  .toast.show, .award-card.pop, .secret-pill.show, .keyboard.rise, .scan-got span, #receiveBox.arrive-in { animation: none; }
 }
