@@ -359,18 +359,29 @@ for (const { id, text, custom } of lists) {
   const pool = parseList(text);
   if (pool.length < 6 || custom) continue;
   const trials = 20, counts = [];
+  // Every word has to be able to cross another, or it can never be in a puzzle (and the
+  // pack's Champion can't be reached).
+  const ws = pool.map((e) => e.w);
+  for (const w of ws) if (!ws.some((o) => o !== w && [...w].some((ch) => o.includes(ch)))) errors.push(`${id}: "${w}" shares no letter with any other word, so it can never cross into a puzzle`);
+  let small = Infinity, stuck = false;
   for (let t = 0; t < trials; t++) {
     const seen = new Set();
     let recent = [], n = 0;
     while (seen.size < pool.length && n < 50) {
       const fresh = pool.map((e) => e.w).filter((w) => !seen.has(w));
       const P = makePuzzle(pool, recent, fresh);
+      small = Math.min(small, P.words.length);
       P.words.forEach((W) => seen.add(W.w));
       recent = P.words.map((W) => W.w).concat(recent).slice(0, 8);
       n++;
     }
+    if (seen.size < pool.length) stuck = true;
     counts.push(n);
   }
+  // The app builds puzzles this way (the words not done yet this round first), so each one
+  // must still be a real crossword, and every word must come up.
+  if (small < 3) errors.push(`${id}: covering the pack made a puzzle of only ${small} ${small === 1 ? "word" : "words"}`);
+  if (stuck) errors.push(`${id}: some words never came up in 50 puzzles`);
   const per = shortWords(pool) ? 5 : 6;
   const avg = counts.reduce((a, b) => a + b) / trials, best = Math.ceil(pool.length / per);
   coverage.push(`${id} ${avg.toFixed(1)} (best ${best})`);

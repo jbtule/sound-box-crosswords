@@ -219,7 +219,7 @@ var pz = { helped: {}, crossed: {}, twofer: false, keys: false, guess: {}, nudge
 function newPuzzle(solved) {
   if (updateReady) { location.reload(); return; }
   skipEntrance();
-  $("#done").hidden = true; $("#cluebar").classList.remove("spent");
+  $("#done").hidden = true; $("#cluebar").classList.remove("spent"); $(".board-card").style.minHeight = "";
   finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {}; newPics = 0; pz = { helped: {}, crossed: {}, twofer: false, keys: false, guess: {}, nudged: {} };
   var pool = entries(packId);
   if (pool.length < 3) { P = null; renderEmpty(); return; }
@@ -631,7 +631,7 @@ function finish() {
   var fresh = checkAchievements().concat(takePending());
   renderPacks();
   update();
-  var parts = [P.words.length + " words"];
+  var parts = [P.words.length + (P.words.length === 1 ? " word" : " words")];
   parts.push(misses === 0 ? "no slips" : misses === 1 ? "1 try again" : misses + " try-agains");
   if (newPics) parts.push("+" + newPics + (newPics === 1 ? " picture" : " pictures"));
   $("#doneStats").textContent = parts.join(" · ");
@@ -643,6 +643,12 @@ function finish() {
   });
   newList.hidden = !fresh.length;
   $("#done").hidden = false;
+  // A small board is shorter than the card: grow the board's card so it fits, nothing cut off.
+  var done = $("#done"), bc = $(".board-card");
+  done.style.bottom = "auto"; // its own height, not the card's
+  var need = done.offsetHeight;
+  done.style.bottom = "";
+  if (need > bc.offsetHeight) bc.style.minHeight = need + "px";
   $("#cluebar").classList.add("spent"); // grayed out with the puzzle solved: no word left to hear
   confetti($(".board-card"));
   if (settings.chime) chime();
