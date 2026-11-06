@@ -346,7 +346,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   Champion and Legend cards, add "Hard mode" to the grade line (`gradeLine` in `app.js`, on the
   big card and the share card). Secret achievements (`SECRETS`: Good Listener,
   Two for One, Triple Digits, Weekend Speller, Touch Typist, Show-Off, New Look, Collector's
-  Eye, Front Row Seat) show as ??? in the 🏆 sheet until earned, with no hint, and their card says "Secret
+  Eye, Front Row Seat) show as ??? in the 🏆 sheet until earned, with no hint (the ones that count up show just their count once started, "37 of 100"), and their card says "Secret
   achievement!"; their counts are in `sbx:counts` too (puzzle ones from `pz`, this puzzle's
   flags in `app.js`).
   Shown on the solved card, as a big card per new achievement (`showAwards`, after the
