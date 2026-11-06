@@ -253,8 +253,11 @@ html.standalone { touch-action: pan-x pan-y; }
    shadow. --kb-h (its height) keeps the cursor box from hiding behind it. */
 .keyboard { display: flex; flex-direction: column; gap: 6px; user-select: none; position: sticky; bottom: 0; z-index: 5; margin-inline: -8px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px)); border-radius: 16px 16px 0 0; background: var(--bg); transition: box-shadow 0.15s, opacity 0.4s ease-out; }
 .keyboard.floating { box-shadow: var(--float-shadow); }
-.keyboard.resting { opacity: 0; pointer-events: none; transition: box-shadow 0.15s, opacity 0.25s ease-in; } /* out of the way while a new puzzle's boxes arrive (runEntrance) */
-.keyboard.asleep { opacity: 0; transition: box-shadow 0.15s, opacity 0.25s ease-in; } /* while Start / Continue waits; still tappable, which starts */
+/* Unpinned (in its place below the puzzle, often off a phone's screen) while a new puzzle's boxes
+   arrive (runEntrance) or Start / Continue waits; pinned again after, rising in from below. */
+.keyboard.resting, .keyboard.asleep { position: relative; }
+.keyboard.rise { animation: pad-rise 0.3s ease-out; }
+@keyframes pad-rise { from { transform: translateY(100%); } }
 .kb-end { height: 1px; margin-top: -15px; }
 .cell { scroll-margin-top: 12px; scroll-margin-bottom: calc(var(--kb-h, 0px) + 12px); }
 .krow { display: flex; gap: 6px; justify-content: center; }
@@ -330,5 +333,5 @@ textarea { width: 100%; min-height: 170px; border: 1.5px solid var(--key-edge); 
   .cell.wiggle, .cell.pop { animation: none; }
   .cell.beat { transform: none; }
   .cell, .key, .progress .fill, .keyboard { transition: none; }
-  .toast.show, .award-card.pop, .secret-pill.show { animation: none; }
+  .toast.show, .award-card.pop, .secret-pill.show, .keyboard.rise { animation: none; }
 }

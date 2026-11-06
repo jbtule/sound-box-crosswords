@@ -251,9 +251,9 @@ function runEntrance(turn) {
   var run = playEntrance(id, geometry(P, board, order()), { audio: (test ? test.sound : settings.chime) ? audioOut() : null, rate: test ? test.rate : 1 });
   entrance = run;
   showBoardCard();
-  kbEl.classList.add("resting"); // the letter pad fades out while the boxes arrive, and back in
+  kbEl.classList.add("resting"); // the letter pad unpins while the boxes arrive, and pins again after
   run.done.then(function (skipped) {
-    if (entrance === run) { entrance = null; kbEl.classList.remove("resting"); }
+    if (entrance === run) { entrance = null; pinPad("resting"); }
     if (test) test.done(run, skipped);
     else if (!skipped) { after(); sawEntrance(run.id); }
   });
@@ -280,6 +280,14 @@ function showBoardCard() {
   var card = board.parentElement, r = card.getBoundingClientRect();
   if (r.top >= 0 && r.bottom <= window.innerHeight) return;
   card.scrollIntoView({ block: r.height <= window.innerHeight - 24 ? "nearest" : "start", behavior: "smooth" });
+}
+// Pins the letter pad again once neither reason to unpin it (resting, asleep) is left; if it wasn't
+// all on screen, it rises in from the bottom rather than popping up.
+function pinPad(why) {
+  var off = kbEl.getBoundingClientRect().bottom > window.innerHeight + 1; // not all on screen
+  kbEl.classList.remove(why);
+  if (!off || kbEl.classList.contains("resting") || kbEl.classList.contains("asleep")) return;
+  kbEl.classList.remove("rise"); void kbEl.offsetWidth; kbEl.classList.add("rise");
 }
 function skipEntrance() { if (entrance) entrance.skip(); }
 // Entrances seen to the end, for Front Row Seat (every one), which opens the Director tab.
@@ -1489,9 +1497,10 @@ document.addEventListener("keydown", function (e) {
   if ($("#startOverlay").hidden || !safeToReload() || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
   e.preventDefault(); e.stopPropagation(); start();
 }, true);
-// The letter pad stays hidden (its space kept, under the cover) while Start or Continue waits,
-// so the button is the one thing to tap.
-new MutationObserver(function () { kbEl.classList.toggle("asleep", !$("#startOverlay").hidden); })
+// The letter pad is unpinned (sitting in its place, under the cover) while Start or Continue
+// waits, so the button is the one thing to tap.
+kbEl.addEventListener("animationend", function () { kbEl.classList.remove("rise"); });
+new MutationObserver(function () { if ($("#startOverlay").hidden) pinPad("asleep"); else kbEl.classList.add("asleep"); })
   .observe($("#startOverlay"), { attributes: true, attributeFilter: ["hidden"] });
 kbEl.classList.toggle("asleep", !$("#startOverlay").hidden);
 kbEl.addEventListener("click", function (e) {
