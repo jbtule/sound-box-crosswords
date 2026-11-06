@@ -242,7 +242,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `sayFirstWord`), unless the player already picked another word or typed. The
   selection is off while one plays (`.board.entering`), so the premium ones can deliver the highlight;
   skipped with reduced motion; the puzzle card scrolls into view
-  (`showBoardCard`) and the letter pad fades out while it plays (`.keyboard.resting`) and back in after; physical keys still type, and nothing
+  (`showBoardCard`) and the letter pad is unpinned while it plays (`.keyboard.resting`: it sits in its place below the puzzle, often off a phone's screen) and pinned again after, rising in if it was off screen (`pinPad`); physical keys still type, and nothing
   cuts it short but a new puzzle. Its sounds are
   `js/sfx.js` (`makeSfx`, Web Audio like the chime, through `audioOut()` in `chime.js`) and
   follow the Sound effects setting. To refine them, open the app with `?backstage` (it stays on, on that device, until its
@@ -316,7 +316,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     only those and the pad and pictures, `.play`, so the packs, 🏆 and More stay usable), since
     iOS plays recorded words, the device voice and the chime only after a tap; tapping it (or
     any key or letter pad tap, which isn't typed) dismisses it and says the current word if auto-speak is on.
-    The letter pad is hidden meanwhile (`.asleep`, its space kept and still tappable); the cover spans the clue, puzzle, pad and pictures (`.play`).
+    The letter pad is unpinned meanwhile (`.asleep`, under the cover); the cover spans the clue, puzzle, pad and pictures (`.play`).
     Skipped after the first-visit grade question (a tap already). It says Continue only for a
     puzzle with letters typed (`played`); an untouched saved puzzle counts as new (Start, with
     its entrance). New puzzle, Next puzzle or a pack tap while it shows dismisses it and starts
