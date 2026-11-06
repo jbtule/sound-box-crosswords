@@ -920,9 +920,11 @@ function statsPacks() {
 }
 function renderProgressSheet() {
   renderCalendar();
-  var rows = $("#progressPacks"); rows.innerHTML = "";
+  var rows = $("#progressPacks"), shown = 0; rows.innerHTML = "";
   statsPacks().forEach(function (id) {
     var c = coverage(id), stats = packProgress(id).stats;
+    if (!c.done && !stars[id]) return; // not started: left out, less to read
+    shown++;
     var firsts = entries(id).filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
     var li = document.createElement("li"), name = document.createElement("b");
     name.textContent = (isHard(id) ? "🥋 " : "") + PACKS[id].name;
@@ -930,6 +932,7 @@ function renderProgressSheet() {
       (stars[id] || 0) + (stars[id] === 1 ? " puzzle" : " puzzles"));
     rows.appendChild(li);
   });
+  $("#packsEmpty").hidden = shown > 0;
   renderSlips();
   renderTricky();
   renderGuessing();
@@ -939,15 +942,28 @@ function renderProgressSheet() {
   $("#comebackNote").textContent = cb
     ? cb + (cb === 1 ? " word" : " words") + " spelled right on the first try after being missed before."
     : "None yet: a word spelled right on the first try after being missed before counts here.";
-  var list = $("#progressLog"); list.innerHTML = "";
-  var fmt = { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
-  log.slice(0, 30).forEach(function (e) {
-    var li = document.createElement("li");
-    li.textContent = new Date(e.t).toLocaleString(undefined, fmt) + " · " + (PACKS[e.pack] ? PACKS[e.pack].name : e.pack) +
-      " · " + e.n + " words · " + (e.m === 0 ? "no slips" : e.m === 1 ? "1 try again" : e.m + " try-agains");
+  renderDays();
+}
+// Under the calendar: each recent practice day and the packs played on it, newest first,
+// e.g. "Thu, Nov 6: Blends ×2, Unit 3" (puzzles finished, from the log).
+function renderDays() {
+  var list = $("#progressLog"), byDay = [], at = {};
+  list.innerHTML = "";
+  log.forEach(function (e) {
+    var k = dayKey(e.t);
+    if (!at[k]) { at[k] = { t: e.t, packs: [], n: {} }; byDay.push(at[k]); }
+    var d = at[k];
+    if (!d.n[e.pack]) { d.n[e.pack] = 0; d.packs.push(e.pack); }
+    d.n[e.pack]++;
+  });
+  byDay.slice(0, 14).forEach(function (d) {
+    var li = document.createElement("li"), when = document.createElement("b");
+    when.textContent = new Date(d.t).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    li.append(when, ": " + d.packs.map(function (id) {
+      return (PACKS[id] ? (isHard(id) ? "🥋 " : "") + PACKS[id].name : id) + (d.n[id] > 1 ? " ×" + d.n[id] : "");
+    }).join(", "));
     list.appendChild(li);
   });
-  $("#progressEmpty").hidden = log.length > 0;
 }
 // Practice days: the last 4 weeks, Sunday first, a filled dot per day with a finished puzzle.
 function renderCalendar() {
