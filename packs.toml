@@ -221,6 +221,35 @@ croc-o-dile 🐊 (crock-uh-dial)
 fla-min-go 🦩 (fluh-ming-go)
 pi-an-o 🎹 (pea-ann-oh)
 """
+# Hard mode (🥋, opens after any other pack is finished): long words whose endings like to
+# fade (-ture, -tion, -ble, -ous), plus a few whose last beat is easy to drop.
+[[pack]]
+id = "long-words"
+name = "Long Words"
+note = "Long words with endings that like to fade. Hold on to every beat!"
+hard = true
+words = """
+ad-ven-ture 🧭 (add-ven-chur) "The hike was a real adventure."
+tem-per-a-ture 🌡️ (tem-per-uh-chur)
+fur-ni-ture 🛋️ (fur-nih-chur) "Mom moved the furniture to clean the floor."
+sig-na-ture (sig-nuh-chur) "Write your signature at the bottom of the page."
+va-ca-tion 🏖️ (vay-kay-shun) "Our family went to the beach on vacation."
+cel-e-bra-tion 🎉 (sel-uh-bray-shun)
+ad-di-tion ➕ (add-dih-shun)
+sub-trac-tion ➖ (sub-trak-shun)
+ex-plo-sion 💥 (ex-plo-zhun)
+in-for-ma-tion (in-for-may-shun) "The sign had information about the park."
+veg-e-ta-ble 🥕 (vedge-uh-tuh-bul) "A carrot is a vegetable."
+in-vis-i-ble (in-viz-uh-bul) "The ghost in the story was invisible."
+in-cred-i-ble (in-kred-uh-bul) "The magic show was incredible."
+a-dor-a-ble (uh-door-uh-bul) "The sleepy puppy was so adorable."
+dan-ger-ous ⚠️ (dane-jer-us) "Crossing a busy street alone is dangerous."
+de-li-cious 😋 (dih-lih-shuss) "The warm pie smelled delicious."
+mys-ter-i-ous (miss-teer-ree-us) "A mysterious box was left on the porch."
+cal-en-dar 📅 (cal-un-durr)
+mi-cro-scope 🔬 (mye-kro-scope)
+hel-i-cop-ter 🚁 (hel-uh-cop-ter)
+"""
 
 # Starter list for the "Custom" pack (edited in Settings) until they save their own.
 [custom]
