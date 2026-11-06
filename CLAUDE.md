@@ -262,6 +262,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   saves nothing when nothing changed (`canon`). `remoteGrades`. `fetch` is passed in; tested
   against the service in `scripts/sync.test.mjs`.
 - `js/scan.js`: the camera QR reader for Receive (jsQR), loaded only when it starts.
+- `js/linkqr.js`: no DOM. Send's QR code, drawn from the `qrcode` grid so it isn't mistaken for
+  the share sheet's: round dots, rounded corner eyes with an orange box, the icon's empty box
+  and waves in the middle (error correction H). Fixed dark colors on white, so cameras read
+  them; after changing it, check that rendered codes still decode.
 - `js/seal.js`: no DOM. Seals sync records with the browser's own Web
   Crypto: a profile key (`newKey`, 43 base64url characters, carried only after `#link=` in a
   link: `linkFor` / `keyFromLink`) gives, by HKDF, the lookup ID the server sees and an

@@ -225,7 +225,7 @@ html.standalone { touch-action: pan-x pan-y; }
 .profile-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
 .profile-row input { flex: 1 1 auto; }
 #recvNames { display: grid; gap: 6px; margin: 10px 0; }
-#sendQr { margin-top: 10px; }
+#sendQr { width: min(260px, 100%); margin-top: 10px; } /* error correction H makes a finer grid */
 .secret-pill.show { animation: award-pop 0.45s cubic-bezier(.2, 1.4, .4, 1) both; }
 /* How?'s steps, a popover in the top layer, placed under the tip by app.js. */
 .install-pop { position: fixed; inset: auto; top: 80px; left: 50%; transform: translateX(-50%); width: min(340px, calc(100vw - 32px)); margin: 0; border: none; border-radius: 18px; background: var(--card); color: var(--ink); border: 2px solid var(--key-edge); box-shadow: 0 10px 30px rgba(0,0,0,0.22); padding: 14px 16px 16px; text-align: left; }

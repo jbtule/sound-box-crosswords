@@ -11,6 +11,7 @@ import { speak, say, sayAfter, sayRecorded, hasClip, splitOf, onClips, stopSpeec
 import { blendsIn, slipSpots, isClose } from "./phonics.js";
 import { newKey, isKey, keysFor, linkFor, keyFromLink } from "./seal.js";
 import { syncGrade, remoteGrades, canon } from "./sync.js";
+import { linkQR } from "./linkqr.js";
 
 var $ = function (s) { return document.querySelector(s); };
 
@@ -1731,8 +1732,8 @@ $("#sendBtn").addEventListener("click", async function () {
   var url = linkFor(SHARE_BASE, key);
   $("#sendUrl").textContent = url;
   $("#sendBtn").hidden = true; $("#sendBox").hidden = false;
-  loadQR().then(function (Q) { return Q.toString(url, { type: "svg", errorCorrectionLevel: "M", margin: 2 }); })
-    .then(function (svg) { $("#sendQr").innerHTML = svg; $("#sendQr").hidden = false; }, function () { $("#sendQr").hidden = true; });
+  // Drawn its own way (linkqr.js), so it isn't mistaken for the share sheet's QR code.
+  loadQR().then(function (Q) { $("#sendQr").innerHTML = linkQR(Q, url); $("#sendQr").hidden = false; }, function () { $("#sendQr").hidden = true; });
 });
 $("#sendShare").hidden = typeof navigator.share !== "function";
 $("#sendShare").addEventListener("click", function () { navigator.share({ url: $("#sendUrl").textContent }).catch(function () {}); });
