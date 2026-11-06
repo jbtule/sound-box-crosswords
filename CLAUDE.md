@@ -280,15 +280,17 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   them; after changing it, check that rendered codes still decode.
 - `js/seal.js`: no DOM. Seals sync records with the browser's own Web
   Crypto: a profile key (`newKey`, 43 base64url characters, carried only after `#link=` in a
-  link: `linkFor` / `keyFromLink`) gives, by HKDF, the lookup ID the server sees and an
-  AES-256-GCM key (`keysFor`); `seal` / `unseal` gzip the JSON and bind it to its profile and
+  link: `linkFor` / `keyFromLink`) gives, by HKDF, the lookup ID the server sees, an
+  AES-256-GCM key, and a write token sent with every save (`keysFor`); `seal` / `unseal` gzip the JSON and bind it to its profile and
   grade. Tests: `scripts/seal.test.mjs`.
 - `sync/`: the sync service, a Cloudflare Worker at `sound-box-sync.asset-data.stream`
   (`wrangler.jsonc`; deployed by the `sync-deploy` job, not part of the site). `src/api.js`
-  checks requests (CORS to the site and localhost, sealed records up to 64 KB) and routes
-  them; `src/profile.js` is one SQLite Durable Object per profile, keeping each grade's latest
-  record and refusing a save from an out-of-date version (409: fetch, merge, try again);
-  `src/index.js` only exports them (the runtime refuses other exports there). Tests:
+  checks requests (CORS to the site and localhost, sealed records up to 32 KB, a write token
+  on saves) and routes them; `src/profile.js` is one SQLite Durable Object per profile, keeping
+  each grade's latest record (up to 8 grades) and refusing a save from an out-of-date version
+  (409: fetch, merge, try again) or without the profile's write token (403: the first save
+  sets its owner, a hash of the token), and `Limiter`, one per network (an IPv4 address or an
+  IPv6 /64, `networkOf`), allowing it 50 new profiles a day (429); `src/index.js` only exports them (the runtime refuses other exports there). Tests:
   `scripts/sync.test.mjs` (in memory). To try it in the real runtime: `npx wrangler dev`
   in `sync/`. It can't read what it stores and holds no names or accounts.
 - `js/confetti.js`: `confetti(host)`, the solve celebration (skipped with reduced motion).

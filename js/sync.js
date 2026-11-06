@@ -47,10 +47,11 @@ export async function syncGrade({ fetch, url = SYNC_URL, keys, grade, me, read, 
     if (!server || canon(merged) !== canon(server)) {
       const put = await fetch(at, {
         method: "PUT",
-        headers: { "content-type": "application/octet-stream", "x-base-version": String(version) },
+        headers: { "content-type": "application/octet-stream", "x-base-version": String(version), "x-write-token": keys.writeToken },
         body: await seal(keys, grade, merged)
       });
       if (put.status === 409) continue;
+      if (put.status === 429) throw Object.assign(new Error("sync: too many new players from this network today"), { limited: true });
       if (!put.ok) throw new Error("sync: " + put.status);
     }
     // Anything played meanwhile is added on top, so nothing is lost by keeping the result.

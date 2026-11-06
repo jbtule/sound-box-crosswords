@@ -2,29 +2,37 @@
 // Run by `npm run check`, or alone: node --test scripts/sync.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { handle, MAX_BYTES } from "../sync/src/api.js";
-import { Profile, memoryStore, MAX_GRADES } from "../sync/src/profile.js";
+import { handle, MAX_BYTES, networkOf } from "../sync/src/api.js";
+import { Profile, memoryStore, MAX_GRADES, Limiter, memoryLimiterStore, NEW_PER_DAY } from "../sync/src/profile.js";
 import { newKey, keysFor, seal, unseal } from "../js/seal.js";
 import { toRecord, merge, fromRecord } from "../js/merge.js";
 
 const SITE = "https://tools.tuley.name";
 function service() {
-  const profiles = new Map();
+  const profiles = new Map(), limiters = new Map();
   const env = {
     PROFILE: {
       idFromName: (name) => name,
       get: (id) => {
-        if (!profiles.has(id)) profiles.set(id, new Profile({ store: memoryStore() }));
+        if (!profiles.has(id)) profiles.set(id, new Profile({ store: memoryStore() }, env));
         return { fetch: (req) => profiles.get(id).fetch(req) };
+      }
+    },
+    LIMITER: {
+      idFromName: (name) => name,
+      get: (id) => {
+        if (!limiters.has(id)) limiters.set(id, new Limiter({ store: memoryLimiterStore() }));
+        return { fetch: (url, init) => limiters.get(id).fetch(new Request(url, init)) };
       }
     }
   };
   const call = (path, init = {}) =>
     handle(new Request("https://sound-box-sync.asset-data.stream" + path, { ...init, headers: { origin: SITE, ...init.headers } }), env);
-  return { call, profiles };
+  return { call, profiles, limiters };
 }
-const put = (call, lookup, grade, base, body) =>
-  call(`/v1/p/${lookup}/${grade}`, { method: "PUT", headers: { "x-base-version": String(base) }, body });
+const TOKEN = "T".repeat(43);
+const put = (call, lookup, grade, base, body, token = TOKEN, ip) =>
+  call(`/v1/p/${lookup}/${grade}`, { method: "PUT", headers: { "x-base-version": String(base), "x-write-token": token, ...(ip ? { "cf-connecting-ip": ip } : {}) }, body });
 
 test("save and fetch a sealed record; a stale save is refused", async () => {
   const { call } = service();
@@ -175,4 +183,58 @@ test("syncGrade: a record from a newer app is left alone", async () => {
   assert.equal(a.base, null);
   const res = await call(`/v1/p/${keys.lookup}/g3`);
   assert.deepEqual(await unseal(keys, "g3", new Uint8Array(await res.arrayBuffer())), newer);
+});
+
+test("only the profile's own devices can save: the write token", async () => {
+  const { call, profiles } = service();
+  const keys = await keysFor(newKey()), other = await keysFor(newKey());
+  const rec = await seal(keys, "g3", { n: 1 });
+  assert.equal((await put(call, keys.lookup, "g3", 0, rec, keys.writeToken)).status, 200);
+  // Someone who knows the lookup ID but not the key: refused, and the record is unchanged.
+  assert.equal((await put(call, keys.lookup, "g3", 1, rec, other.writeToken)).status, 403);
+  assert.equal((await put(call, keys.lookup, "g3", 1, rec, "")).status, 400);
+  assert.equal((await call(`/v1/p/${keys.lookup}/g3`)).headers.get("x-version"), "1");
+  assert.equal((await put(call, keys.lookup, "g3", 1, rec, keys.writeToken)).status, 200);
+  // The server keeps a hash, not the token.
+  assert.notEqual(profiles.get(keys.lookup).store.owner(), keys.writeToken);
+  // A profile saved before tokens: its first save with a token claims it.
+  const old = await keysFor(newKey());
+  const p = new Profile({ store: memoryStore() }); profiles.set(old.lookup, p);
+  p.store.put("g3", 1, await seal(old, "g3", { n: 1 }));
+  assert.equal((await put(call, old.lookup, "g3", 1, await seal(old, "g3", { n: 2 }), old.writeToken)).status, 200);
+  assert.equal((await put(call, old.lookup, "g3", 2, await seal(old, "g3", { n: 3 }), other.writeToken)).status, 403);
+});
+
+test("a network makes at most NEW_PER_DAY new profiles a day; saving existing ones isn't limited", async () => {
+  const { call } = service();
+  const made = [];
+  for (let i = 0; i < NEW_PER_DAY; i++) {
+    const k = await keysFor(newKey()); made.push(k);
+    assert.equal((await put(call, k.lookup, "g3", 0, await seal(k, "g3", {}), k.writeToken, "203.0.113.7")).status, 200);
+  }
+  const extra = await keysFor(newKey());
+  assert.equal((await put(call, extra.lookup, "g3", 0, await seal(extra, "g3", {}), extra.writeToken, "203.0.113.7")).status, 429);
+  assert.equal((await put(call, extra.lookup, "g3", 0, await seal(extra, "g3", {}), extra.writeToken, "198.51.100.2")).status, 200);
+  const k = made[0];
+  assert.equal((await put(call, k.lookup, "g3", 1, await seal(k, "g3", { more: 1 }), k.writeToken, "203.0.113.7")).status, 200);
+  assert.equal((await put(call, k.lookup, "k", 0, await seal(k, "k", {}), k.writeToken, "203.0.113.7")).status, 200);
+  // Another address in the same IPv6 /64 is the same network.
+  assert.equal(networkOf("2001:db8:1:2::1"), networkOf("2001:0db8:0001:0002:ffff:1:2:3"));
+  assert.notEqual(networkOf("2001:db8:1:2::1"), networkOf("2001:db8:1:3::1"));
+});
+
+test("syncGrade sends the write token, and says when the network is at its limit", async () => {
+  const { call } = service();
+  const keys = await keysFor(newKey());
+  const a = deviceFor("a"); a.data.counts.clean = 1;
+  await syncGrade(a.opts(client(call), keys));
+  const stranger = await keysFor(newKey()), b = deviceFor("b"); b.data.counts.clean = 1;
+  await assert.rejects(syncGrade(b.opts(client(call), { ...keys, writeToken: stranger.writeToken })), /403/);
+  // A new profile from a network that's used up today's: a "limited" error the app can name.
+  const { call: call2, limiters } = service();
+  const full = new Limiter({ store: memoryLimiterStore() });
+  full.store.set(new Date().toISOString().slice(0, 10), NEW_PER_DAY);
+  limiters.set("unknown", full);
+  const fresh = await keysFor(newKey()), c = deviceFor("c"); c.data.counts.clean = 1;
+  await assert.rejects(syncGrade(c.opts(client(call2), fresh)), (e) => e.limited === true);
 });
