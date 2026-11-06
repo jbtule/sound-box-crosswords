@@ -4,6 +4,7 @@
 // 2. packs.toml parses, and every word list follows the `syl-la-bles emoji` format.
 // 3. The generator builds valid puzzles from every pack.
 // 4. Every color scheme keeps the syllable colors clearly apart and readable.
+// 5. The tests for combining two devices' progress (scripts/merge.test.mjs) pass.
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -432,6 +433,13 @@ for (const pal of PALETTES) {
   }
 }
 
+// Combining two devices' progress (js/merge.js).
+try {
+  execFileSync(process.execPath, ["--test", "--test-reporter=dot", join(root, "scripts", "merge.test.mjs")], { stdio: "pipe" });
+} catch (e) {
+  errors.push("scripts/merge.test.mjs failed:\n" + e.stdout.toString() + e.stderr.toString());
+}
+
 if (errors.length) {
   console.error([...new Set(errors)].map((e) => "✗ " + e).join("\n"));
   process.exit(1);
@@ -439,3 +447,4 @@ if (errors.length) {
 console.log(`✓ scripts parse; ${lists.length} word lists OK; ${RUNS} puzzles built per list`);
 console.log(`✓ puzzles to cover each pack: ${coverage.join(", ")}`);
 console.log(`✓ ${PALETTES.length} color schemes keep syllables apart in light and dark`);
+console.log("✓ merging two devices' progress passes its tests");

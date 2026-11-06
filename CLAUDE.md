@@ -234,6 +234,15 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   the rest of its pack, since it could never cross in), max 11 columns × 12 rows so it
   fits a phone, avoids `recent` words. Returns `P` (`words`, `cells`, `rows`, `cols`); each
   word has `cells`, `chunks` (syllables) and `sylOf` (syllable index per letter).
+- `js/merge.js`: no DOM, nothing calls it yet (the first step of syncing a profile between
+  devices). `toRecord` turns a grade's saved data into a sync record, `merge` combines two
+  records (order doesn't matter; merging twice changes nothing), `fromRecord` turns one back.
+  Earned things only grow; tallies (word stats, counts, slips, stars) are kept per device in
+  the record, each device's share being its total less the others' in the last record it
+  merged, so the app keeps saving plain totals; a pack's later round wins (`rounds` in
+  `progress`); settings and Custom list words go by an edit counter, never the clock, and a
+  removed Custom word stays removed. Tests: `scripts/merge.test.mjs`, run by the check. A
+  new saved key must be added there or left out of sync on purpose.
 - `js/confetti.js`: `confetti(host)`, the solve celebration (skipped with reduced motion).
 - `js/entrances.js`: new-puzzle entrances, how a fresh puzzle's boxes arrive (designed in the
   Board Entrances spike). `ENTRANCES` (each a `plan` of keyframes per box plus timed sounds;
