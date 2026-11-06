@@ -1766,16 +1766,22 @@ $("#sendCopy").addEventListener("click", function () { copyButton($("#sendCopy")
 // Receive: the camera starts at once; a key can also come from a pasted link, or a link
 // this page was opened with. Then one question: who is this?
 var incoming = null, stopScan = null;
-function endScan() { if (stopScan) stopScan(); stopScan = null; $("#scanBox").hidden = true; }
+function endScan() {
+  if (stopScan) stopScan();
+  stopScan = null;
+  $("#scanBox").hidden = true;
+  $("#scanBox").classList.remove("found");
+  var still = $("#scanBox canvas"); if (still) still.remove();
+}
 function showScan() { incoming = null; $("#recvScan").hidden = false; $("#receiveBox").hidden = true; $("#receiveMsg").textContent = ""; }
 async function startScan() {
   endScan();
   $("#scanBox").hidden = false; $("#scanAgain").hidden = true;
   try {
     var { scan } = await import("./scan.js");
-    var stop = await scan($("#scanVideo"), function (text) {
+    var stop = await scan($("#scanVideo"), function (text, freeze) {
       var k = keyFromLink(text);
-      if (k) gotKey(k);
+      if (k) found(k, freeze);
       return !!k;
     });
     if ($("#linkRecv").hidden || incoming || $("#sheet").hidden) stop(); // left meanwhile
@@ -1787,6 +1793,17 @@ async function startScan() {
   }
 }
 $("#scanAgain").addEventListener("click", startScan);
+// Found: the frame it was read from stays, the code outlined, with "Got it!", for a moment
+// before "Who is this?", so it's plain what happened.
+function found(key, freeze) {
+  var box = $("#scanBox"), still = freeze(getComputedStyle(document.documentElement).getPropertyValue("--ok").trim() || "#24895c");
+  still.className = "scan-still"; still.setAttribute("aria-hidden", "true");
+  box.querySelector(".scan-view").insertBefore(still, box.querySelector(".scan-got"));
+  box.classList.add("found");
+  stopScan = null; // the scanner turns the camera off itself
+  $("#receiveMsg").textContent = "";
+  setTimeout(function () { if (!$("#linkRecv").hidden && !$("#sheet").hidden) gotKey(key); else endScan(); }, 1100);
+}
 function gotKey(key) {
   endScan();
   if (PROFILES.some(function (p) { return linkKey(p.id) === key; })) {
@@ -1796,6 +1813,7 @@ function gotKey(key) {
   }
   incoming = key;
   $("#recvScan").hidden = true; $("#receiveBox").hidden = false; $("#recvMsg").textContent = "";
+  $("#receiveBox").classList.remove("arrive-in"); void $("#receiveBox").offsetWidth; $("#receiveBox").classList.add("arrive-in");
   var mine = EDITIONS.some(function (ed) { return hasData(PROFILE, ed); });
   $("#recvReplace").checked = !mine; $("#recvAdd").checked = mine;
   $("#recvWarn").textContent = mine ? "This device’s progress is replaced by theirs." : "Nothing is played here yet, so nothing is lost.";

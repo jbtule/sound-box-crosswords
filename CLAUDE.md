@@ -265,8 +265,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   against the service in `scripts/sync.test.mjs`.
 - `js/scan.js`: the camera QR reader for Receive (jsQR), loaded only when it starts.
 - `js/linkqr.js`: no DOM. Send's QR code, drawn from the `qrcode` grid so it isn't mistaken for
-  the share sheet's: round dots, rounded corner eyes with an orange box, the icon's empty box
-  and waves in the middle (error correction H). Fixed dark colors on white, so cameras read
+  the share sheet's: round dots, rounded corner eyes with an orange box, a key in the middle
+  (error correction H). Fixed dark colors on white, so cameras read
   them; after changing it, check that rendered codes still decode.
 - `js/seal.js`: no DOM. Seals sync records with the browser's own Web
   Crypto: a profile key (`newKey`, 43 base64url characters, carried only after `#link=` in a
@@ -391,7 +391,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   - `clap`: the Break it down scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
   - The More sheet (`#settingsBtn`, a quiet line gear + "More" in the muted color, no pill, so it
-    reads as the grown-ups' door beside the 🏆): above the tabs, the profile picker (two or more profiles; a thin bar across the top, "Playing as Sam", `#whoPill`, opens More) and Edition; tabs Settings, Stats, Link (two tasks, the players on this device, sync status, and "How linking works"; `renderLink`) and About (license, Home Screen steps); `openSheet(tab)` opens
+    reads as the grown-ups' door beside the 🏆): above the tabs, the profile picker (two or more profiles; a thin bar across the top, "Playing as Sam", `#whoPill`, opens More) and Edition; tabs Settings, Stats, Link (two tasks, the players on this device, sync status, under a short note on how linking works; `renderLink`) and About (license, Home Screen steps); `openSheet(tab)` opens
     on Settings or the named tab (`SHEET_TABS`; the Home Screen tip's How? shows the same steps as About in a popover, `#installPop`), with
     `closeSheet` and the change handlers below them. `selectTab` switches tabs here and in 🏆.
   - Stats (`renderProgressSheet`): practice days, the last 4 weeks (`renderCalendar`); each

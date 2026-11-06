@@ -3,8 +3,10 @@
 // BarcodeDetector. The Home Screen app needs its own scanner: the Camera app would open the
 // link in Safari, whose storage is separate.
 //
-// scan(video, found): shows the back camera in `video` and calls found(text) for each code
-// read; found returns true to stop. Resolves to stop(), which turns the camera off.
+// scan(video, found): shows the back camera in `video` and calls found(text, freeze) for
+// each code read; found returns true to stop. freeze(color) gives the frame it was read
+// from, as a canvas, with the code outlined in `color`, to show in place of the camera so
+// the moment it's found is plain to see. Resolves to stop(), which turns the camera off.
 //
 // Focus: an iPhone Pro's main camera can't focus closer than about 20 cm (its Camera app
 // switches to the macro lens, which a page can't pick), so a code held close stays blurry.
@@ -40,9 +42,29 @@ export async function scan(video, found) {
       canvas.width = w; canvas.height = w;
       ctx.drawImage(video, (vw - side) / 2, (vh - side) / 2, side, side, 0, 0, w, w);
       const code = jsQR(ctx.getImageData(0, 0, w, w).data, w, w, { inversionAttempts: "dontInvert" });
-      if (code && found(code.data)) { stop(); return; }
+      if (code && found(code.data, freezer(code.location, vw, vh, side, w))) { stop(); return; }
     }
     requestAnimationFrame(tick);
+  }
+  // The whole frame, at most 960 pixels wide, with the code's corners (found in the middle
+  // square) traced around it.
+  function freezer(loc, vw, vh, side, w) {
+    return function (color) {
+      const k = Math.min(1, 960 / vw), out = document.createElement("canvas");
+      out.width = Math.round(vw * k); out.height = Math.round(vh * k);
+      const c = out.getContext("2d");
+      c.drawImage(video, 0, 0, out.width, out.height);
+      const at = (p) => [((vw - side) / 2 + p.x * side / w) * k, ((vh - side) / 2 + p.y * side / w) * k];
+      c.beginPath();
+      [loc.topLeftCorner, loc.topRightCorner, loc.bottomRightCorner, loc.bottomLeftCorner].forEach((p, i) => {
+        const [x, y] = at(p);
+        if (i) c.lineTo(x, y); else c.moveTo(x, y);
+      });
+      c.closePath();
+      c.lineJoin = "round"; c.lineWidth = Math.max(4, out.width / 80); c.strokeStyle = color;
+      c.stroke();
+      return out;
+    };
   }
   requestAnimationFrame(tick);
   return stop;
