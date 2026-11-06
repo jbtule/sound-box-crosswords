@@ -654,6 +654,459 @@ export var ENTRANCES = [
       return a;
     } },
   // The premium ones: showpieces, every 5th turn (nextEntrance).
+  { id: "dominoes", name: "Dominoes", icon: "🁫", premium: false,
+    // Every box stands on edge like a domino (a thin sliver, seen from above). One push at the
+    // cursor starts a chain: each box falls away from the one that knocked it, and knocks its
+    // neighbors in its words in turn, so where words cross the run splits and spreads both ways
+    // along the crossing word, speeding up as it goes. Each lands flat with a clack.
+    plan: function (g, sfx) {
+      var a = {}, start = g.order.filter(function (k) { return g.cells[k].cursor; })[0] || g.words[0].cells[0];
+      var near = {}; // each box's neighbors along its words
+      g.words.forEach(function (w) { w.cells.forEach(function (k, j) {
+        near[k] = near[k] || [];
+        if (j > 0) near[k].push(w.cells[j - 1]);
+        if (j < w.cells.length - 1) near[k].push(w.cells[j + 1]);
+      }); });
+      // when each box falls, and which neighbor knocked it (the earliest to reach it)
+      var fall = {}, from = {}, depth = {}, queue = [start], n = 0;
+      fall[start] = 0.35; depth[start] = 0;
+      var w0 = g.words.filter(function (w) { return w.cells.indexOf(start) >= 0; })[0]; // the first push goes along its word
+      from[start] = null; var startDir = w0.dir;
+      while (queue.length) {
+        queue.sort(function (x, y) { return fall[x] - fall[y]; });
+        var k = queue.shift(), dt = Math.max(0.05, 0.12 * Math.pow(0.9, depth[k]));
+        near[k].forEach(function (m) {
+          if (fall[m] !== undefined && fall[m] <= fall[k] + dt) return;
+          fall[m] = fall[k] + dt; from[m] = k; depth[m] = depth[k] + 1; queue.push(m);
+        });
+      }
+      g.order.forEach(function (k) {
+        var o = g.cells[k], p = from[k] ? g.cells[from[k]] : null, side; // the side it's hinged on: toward what knocked it
+        if (p) side = p.c < o.c ? "L" : p.c > o.c ? "R" : p.r < o.r ? "T" : "B";
+        else side = startDir === "A" ? "L" : "T";
+        var origin = { L: "0% 50%", R: "100% 50%", T: "50% 0%", B: "50% 100%" }[side];
+        var axis = side === "L" || side === "R" ? "rotateY(" : "rotateX(", sgn = side === "L" || side === "B" ? -1 : 1;
+        var stand = axis + (78 * sgn) + "deg)", back = axis + (-7 * sgn) + "deg)", flat = axis + "0deg)";
+        var t = fall[k], appear = 0.05 + Math.random() * 0.2, D = t + 0.34;
+        sfx(t + 0.16, function (at, S) { S.clack(at, n++); });
+        a[k] = { delay: 0, dur: D, ease: "linear", kf: [
+          { transform: stand, transformOrigin: origin, opacity: 0, offset: 0 },
+          { transform: stand, transformOrigin: origin, opacity: 1, offset: appear / D },
+          { transform: stand, transformOrigin: origin, opacity: 1, offset: t / D, easing: "cubic-bezier(.5,0,.9,.6)" }, // falls, faster and faster
+          { transform: back, transformOrigin: origin, opacity: 1, offset: (t + 0.2) / D, easing: "ease-out" },         // lands, a little rebound
+          { transform: flat, transformOrigin: origin, opacity: 1, offset: 1 }
+        ] };
+      });
+      return a;
+    } },
+  { id: "popcorn", name: "Popcorn", icon: "🍿", premium: false,
+    // The boxes start as a heap of small kernels at the bottom of the board, jiggling harder as
+    // they heat up. Then they pop, one at a time in a random order and faster and faster, each
+    // puffing up to full size and arcing to its place with a little bounce; the last few pop
+    // in a burst. A pop each, thick and fast by the end, like a bag in the microwave.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      var keys = shuffle(g.order), kern = 0.5, ks = g.size * kern * 0.95, perRow = Math.max(4, Math.ceil(Math.sqrt(keys.length * 2)));
+      var t = 0.6, dt = 0.3;
+      keys.forEach(function (k, i) {
+        var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half;
+        var row = Math.floor(i / perRow), col = i % perRow - (perRow - 1) / 2 + (row % 2) * 0.5; // the heap: rows of kernels, offset like a pile
+        var px = W / 2 + col * ks + (Math.random() - 0.5) * ks * 0.3, py = H - ks * 0.5 - row * ks * 0.8;
+        var tp = t, fl = 0.42 + Math.random() * 0.18, D = tp + 0.06 + fl + 0.22, kf = [], ph = Math.random() * 6;
+        function T(x, y, rot, sx, sy) { return "translate(" + (x - fx) + "px," + (y - fy) + "px) rotate(" + rot + "deg) scale(" + sx + "," + (sy || sx) + ")"; }
+        for (var q = 0; q < tp; q += 0.08) { // heating up: jiggles grow until it pops
+          var heat = Math.min(1, q / tp) * 9;
+          kf.push({ transform: T(px + Math.sin(q * 37 + ph) * heat * 0.25, py, Math.sin(q * 29 + ph) * heat, kern), opacity: Math.min(1, q / 0.2), zIndex: 2, offset: q / D });
+        }
+        var spin = (Math.random() < 0.5 ? -1 : 1) * 360;
+        kf.push({ transform: T(px, py, 0, kern), opacity: 1, zIndex: 2, offset: tp / D, easing: "ease-out" });
+        kf.push({ transform: T(px, py - ks * 0.4, 0, 1.15), opacity: 1, zIndex: 3, offset: (tp + 0.06) / D, easing: "cubic-bezier(.2,.7,.4,1)" }); // pop!
+        var ax = px + (fx - px) * 0.55, ay = Math.max(-H * 0.4, Math.min(py, fy) - H * (0.2 + Math.random() * 0.25));
+        kf.push({ transform: T(ax, ay, spin * 0.5, 1), opacity: 1, zIndex: 3, offset: (tp + 0.06 + fl * 0.45) / D, easing: "cubic-bezier(.5,0,.9,.6)" });
+        kf.push({ transform: T(fx, fy, spin, 1.1, 0.88), opacity: 1, zIndex: 1, offset: (tp + 0.06 + fl) / D, easing: "ease-out" });
+        kf.push({ transform: T(fx, fy - g.size * 0.15, spin, 1), opacity: 1, zIndex: 1, offset: (tp + 0.06 + fl + 0.1) / D, easing: "ease-in" });
+        kf.push({ transform: "translate(0,0) rotate(" + spin + "deg) scale(1)", opacity: 1, zIndex: 1, offset: 1 });
+        a[k] = { kf: kf, delay: 0, dur: D, ease: "linear" };
+        sfx(tp, function (when, S) { S.pop(when, i % 7); });
+        t += dt; dt = Math.max(0.035, dt * 0.84);
+      });
+      return a;
+    } },
+  { id: "chess", name: "Chess", icon: "♟️", premium: false,
+    // A faint checkerboard of plain boxes fades in under the puzzle, and the boxes stand on its
+    // empty squares in two armies, left and right (the boxes whose places are in that half),
+    // never on a place. Then they play: turns alternate left, right, and on each a few pieces of
+    // that side make one move each by their piece's rules until all are home: a rook straight
+    // along a row or column, a bishop on a diagonal (only pieces whose place is on their color), a
+    // knight in L-hops, lifting over the board. A wooden tap as each lands, a note for each side.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, half = g.size / 2, R = g.rows, C = g.cols, PER = 4, TURN = 0.2, MOVE = 0.17;
+      function sq(r, c) { return { x: c * step + half, y: r * step + half }; }
+      var used = {}; g.order.forEach(function (k) { used[k] = 1; });
+      // Home squares: the empty squares of each half, outermost first; then columns just outside.
+      var empty = [[], []];
+      for (var r = 0; r < R; r++) for (var c = 0; c < C; c++) if (!used[r + "," + c]) empty[c < C / 2 ? 0 : 1].push([r, c]);
+      empty[0].sort(function (x, y) { return x[1] - y[1] || Math.random() - 0.5; });
+      empty[1].sort(function (x, y) { return y[1] - x[1] || Math.random() - 0.5; });
+      for (var r2 = 0; r2 < R; r2++) { empty[0].push([r2, -1]); empty[1].push([r2, C]); }
+      var sides = [[], []];
+      g.order.forEach(function (k) { sides[g.cells[k].c < C / 2 ? 0 : 1].push(k); });
+      function knightPath(r0, c0, r1, c1) {
+        var seen = {}, q = [[r0, c0, []]], J = [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]];
+        seen[r0 + "," + c0] = 1;
+        while (q.length) {
+          var cur = q.shift();
+          if (cur[0] === r1 && cur[1] === c1) return cur[2];
+          if (cur[2].length >= 3) continue;
+          for (var m = 0; m < 8; m++) {
+            var nr = cur[0] + J[m][0], nc = cur[1] + J[m][1], id = nr + "," + nc;
+            if (seen[id] || nr < 0 || nr >= R || nc < -1 || nc > C) continue;
+            seen[id] = 1; q.push([nr, nc, cur[2].concat([[nr, nc]])]);
+          }
+        }
+        return null;
+      }
+      var piece = {}; // per box: its home square, kind and the squares it moves through
+      sides.forEach(function (list, sd) {
+        list.forEach(function (k, i) {
+          var o = g.cells[k], h = empty[sd][i] || [Math.floor(i / 2) % R, sd ? C : -1], path = null, kind;
+          var pick = Math.random(), sameColor = (h[0] + h[1] + o.r + o.c) % 2 === 0;
+          if (h[0] === o.r || h[1] === o.c) { kind = "rook"; path = [[o.r, o.c]]; }
+          else if (pick < 0.35) { kind = "knight"; path = knightPath(h[0], h[1], o.r, o.c); }
+          else if (pick < 0.7 && sameColor) {
+            kind = "bishop";
+            var br = (h[0] - h[1] + o.r + o.c) / 2, bc = (o.r + o.c - h[0] + h[1]) / 2;
+            path = Math.abs(o.r - h[0]) === Math.abs(o.c - h[1]) ? [[o.r, o.c]] : [[br, bc], [o.r, o.c]];
+          }
+          if (!path) { kind = "rook"; path = Math.random() < 0.5 ? [[h[0], o.c], [o.r, o.c]] : [[o.r, h[1]], [o.r, o.c]]; }
+          piece[k] = { sd: sd, home: h, kind: kind, path: path, at: sq(h[0], h[1]), kf: [], done: 0 };
+        });
+      });
+      // The game: alternate sides; each turn, the next few of that side's pieces still on their way
+      // (round robin) make one move.
+      var queues = [shuffle(sides[0]), shuffle(sides[1])], t = 0.55, turn = 0, n = 0;
+      while (queues[0].length || queues[1].length) {
+        var sd = turn % 2, qq = queues[sd], movers = qq.splice(0, PER);
+        movers.forEach(function (k, mi) {
+          var pc = piece[k], to = sq(pc.path[pc.done][0], pc.path[pc.done][1]), st = t + mi * 0.03;
+          pc.kf.push({ x: pc.at.x, y: pc.at.y, s: 1, t: st, z: 3, ease: pc.kind === "knight" ? "cubic-bezier(.3,.6,.5,1)" : "cubic-bezier(.4,0,.2,1)" });
+          if (pc.kind === "knight") pc.kf.push({ x: (pc.at.x + to.x) / 2, y: (pc.at.y + to.y) / 2 - g.size * 0.45, s: 1.14, t: st + MOVE * 0.5, z: 4, ease: "cubic-bezier(.5,0,.7,.4)" });
+          pc.kf.push({ x: to.x, y: to.y, s: 1, t: st + MOVE, z: 2, ease: "linear" });
+          sfx(st + MOVE, function (when, S) { S.knock(when, pc.sd ? 1 : 4); });
+          pc.at = to; pc.done++;
+          if (pc.done < pc.path.length) qq.push(k);
+        });
+        if (movers.length) t += TURN;
+        turn++;
+      }
+      var END = t + 0.3;
+      g.order.forEach(function (k) {
+        var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, pc = piece[k], h0 = sq(pc.home[0], pc.home[1]), D = pc.kf[pc.kf.length - 1].t + 0.08;
+        function T(x, y, s2) { return "translate(" + (x - fx) + "px," + (y - fy) + "px) scale(" + s2 + ")"; }
+        var appear = 0.1 + Math.random() * 0.25, kf = [
+          { transform: T(h0.x, h0.y, 0.6), opacity: 0, zIndex: 1, offset: 0 },
+          { transform: T(h0.x, h0.y, 1), opacity: 1, zIndex: 1, offset: appear / D, easing: "steps(1, end)" }];
+        pc.kf.forEach(function (f) { kf.push({ transform: T(f.x, f.y, f.s), opacity: 1, zIndex: f.z, offset: f.t / D, easing: f.ease }); });
+        kf.push({ transform: "translate(0,0) scale(1)", opacity: 1, zIndex: 1, offset: 1 });
+        kf[1].easing = "linear";
+        a[k] = { kf: kf, delay: 0, dur: D, ease: "linear" };
+      });
+      // the board: faint plain boxes on the dark squares, over the puzzle and a column each side
+      g.at(0, function () {
+        var anims = [];
+        for (var r = 0; r < R; r++) for (var c = -1; c <= C; c++) {
+          if ((r + c) % 2 !== 0) continue;
+          var d = document.createElement("div"), p2 = sq(r, c);
+          d.className = "entrance-decoy"; d.style.width = d.style.height = g.size + "px";
+          d.style.left = (p2.x - half) + "px"; d.style.top = (p2.y - half) + "px"; d.style.zIndex = 0;
+          g.board.appendChild(d);
+          var an = d.animate([{ opacity: 0 }, { opacity: 0.35, offset: 0.4 / END }, { opacity: 0.35, offset: (END - 0.35) / END }, { opacity: 0 }], { duration: END * 1000, fill: "forwards" });
+          (function (el) { an.onfinish = an.oncancel = function () { el.remove(); }; })(d);
+          anims.push(an);
+        }
+        return anims;
+      });
+      return a;
+    } },
+  { id: "fireflies", name: "Fireflies", icon: "✨", premium: false,
+    // The boxes drift in as small dim boxes (still showing their edges) scattered over the board, wandering slowly and
+    // blinking on and off like fireflies on a summer night, each with a soft glow. One by one
+    // they float to their places, growing to full size and brightening as they settle. Just
+    // crickets chirping, like a summer night.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      var keys = shuffle(g.order), glow = "0 0 " + Math.round(g.size * 0.35) + "px " + Math.round(g.size * 0.08) + "px " + g.accent, none = "0 0 0 0 transparent";
+      keys.forEach(function (k, i) {
+        var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half;
+        var x0 = Math.random() * W, y0 = Math.random() * H, ph = Math.random() * 6, ph2 = Math.random() * 6, blink = 2.2 + Math.random() * 1.6;
+        var ts = 0.9 + i / keys.length * 1.3 + Math.random() * 0.15, FLY = 0.6, D = ts + FLY + 0.2, kf = [];
+        function at(t) { return { x: x0 + Math.sin(t * 0.9 + ph) * g.size * 1.2 + Math.sin(t * 2.1 + ph2) * g.size * 0.3, y: y0 + Math.cos(t * 0.8 + ph2) * g.size * 1.0 + Math.sin(t * 1.7 + ph) * g.size * 0.3 }; }
+        function T(x, y, s2) { return "translate(" + (x - fx) + "px," + (y - fy) + "px) scale(" + s2 + ")"; }
+        for (var t = 0; t < ts; t += 0.08) {
+          var p = at(t), lit = Math.pow(Math.max(0, Math.sin(t * blink + ph)), 3); // blinking
+          kf.push({ transform: T(p.x, p.y, 0.45), opacity: Math.min(1, t / 0.4) * (0.45 + 0.55 * lit), boxShadow: lit > 0.4 ? glow : none, zIndex: 3, offset: t / D });
+        }
+        var p0 = at(ts);
+        kf.push({ transform: T(p0.x, p0.y, 0.45), opacity: 1, boxShadow: glow, zIndex: 3, offset: ts / D, easing: "cubic-bezier(.4,0,.2,1)" }); // floats home
+        kf.push({ transform: T(fx, fy - g.size * 0.08, 1.04), opacity: 1, boxShadow: glow, zIndex: 2, offset: (ts + FLY) / D, easing: "ease-out" });
+        kf.push({ transform: "translate(0,0) scale(1)", opacity: 1, boxShadow: none, zIndex: 1, offset: 1 });
+        a[k] = { kf: kf, delay: 0, dur: D, ease: "linear" };
+      });
+      sfx(0, function (when, S) { S.crickets(when, 3); });
+      return a;
+    } },
+  { id: "band", name: "Marching band", icon: "🥁", premium: false,
+    // The boxes march in from the left in a tight block, in step with a drum: each beat a
+    // stride with a little bob. The block halts in the middle on a drum roll, then breaks ranks,
+    // front rank first: each box marches off to its place in step, along then a sharp turn up
+    // or down, and stamps in. A bass drum and a snare keep the beat the whole way.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      var n = g.order.length, F = Math.max(2, Math.ceil(Math.sqrt(n * 0.8))), RK = Math.ceil(n / F); // F ranks (front to back), RK boxes in each
+      var bs = 0.78, sp = g.size * bs + 3, blockW = F * sp, blockH = RK * sp, BEAT = 0.15, IN = 6;
+      var x1 = W / 2 - blockW / 2, y1 = H / 2 - blockH / 2, x0 = -blockW - g.size, stride = (x1 - x0) / IN, bob = g.size * 0.14;
+      // who stands where: the ones going furthest right lead (front ranks on the right), each rank top to bottom
+      var keys = g.order.slice().sort(function (p, q) { return g.cells[q].c - g.cells[p].c || g.cells[p].r - g.cells[q].r; });
+      var slot = {};
+      keys.forEach(function (k, i) { var rank = Math.floor(i / RK); slot[k] = { rank: rank, x: x1 + (F - 1 - rank + 0.5) * sp, y: y1 + (i % RK + 0.5) * sp }; });
+      keys.sort(function (p, q) { return slot[p].rank - slot[q].rank || g.cells[p].r - g.cells[q].r; });
+      var lastBeat = 0;
+      keys.forEach(function (k) {
+        var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, sl = slot[k], pts = [];
+        function T(x, y, s2) { return "translate(" + (x - fx) + "px," + (y - fy) + "px) scale(" + s2 + ")"; }
+        function beatAt(b) { return 0.25 + b * BEAT; }
+        function stepTo(b, xa, ya, xb, yb, s2) { // one step on beat b: up halfway, down at the end
+          pts.push({ t: beatAt(b), x: xa, y: ya, s: s2 });
+          pts.push({ t: beatAt(b) + BEAT * 0.5, x: (xa + xb) / 2, y: (ya + yb) / 2 - bob, s: s2 });
+          pts.push({ t: beatAt(b + 1), x: xb, y: yb, s: s2 });
+        }
+        var x = sl.x - (x1 - x0), y = sl.y;
+        for (var b = 0; b < IN; b++) { stepTo(b, x, y, x + stride, y, bs); x += stride; }
+        // breaks ranks: the front rank goes first, one rank each beat; marches along, then turns
+        var b2 = IN + 2 + sl.rank, legs = [[fx, y], [fx, fy]];
+        legs.forEach(function (to) {
+          var d = Math.hypot(to[0] - x, to[1] - y), nSteps = Math.max(1, Math.min(4, Math.round(d / (g.size * 1.3))));
+          for (var j = 0; j < nSteps; j++) {
+            var nx = x + (to[0] - x) / (nSteps - j), ny = y + (to[1] - y) / (nSteps - j);
+            stepTo(b2++, x, y, nx, ny, bs + (1 - bs) * Math.min(1, (b2 - IN - 2 - sl.rank) / 4));
+            x = nx; y = ny;
+          }
+        });
+        lastBeat = Math.max(lastBeat, b2);
+        var D = beatAt(b2) + 0.15, kf = [{ transform: T(pts[0].x, pts[0].y, bs), offset: 0 }];
+        pts.forEach(function (p) { if (p.t / D > kf[kf.length - 1].offset) kf.push({ transform: T(p.x, p.y, p.s), offset: p.t / D, easing: "ease-in-out" }); });
+        kf.push({ transform: "translate(0,2px) scale(1.06,.92)", offset: Math.min(0.999, (beatAt(b2) + 0.06) / D), easing: "ease-out" }); // stamps in
+        kf.push({ transform: "translate(0,0) scale(1)", offset: 1 });
+        kf.forEach(function (f) { f.zIndex = 3; }); kf[kf.length - 1].zIndex = 1;
+        a[k] = { kf: kf, delay: 0, dur: D, ease: "linear" };
+      });
+      for (var b = 0; b <= lastBeat; b++) (function (b) {
+        var at = 0.25 + b * BEAT;
+        if (b === IN || b === IN + 1) { for (var r = 0; r < 4; r++) sfx(at + r * BEAT / 4, function (when, S) { S.snare(when, 0.6 + r * 0.1); }); return; } // the halt: a drum roll
+        sfx(at, function (when, S) { if (b % 2 === 0) S.bass(when); else S.snare(when); });
+      })(b);
+      return a;
+    } },
+  { id: "centipede", name: "Centipede", icon: "🐛", premium: false,
+    // All the boxes join into one long centipede that comes in at the bottom left and snakes up
+    // the board: along the bottom row, curling round at the edge, back along the next row up,
+    // and so on. It's ordered so its last box always belongs to the next place it crosses: each
+    // time it passes that place, its tail drops off there and stays, so it gets shorter as it
+    // climbs, and its head is the last box down. A skitter of little feet the whole way.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, half = g.size / 2, R = g.rows;
+      var M = step * 0.6, rad = step / 2, Lrow = W + 2 * M, Lturn = Math.PI * rad, LEG = Lrow + Lturn;
+      function rowY(k) { return (R - 1 - k) * step + half; } // k: rows from the bottom
+      function at(s) { // a point on the path, s along it (before 0: coming in from the left of the bottom row)
+        if (s < 0) return { x: -M + s, y: rowY(0) };
+        var k = Math.floor(s / LEG), u = s - k * LEG, right = k % 2 === 0;
+        if (u <= Lrow) return { x: right ? -M + u : W + M - u, y: rowY(k) };
+        var th = (u - Lrow) / rad, cx = right ? W + M : -M, cy = rowY(k) - rad; // the curl up to the next row
+        return { x: cx + (right ? 1 : -1) * Math.sin(th) * rad, y: cy + Math.cos(th) * rad };
+      }
+      function where(o) { var k = R - 1 - o.r, x = o.c * step + half; return k * LEG + (k % 2 === 0 ? x + M : W + M - x); }
+      var chain = g.order.slice().sort(function (p, q) { return where(g.cells[q]) - where(g.cells[p]); }); // head (furthest place) first
+      var SP = step, head = where(g.cells[chain[0]]), START = 0.25, RUN = Math.min(3.2, 1.6 + head / 1400), v = head / RUN, END = START + RUN;
+      chain.forEach(function (k, i) {
+        var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, dest = where(o), stop = START + (dest + i * SP) / v, kf = [];
+        var D = stop + 0.2;
+        function T(x, y, s2) { return "translate(" + (x - fx) + "px," + (y - fy) + "px) scale(" + s2 + ")"; }
+        for (var t = 0; t < stop; t += 1 / 30) {
+          var s2 = v * Math.max(0, t - START) - i * SP, p = at(s2), wig = Math.sin(t * 22 - i * 0.9) * g.size * 0.06;
+          kf.push({ transform: T(p.x, p.y + wig, 0.9), opacity: p.x < -half ? 0 : 1, zIndex: 2, offset: t / D });
+        }
+        kf.push({ transform: T(fx, fy, 0.9), opacity: 1, zIndex: 2, offset: stop / D, easing: "ease-out" });
+        kf.push({ transform: "translate(0,0) scale(1.06)", opacity: 1, zIndex: 1, offset: (stop + 0.08) / D, easing: "ease-in-out" }); // dropped off
+        kf.push({ transform: "translate(0,0) scale(1)", opacity: 1, zIndex: 1, offset: 1 });
+        a[k] = { kf: kf, delay: 0, dur: D, ease: "linear" };
+      });
+      sfx(START, function (when, S) { S.skitter(when, RUN); });
+      return a;
+    } },
+  { id: "wipers", name: "Windshield wipers", icon: "🚗", premium: false,
+    // The puzzle's boxes lie scattered over the board like rain on a windshield. A wiper, an arm
+    // of plain boxes pivoting from the bottom middle, sweeps up and over from left to right,
+    // catching each box as it reaches it and carrying it along. On the wipe back each one slides
+    // along the arm to its place's distance and drops off as the arm passes its place, left
+    // exactly where it belongs. A rubbery swish each way.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      var px = W / 2, py = H + step * 0.5, T0 = 0.35, SWEEP = 1.0, BACK = 1.1, T1 = T0 + SWEEP, END = T1 + BACK + 0.3;
+      var ease = function (m) { return m < 0.5 ? 2 * m * m : 1 - Math.pow(-2 * m + 2, 2) / 2; };
+      function inv(u) { var lo = 0, hi = 1; for (var q = 0; q < 24; q++) { var m = (lo + hi) / 2; if (ease(m) < u) lo = m; else hi = m; } return (lo + hi) / 2; }
+      function armAt(t) { // the arm's angle: 180 (left) up over to 0 (right), then back
+        if (t <= T0) return 180;
+        if (t <= T1) return 180 - 180 * ease((t - T0) / SWEEP);
+        return 180 * ease(Math.min(1, (t - T1) / BACK));
+      }
+      function polar(x, y) { return { r: Math.hypot(x - px, py - y), f: Math.max(0, Math.min(180, Math.atan2(py - y, x - px) * 180 / Math.PI)) }; }
+      function pt(r, f) { var q = f * Math.PI / 180; return { x: px + r * Math.cos(q), y: py - r * Math.sin(q) }; }
+      var reach = 0;
+      g.order.forEach(function (k) {
+        var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, d = polar(fx, fy);
+        // where it lies scattered: somewhere over the board, within the arm's sweep
+        var sx, sy, sp;
+        for (var tries = 0; tries < 40; tries++) {
+          sx = half + Math.random() * (W - g.size); sy = half + Math.random() * (H - g.size); sp = polar(sx, sy);
+          if (sp.f > 8 && sp.f < 172 && sp.r > step) break;
+        }
+        reach = Math.max(reach, d.r, sp.r);
+        var tCatch = T0 + SWEEP * inv((180 - sp.f) / 180), tDrop = T1 + BACK * inv(d.f / 180), tilt = (Math.random() - 0.5) * 50, D = tDrop + 0.2, kf = [];
+        function T(x, y, rot, s2) { return "translate(" + (x - fx) + "px," + (y - fy) + "px) rotate(" + rot + "deg) scale(" + s2 + ")"; }
+        kf.push({ transform: T(sx, sy, tilt, 0.85), opacity: 0, zIndex: 2, offset: 0 });
+        kf.push({ transform: T(sx, sy, tilt, 0.85), opacity: 1, zIndex: 2, offset: 0.25 / D });
+        kf.push({ transform: T(sx, sy, tilt, 0.85), opacity: 1, zIndex: 2, offset: tCatch / D });
+        for (var t = tCatch + 1 / 30; t < tDrop; t += 1 / 30) { // caught: rides the arm, sliding along it to its place's distance on the way back
+          var f = armAt(t), r = t <= T1 ? sp.r : sp.r + (d.r - sp.r) * Math.min(1, (t - T1) / Math.max(0.05, tDrop - T1)), p = pt(r, f);
+          kf.push({ transform: T(p.x, p.y, tilt * Math.max(0, 1 - (t - tCatch) / 0.4), 0.85), opacity: 1, zIndex: 6, offset: t / D });
+        }
+        kf.push({ transform: T(fx, fy, 0, 0.85), opacity: 1, zIndex: 6, offset: tDrop / D, easing: "ease-out" });
+        kf.push({ transform: "translate(0,0) rotate(0deg) scale(1)", opacity: 1, zIndex: 1, offset: 1 }); // dropped off
+        a[k] = { kf: kf, delay: 0, dur: D, ease: "linear" };
+      });
+      reach += half;
+      g.at(0, function () {
+        var sz = g.size * 0.8;
+        var arm = document.createElement("div"); arm.style.position = "absolute"; arm.style.left = px + "px"; arm.style.top = py + "px"; arm.style.width = arm.style.height = "0"; arm.style.zIndex = 5; arm.style.pointerEvents = "none";
+        for (var r = step * 0.3; r < reach; r += sz + 3) {
+          var b = document.createElement("div"); b.className = "entrance-decoy";
+          b.style.width = b.style.height = sz + "px"; b.style.left = r + "px"; b.style.top = (-sz / 2) + "px";
+          arm.appendChild(b);
+        }
+        g.board.appendChild(arm);
+        var kf = [];
+        for (var t = 0; t <= END + 0.001; t += 1 / 30) {
+          var op = t < T0 ? 0 : t < T0 + 0.2 ? (t - T0) / 0.2 : t < T1 + BACK + 0.05 ? 1 : Math.max(0, (T1 + BACK + 0.3 - t) / 0.25); // stays through the last thunk, then fades
+          kf.push({ transform: "rotate(" + -armAt(t) + "deg)", opacity: op, offset: Math.min(1, t / END) });
+        }
+        kf[kf.length - 1].offset = 1;
+        var aw = arm.animate(kf, { duration: END * 1000, fill: "forwards" });
+        aw.onfinish = aw.oncancel = function () { arm.remove(); };
+        return aw;
+      });
+      sfx(T0, function (when, S) { S.swish(when, SWEEP); });
+      sfx(T1, function (when, S) { S.swish(when, BACK); });
+      return a;
+    } },
+  { id: "coins", name: "Coins", icon: "🪙", premium: false,
+    // The boxes drop onto the board like coins spun onto a table, a quick scatter in a random
+    // order, each falling from above (bigger, then its own size as it lands) nearly on its edge.
+    // Each spins on its edge, tipping lower as it goes, into a wobble circling faster and faster
+    // as it flattens out, till it lies still. The quickening rattle of coins settling.
+    plan: function (g, sfx) {
+      var a = {}, keys = shuffle(g.order), WOB = 1.3, FALL = 0.22;
+      keys.forEach(function (k, i) {
+        var t0 = 0.2 + (i / keys.length) * 1.1 + Math.random() * 0.08, land = t0 + FALL, D = land + WOB, kf = [];
+        var tilt0 = 76 + Math.random() * 8, ph = Math.random() * Math.PI * 2; // lands nearly on edge
+        kf.push({ transform: "scale(1.7) rotate3d(1,0,0,0deg)", opacity: 0, zIndex: 3, offset: 0 });
+        kf.push({ transform: "scale(1.7) rotate3d(1,0,0,0deg)", opacity: 0, zIndex: 3, offset: t0 / D, easing: "cubic-bezier(.55,0,1,.45)" }); // falls
+        // the wobble: tilt shrinking, the tilt's direction circling faster and faster
+        for (var q = 0; q <= 1.0001; q += 1 / 30) {
+          var tilt = tilt0 * Math.pow(1 - q, 1.35), turn = ph + 2 * Math.PI * (2.2 * q + 5 * q * q * q); // spinning on its edge, then a faster and faster wobble
+          kf.push({ transform: "scale(1) rotate3d(" + Math.cos(turn).toFixed(3) + "," + Math.sin(turn).toFixed(3) + ",0," + tilt.toFixed(2) + "deg)", opacity: 1, zIndex: q < 0.2 ? 2 : 1, offset: (land + q * WOB) / D });
+        }
+        kf[kf.length - 1].offset = 1;
+        kf[kf.length - 1].transform = "scale(1) rotate3d(1,0,0,0deg)";
+        a[k] = { kf: kf, delay: 0, dur: D, ease: "linear" };
+        if (i % 3 === 0) sfx(land, function (when, S) { S.whir(when, WOB * 0.4, i); });
+        if (i % 3 === 0) sfx(land + WOB * 0.35, function (when, S) { S.settle(when, WOB * 0.6, i); });
+      });
+      return a;
+    } },
+  { id: "rain", name: "Digital rain", icon: "🟩", premium: false,
+    // Digital rain made of full-size boxes, in two layers (a dimmer, slower one behind): streams
+    // fade in as they fall and pour down the board's columns at different speeds,
+    // each a bright head box in the accent color with a trail of plain boxes fading behind it.
+    // Each of the puzzle's boxes decodes as a stream's head passes its place: it flickers on with
+    // a glow and settles. Then the rain thins out and the last trails drain off the bottom. A
+    // soft trickle of tiny high blips, like data pouring, and two big bright synth-brass chords
+    // as it starts.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, H = g.rows * step - g.gap, half = g.size / 2, C = g.cols;
+      var hs = g.size, TAIL = 5, gapY = step, streams = [], END = 0;
+      var byCol = {}; g.order.forEach(function (k) { (byCol[g.cells[k].c] = byCol[g.cells[k].c] || []).push(k); });
+      for (var c = 0; c < C; c++) {
+        var n = byCol[c] ? 3 : 2;
+        for (var q = 0; q < n; q++) {
+          var start = q === 0 && byCol[c] ? 0.1 + Math.random() * 1.1 : 0.05 + (q + Math.random()) / n * 1.9, v = H / (0.7 + Math.random() * 0.6);
+          streams.push({ c: c, start: start, v: v, y0: -gapY, y1: H + TAIL * gapY, back: false });
+        }
+        // a back layer: dimmer, a little smaller and slower, behind, for depth
+        var nb = 2 + (Math.random() < 0.5 ? 1 : 0);
+        for (var q2 = 0; q2 < nb; q2++) {
+          streams.push({ c: c, start: (q2 + Math.random()) / nb * 1.4, v: 0, y0: -gapY, y1: H + TAIL * gapY, back: true }); // speed: below
+        }
+      }
+      // each box decodes when the first head passes its place
+      g.order.forEach(function (k) {
+        var o = g.cells[k], fy = o.r * step + half, t = Infinity;
+        streams.forEach(function (st) { if (st.c === o.c && !st.back) t = Math.min(t, st.start + (fy - st.y0) / st.v); });
+        var glow = "0 0 " + Math.round(g.size * 0.4) + "px " + Math.round(g.size * 0.06) + "px " + g.accent, none = "0 0 0 0 transparent", D = t + 0.45;
+        a[k] = { delay: 0, dur: D, ease: "linear", kf: [
+          { opacity: 0, boxShadow: none, zIndex: 2, offset: 0 },
+          { opacity: 0, boxShadow: none, zIndex: 2, offset: t / D, easing: "steps(1, end)" },
+          { opacity: 1, boxShadow: glow, zIndex: 2, offset: (t + 0.04) / D, easing: "steps(1, end)" }, // flickers on
+          { opacity: 0.35, boxShadow: glow, zIndex: 2, offset: (t + 0.09) / D, easing: "steps(1, end)" },
+          { opacity: 1, boxShadow: glow, zIndex: 2, offset: (t + 0.14) / D, easing: "ease-out" },
+          { opacity: 1, boxShadow: none, zIndex: 2, offset: 1 }] };
+        END = Math.max(END, D);
+      });
+      streams.forEach(function (st) { if (!st.back) END = Math.max(END, st.start + (st.y1 - st.y0) / st.v); });
+      streams.forEach(function (st) { if (st.back) st.v = (st.y1 - st.y0) / Math.max(0.8, END - st.start - 0.05); }); // slower, but done by the end
+      g.at(0, function () {
+        var anims = [];
+        streams.forEach(function (st) {
+          var x = st.c * step + half - hs / 2, dur = (st.y1 - st.y0) / st.v;
+          for (var j = 0; j <= TAIL; j++) { // the head (j = 0), then its fading trail
+            var d = document.createElement("div"), sc = st.back ? 0.8 : 1;
+            d.className = j ? "entrance-decoy" : "entrance-blk";
+            d.style.width = d.style.height = hs + "px"; d.style.left = x + "px"; d.style.top = "0px"; d.style.zIndex = st.back ? -1 : j ? 0 : 4;
+            g.board.appendChild(d);
+            var op = (j ? 0.75 * (1 - j / (TAIL + 1)) : 1) * (st.back ? 0.35 : 1), yA = st.y0 - j * gapY, yE = Math.min(st.y1 - j * gapY, H), FADE = 0.3;
+            var yV = Math.max(yA, -half), tS = st.start, tV = tS + (yV - yA) / st.v, tF = tV + FADE, tE = tS + (yE - yA) / st.v, tO = tS + (yE + g.size * 0.6 - yA) / st.v;
+            function at(y, o2) { return { transform: "translate(0," + y + "px) scale(" + sc + ")", opacity: o2 }; }
+            var an = d.animate([
+              Object.assign(at(yA, 0), { offset: 0 }),
+              Object.assign(at(yA, 0), { offset: tS / END, easing: "linear" }),                                  // invisible till it moves
+              Object.assign(at(yV, 0), { offset: Math.min(1, tV / END), easing: "linear" }),                    // and till it's on the board
+              Object.assign(at(yV + st.v * FADE, op), { offset: Math.min(1, tF / END), easing: "linear" }),     // fades in as it falls
+              Object.assign(at(yE, op), { offset: Math.min(1, tE / END), easing: "linear" }),
+              Object.assign(at(yE + g.size * 0.6, 0), { offset: Math.min(1, tO / END) }),
+              Object.assign(at(yE + g.size * 0.6, 0), { offset: 1 })], { duration: END * 1000, fill: "forwards" });
+            (function (el) { an.onfinish = an.oncancel = function () { el.remove(); }; })(d);
+            anims.push(an);
+          }
+        });
+        return anims;
+      });
+      sfx(0.1, function (when, S) { S.trickle(when, END - 0.3); });
+      // Two big bright chords, each with a punch on its low note (voicings from Jay's sketch): Ab C
+      // Eb Bb D F over Ab, then C E G Bb D F over C.
+      var C11 = [130.81, 261.63, 329.63, 392.0, 466.16, 587.33, 698.46], AB = [103.83, 207.65, 261.63, 311.13, 466.16, 587.33, 698.46];
+      sfx(0.05, function (when, S) { S.horn(when, 1.4, AB, false, 103.83, 0.4); });
+      sfx(0.85, function (when, S) { S.horn(when, 2.2, C11, false, 130.81, 0.4); });
+      return a;
+    } },
   { id: "coaster", name: "Roller coaster", icon: "🎢", premium: true,
     // The boxes ride in as one long train: a slow climb up the left, a drop, a loop-the-loop,
     // then each car peels off to its spot. Clack-clack up the lift, a whoosh down, a wheee
@@ -1116,6 +1569,116 @@ export var ENTRANCES = [
       sfx(0, function (when, S) { S.surf(when, ROLL * 0.55); });
       sfx(ROLL * 0.45, function (when, S) { S.crash(when); });
       sfx(ROLL * 0.5, function (when, S) { S.fizz(when, ROLL * 0.5 + DRAIN + 0.4); });
+      return a;
+    } },
+  { id: "truck", name: "Monster truck", icon: "🛻", premium: true,
+    // A monster truck made of the puzzle's boxes (the first word's colored boxes are the cab) on
+    // two big square wheels roars in from the left and up a mound of plain blocks, launches,
+    // goes half over in a backflip and crashes on its roof: everything, truck, wheels and mound,
+    // blasts up into the air. On the way down each of the puzzle's boxes lands in its place,
+    // bouncing or stopping dead; the plain blocks fall away. An engine revving, a crash, knocks.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      // Long enough to carry every box: a chassis L boxes long, a 2×2 cab at the front, and a
+      // heap of cargo in the bed, up to three rows narrowing upward.
+      var n = g.order.length, L = 6;
+      while (L + 4 + (L - 2) + (L - 3) + (L - 4) < n) L++;
+      var u = Math.max(10, Math.min(g.size * 0.62, W * 0.4 / L)), sc = u / g.size, gy = H, DUR = 7;
+      var T1 = 1.5, T2 = 2.25, T3 = 3.3; // reaches the mound, launches, crashes (seconds)
+      // The truck, in its own frame: x forward, y up negative; the axles at y = 0.
+      var Rw = u * 1.05, AX = u * (L / 2 - 1.1), base = -(Rw * 0.55 + u * 0.5), slots = [];
+      function row(r, from, count) { for (var j = 0; j < count; j++) slots.push({ x: (from + j - (L - 1) / 2) * u, y: base - r * u, cab: false }); }
+      row(0, 0, L);                                                     // chassis
+      [[1, L - 2], [1, L - 1], [2, L - 2], [2, L - 1]].forEach(function (p) { slots.push({ x: (p[1] - (L - 1) / 2) * u, y: base - p[0] * u, cab: true }); }); // cab, at the front
+      row(1, 0, L - 2); row(2, 0.5, L - 3); row(3, 1, L - 4);           // cargo heaped in the bed
+      var cabFirst = slots.map(function (s, i) { return i; }).slice(0, g.order.length);
+      cabFirst.sort(function (x, y) { return (slots[y].cab - slots[x].cab) || x - y; }); // the first word in the cab
+      var where = {}, wordK = firstWord(g), rest = others(g);
+      wordK.forEach(function (k, i) { where[k] = slots[cabFirst[i]]; });
+      cabFirst.slice(wordK.length).forEach(function (si, i) { where[rest[i]] = slots[si]; });
+      var top = Math.min.apply(null, g.order.map(function (k) { return where[k].y; })) - u * 0.5; // the truck's highest point
+      // The mound: a staircase of plain blocks, steepest at the lip.
+      var rb = u * 1.1, HS = [1, 2, 3, 4], X0 = Math.max(u * L * 0.55, Math.min(W * 0.28, W - u * (L + 6))), X1 = X0 + HS.length * rb, HR = HS.length * rb;
+      var theta = Math.atan2(HR, X1 - X0) * 180 / Math.PI;
+      var XL = Math.min(X1 + u * L * 0.6, W - u * L * 0.45), YL = gy + top; // the axles' spot as it lands on its roof
+      var xIn = -u * L * 0.6, peak = Math.min(H * 0.45, u * 4);
+      var sm = function (v) { v = Math.max(0, Math.min(1, v)); return v * v * (3 - 2 * v); };
+      function truck(t) { // the axles' midpoint, the truck's turn, and how far the wheels have rolled
+        var x, y, rot, roll;
+        if (t <= T1) { var q = t / T1; x = xIn + (X0 - AX - xIn) * (q * 0.7 + 0.3 * q * q); y = gy - Rw - Math.abs(Math.sin(t * 9)) * u * 0.12; rot = Math.sin(t * 7) * 2; }
+        else if (t <= T2) { var c = (t - T1) / (T2 - T1); x = X0 - AX + (X1 - X0 + AX) * c; var s = HR * Math.max(0, Math.min(1, (x - X0) / (X1 - X0))); y = gy - Rw - s; rot = -theta * sm(c * 2.5); }
+        else if (t <= T3) { var f = (t - T2) / (T3 - T2); x = X1 + (XL - X1) * f; y = (gy - Rw - HR) + (YL - (gy - Rw - HR)) * f - 4 * peak * f * (1 - f); rot = -theta + (-180 + theta) * (f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2); }
+        else { x = XL; y = YL; rot = -180; }
+        roll = (Math.min(t, T2) * 1.0 + Math.max(0, Math.min(t, T3) - T2) * 0.6) * 520; // wheel spin, slower in the air
+        return { x: x, y: y, rot: rot, roll: roll };
+      }
+      function place(p, lx, ly) { var r = p.rot * Math.PI / 180; return { x: p.x + lx * Math.cos(r) - ly * Math.sin(r), y: p.y + lx * Math.sin(r) + ly * Math.cos(r) }; }
+      var frames = []; for (var t = 0; t < T3; t += 1 / 30) frames.push(t); frames.push(T3);
+      var G = 2400 * u / 25;
+      // The puzzle's boxes: ride in the truck, blast up at the crash, and come down in their places.
+      g.order.forEach(function (k, i) {
+        var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, s = where[k], kf = [];
+        function T(x, y, rot, sx, sy) { return "translate(" + (x - fx) + "px," + (y - fy) + "px) rotate(" + rot + "deg) scale(" + sx + "," + (sy || sx) + ")"; }
+        frames.forEach(function (t) { var p = truck(t), w = place(p, s.x, s.y); kf.push({ transform: T(w.x, w.y, p.rot, sc), zIndex: 3, offset: t / DUR }); });
+        var p0 = place(truck(T3), s.x, s.y), land = Math.min(DUR - 0.55, T3 + 1.0 + Math.random() * 1.6), apexT = T3 + (land - T3) * (0.38 + Math.random() * 0.12);
+        var ax = p0.x + (fx - p0.x) * 0.5 + (Math.random() - 0.5) * u * 3, ay = Math.max(-H * 0.7, Math.min(p0.y, fy) - H * (0.35 + Math.random() * 0.45));
+        var spin = (Math.random() < 0.5 ? -1 : 1) * (360 + Math.random() * 540), endRot = Math.round((-180 + spin) / 360) * 360;
+        kf[kf.length - 1].easing = "cubic-bezier(.2,.6,.4,1)"; // flung up, slowing
+        kf.push({ transform: T(ax, ay, -180 + spin * 0.5, 0.85), zIndex: 3, offset: apexT / DUR, easing: "cubic-bezier(.55,0,.9,.6)" }); // then falling
+        if (Math.random() < 0.5) { // bounces
+          kf.push({ transform: T(fx, fy, endRot, 1.12, 0.84), zIndex: 1, offset: land / DUR, easing: "cubic-bezier(.2,.7,.4,1)" });
+          kf.push({ transform: T(fx, fy - g.size * 0.55, endRot, 1), zIndex: 1, offset: (land + 0.18) / DUR, easing: "cubic-bezier(.6,0,.9,.5)" });
+          kf.push({ transform: T(fx, fy, endRot, 1.06, 0.92), zIndex: 1, offset: (land + 0.34) / DUR, easing: "ease-out" });
+          sfx(land, function (when, S) { S.clunk(when, i); });
+          sfx(land + 0.34, function (when, S) { S.knock(when, i); });
+        } else { // stops dead
+          kf.push({ transform: T(fx, fy, endRot, 1.08, 0.9), zIndex: 1, offset: land / DUR, easing: "ease-out" });
+          sfx(land, function (when, S) { S.knock(when, i + 3); });
+        }
+        kf.push({ transform: "translate(0,0) rotate(" + endRot + "deg) scale(1)", zIndex: 1, offset: Math.min(1, (land + 0.5) / DUR) });
+        if (kf[kf.length - 1].offset < 1) kf.push({ transform: "translate(0,0) rotate(" + endRot + "deg) scale(1)", zIndex: 1, offset: 1 });
+        a[k] = { kf: kf, delay: 0, dur: DUR, ease: "linear" };
+      });
+      // Plain blocks (the wheels and the mound): `path(t)` until the crash, then flung up and
+      // falling away out of the board, fading.
+      function block(sizePx, color, z, path, push) {
+        var d = document.createElement("div"); d.className = "entrance-decoy";
+        d.style.width = d.style.height = sizePx + "px"; d.style.left = d.style.top = "0px"; d.style.zIndex = z;
+        if (color) { d.style.background = color; d.style.borderColor = color; }
+        var kf = [], M = function (x, y, rot, op) { return { transform: "translate(" + (x - sizePx / 2) + "px," + (y - sizePx / 2) + "px) rotate(" + rot + "deg)", opacity: op }; };
+        frames.forEach(function (t) { var p = path(t); kf.push(Object.assign(M(p.x, p.y, p.rot, t < 0.12 ? t / 0.12 : 1), { offset: t / DUR })); });
+        var p0 = path(T3), x = p0.x, y = p0.y, rot = p0.rot, vx = push.vx, vy = push.vy, vr = (Math.random() - 0.5) * 900;
+        for (var tt = T3 + 1 / 30; tt <= DUR; tt += 1 / 30) {
+          vy += G / 30; x += vx / 30; y += vy / 30; rot += vr / 30;
+          var op = Math.max(0, Math.min(1, (H + g.size - y) / g.size, (DUR - 0.3 - tt) / 0.6));
+          kf.push(Object.assign(M(x, y, rot, op), { offset: tt / DUR }));
+        }
+        kf[kf.length - 1].offset = 1;
+        g.board.appendChild(d);
+        var an = d.animate(kf, { duration: DUR * 1000, easing: "linear", fill: "forwards" });
+        an.onfinish = an.oncancel = function () { d.remove(); };
+        return an;
+      }
+      g.at(0, function () {
+        var anims = [], tire = g.plain.edge;
+        [-1, 1].forEach(function (sgn) {
+          anims.push(block(Rw * 2, tire, 4, function (t) { var p = truck(t), w = place(p, sgn * AX, 0); return { x: w.x, y: w.y, rot: p.rot + p.roll }; },
+            { vx: sgn * (150 + Math.random() * 200), vy: -(900 + Math.random() * 400) * u / 25 }));
+        });
+        HS.forEach(function (h, ci) {
+          for (var r = 0; r < h; r++) (function (bx, by) {
+            anims.push(block(rb, null, 2, function () { return { x: bx, y: by, rot: 0 }; },
+              { vx: (bx - XL) * 1.2 + (Math.random() - 0.5) * 300, vy: -(500 + Math.random() * 700) * u / 25 }));
+          })(X0 + (ci + 0.5) * rb, gy - (r + 0.5) * rb);
+        });
+        return anims;
+      });
+      g.at(T3, function () { return shake(g.board, 5); });
+      sfx(0, function (when, S) { S.engine(when, [[0, 52], [T1 * 0.6, 78], [T1, 70], [T2, 150], [T2 + 0.3, 135], [T3, 118]]); });
+      sfx(T1, function (when, S) { S.thump(when); });
+      sfx(T2, function (when, S) { S.whoosh(when, T3 - T2); });
+      sfx(T3, function (when, S) { S.crash(when); });
+      sfx(T3 + 0.02, function (when, S) { S.stomp(when, 0); });
       return a;
     } },
   { id: "saucer", name: "Flying saucer", icon: "🛸", premium: true,

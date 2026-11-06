@@ -315,7 +315,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `premium` ones are the showpieces), `geometry` (where each box is), `playEntrance` (`{ done,
   skip }`; skip jumps to the finished board and silences its sounds) and `nextEntrance`: every 5th
   turn a premium one (`PREMIUM_EVERY`), otherwise an everyday one, each kind from its own
-  shuffled queue, never the same twice in a row (saved per edition as `entrances`). In `app.js`, `runEntrance` plays one for a new
+  shuffled queue, never the same twice in a row (saved per edition as `entrances`). Keep about 4
+  everyday ones per premium one (28 and 7 now): with a premium every 5th, each entrance then comes
+  back about as often as any other. In `app.js`, `runEntrance` plays one for a new
   puzzle (not one restored at launch; at launch it waits for the Start tap, `.board.waiting`),
   but only the new puzzle after a finished one moves the cycle on (`entranceDue`, saved at the solve, so an update's reload in between keeps it); otherwise the same one replays. As it ends, the first word is said (with auto-speak on;
   `sayFirstWord`), unless the player already picked another word or typed. The

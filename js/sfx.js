@@ -7,6 +7,7 @@ var PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26, 28];
 var noiseFor = null, noiseBuf = null;
 
 export function makeSfx(ac, dest) {
+  var reverb = null; // the horn's hall, made the first time
   if (noiseFor !== ac) { // a second and a half of white noise, made once per audio context
     noiseFor = ac;
     noiseBuf = ac.createBuffer(1, ac.sampleRate * 1.5, ac.sampleRate);
@@ -104,6 +105,117 @@ export function makeSfx(ac, dest) {
     clickin: function (t) { noise(t, 0.02, "bandpass", 2600, 0, 0.3, 4); osc(t + 0.01, 880, "triangle", 0.12, 0.002, 0.12); osc(t + 0.01, 1320, "triangle", 0.06, 0.002, 0.1); },
     // Kaiju: a growl, stomps, uh-oh, the crash, wooden knocks, a rumble.
     stomp: function (t, i) { var f = i % 2 ? 52 : 60; osc(t, f * 1.8, "triangle", 0.7, 0.003, 0.4, f * 0.8); noise(t, 0.18, "lowpass", 500, 90, 0.42, 0.7); },
+    // Monster truck: a big engine, a low sawtooth with a rumble, its pitch following `pts`
+    // ([[seconds in, Hz], ...]: idling in, revving up the mound, screaming in the air), cut at the end.
+    engine: function (t, pts) {
+      var o = ac.createOscillator(), o2 = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
+      var end = pts[pts.length - 1][0];
+      o.type = "sawtooth"; o2.type = "square";
+      pts.forEach(function (p, i) { var at = t + p[0]; if (i) { o.frequency.linearRampToValueAtTime(p[1], at); o2.frequency.linearRampToValueAtTime(p[1] * 0.5, at); } else { o.frequency.setValueAtTime(p[1], at); o2.frequency.setValueAtTime(p[1] * 0.5, at); } });
+      f.type = "lowpass"; f.frequency.setValueAtTime(500, t); f.frequency.linearRampToValueAtTime(1400, t + end * 0.8);
+      lfo.frequency.value = 23; lg.gain.value = 0.05;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.13, t + 0.3); g.gain.setValueAtTime(0.13, t + end - 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + end + 0.08);
+      var g2 = ac.createGain(); g2.gain.value = 0.6; o2.connect(g2); g2.connect(f);
+      lfo.connect(lg); lg.connect(g.gain); o.connect(f); f.connect(g); g.connect(dest);
+      [o, o2, lfo].forEach(function (x) { x.start(t); x.stop(t + end + 0.15); });
+    },
+    // Fireflies: crickets on a summer night, soft high chirps in threes, here and there.
+    crickets: function (t, dur) {
+      for (var c = 0.1; c < dur - 0.2; c += 0.35 + Math.random() * 0.4) {
+        var f = 4200 + Math.random() * 600;
+        for (var j = 0; j < 3; j++) osc(t + c + j * 0.045, f, "sine", 0.018, 0.004, 0.03);
+      }
+    },
+    // Marching band: a snare (a crisp rattle of noise over a short tone) and a bass drum.
+    snare: function (t, g) { noise(t, 0.09, "highpass", 2400, 0, 0.32 * (g || 1), 0.7); osc(t, 210, "triangle", 0.12 * (g || 1), 0.002, 0.06, 160); },
+    bass: function (t) { osc(t, 110, "sine", 0.55, 0.003, 0.22, 48); noise(t, 0.04, "lowpass", 500, 0, 0.12, 0.7); },
+    // Centipede: a skitter of tiny feet, fast soft ticks the whole way.
+    skitter: function (t, dur) {
+      for (var c = 0; c < dur; c += 0.028 + Math.random() * 0.02) noise(t + c, 0.008, "bandpass", 2600 + Math.random() * 1800, 0, 0.035, 3);
+    },
+    // Wipers on wet glass: a brushing swoosh across the stroke (filtered noise swelling and
+    // fading, with a little grit), a short rubber "eek" as the blade turns over at the start,
+    // and a thunk at the end.
+    swish: function (t, dur) {
+      var s2 = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+      s2.buffer = noiseBuf; f.type = "bandpass"; f.Q.value = 0.9;
+      f.frequency.setValueAtTime(500, t); f.frequency.linearRampToValueAtTime(1300, t + dur * 0.5); f.frequency.linearRampToValueAtTime(600, t + dur);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + dur * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      s2.connect(f); f.connect(g); g.connect(dest); s2.start(t); s2.stop(t + dur + 0.05);
+      for (var c = 0.05; c < dur - 0.1; c += 0.06 + Math.random() * 0.05) noise(t + c, 0.015, "bandpass", 2200, 0, 0.03, 2); // grit
+      // eek: rubber catching on glass, a squeal that wobbles and chatters (stick-slip)
+      var e = ac.createOscillator(), ef = ac.createBiquadFilter(), eg = ac.createGain(), ch = ac.createOscillator(), chg = ac.createGain(), vb = ac.createOscillator(), vbg = ac.createGain(), ED = 0.22;
+      e.type = "sawtooth"; e.frequency.setValueAtTime(1350, t); e.frequency.linearRampToValueAtTime(1800, t + ED * 0.6); e.frequency.linearRampToValueAtTime(1600, t + ED);
+      vb.frequency.value = 23; vbg.gain.value = 90; vb.connect(vbg); vbg.connect(e.frequency);
+      ch.type = "square"; ch.frequency.value = 62; chg.gain.value = 0.04; ch.connect(chg); chg.connect(eg.gain);
+      ef.type = "bandpass"; ef.frequency.value = 1700; ef.Q.value = 5;
+      eg.gain.setValueAtTime(0.0001, t); eg.gain.exponentialRampToValueAtTime(0.07, t + 0.02); eg.gain.setValueAtTime(0.07, t + ED * 0.6); eg.gain.exponentialRampToValueAtTime(0.0001, t + ED);
+      e.connect(ef); ef.connect(eg); eg.connect(dest);
+      [e, ch, vb].forEach(function (x) { x.start(t); x.stop(t + ED + 0.05); });
+      var tk = t + dur - 0.03; // the thunk: as the stroke ends
+      osc(tk, 120, "sine", 0.32, 0.004, 0.14, 70); noise(tk, 0.06, "lowpass", 500, 0, 0.12, 0.7);
+    },
+    // Coins: the rattle of one settling, taps coming faster and faster and fading to a stop.
+    // and before that, spinning on its edge: a rolling stream of tiny uneven ticks, speeding up.
+    whir: function (t, dur, i) {
+      var c = 0, rate = 16; // taps a second, rising
+      while (c < dur) {
+        var f = 1900 + (i % 4) * 150 + (Math.random() - 0.5) * 300;
+        noise(t + c, 0.009, "bandpass", f, 0, 0.022 + Math.random() * 0.012, 9); // a tiny ringing tick of the edge on the table
+        rate = 16 + 22 * (c / dur);
+        c += (1 / rate) * (0.75 + Math.random() * 0.5); // a little uneven
+      }
+    },
+    settle: function (t, dur, i) {
+      var c = 0, gap = 0.09;
+      while (c < dur) { noise(t + c, 0.01, "bandpass", 3400 + (i % 4) * 300, 0, 0.05 * (1 - c / dur) + 0.01, 3); c += gap; gap = Math.max(0.012, gap * 0.82); }
+    },
+    // Digital rain: a soft, fast trickle of tiny high blips at random pitches, like data pouring.
+    trickle: function (t, dur) {
+      for (var c = 0; c < dur; c += 0.018 + Math.random() * 0.03) {
+        var f = 2800 + Math.random() * 3400, fade = Math.min(1, c / 0.3, (dur - c) / 0.5);
+        osc(t + c, f, "sine", 0.012 * Math.max(0.1, fade), 0.002, 0.02);
+      }
+    },
+    // A cinematic synth horn ("braaam"): a chord of detuned sawtooths over a sub tone an
+    // octave below its lowest note, bending up into the note, driven into a growl, a filter opening as it swells and
+    // closing as it dies, ringing out in a big hall. `root` in Hz.
+    horn: function (t, dur, notes, dark, stab, vol) { // vol: overall level (1 = full) // notes: the chord in Hz, lowest first; dark: a duller, rumbling "bruum" instead of a blaring "braaam"
+      var root = notes[0];
+      var f = ac.createBiquadFilter(), drive = ac.createWaveShaper(), g = ac.createGain(), os = [];
+      var curve = new Float32Array(1024); for (var c = 0; c < 1024; c++) { var x = c / 511.5 - 1; curve[c] = Math.tanh(x * (dark ? 3.2 : 1.1)); } drive.curve = curve;
+      f.type = "lowpass"; f.Q.value = 3;
+      var open = dark ? 650 : 12000, after = dark ? 380 : 9000, last = dark ? 110 : 4000; // bright: stays wide open, like a synth brass section
+      f.frequency.setValueAtTime(dark ? 120 : 500, t); f.frequency.exponentialRampToValueAtTime(open, t + (dark ? 0.18 : 0.05)); f.frequency.exponentialRampToValueAtTime(after, t + 0.45); f.frequency.exponentialRampToValueAtTime(last, t + dur); // the blat: snaps open, then eases down
+      notes.forEach(function (hz, n) { (dark ? [-8, 8] : [-4, 4]).forEach(function (cents) { // each note of the chord: two slightly detuned saws
+        var o = ac.createOscillator(), og = ac.createGain(); o.type = "sawtooth"; o.detune.value = cents;
+        if (dark) { o.frequency.setValueAtTime(hz * 0.94, t); o.frequency.exponentialRampToValueAtTime(hz, t + 0.14); } // dark: leans up into the note
+        else o.frequency.value = hz; // bright: right on pitch, no ominous swell
+        og.gain.value = !dark && hz < 220 ? 0.4 : 1; // bright: the bass notes lighter
+        o.connect(og); og.connect(f); os.push(o);
+      }); });
+      var sub = ac.createOscillator(), sg = ac.createGain(); sub.type = "sine"; sub.frequency.value = root / 2 > 40 ? root / 2 : root; sg.gain.value = dark ? 1.4 : 0; sub.connect(sg); sg.connect(g); os.push(sub);
+      var bite = ac.createBiquadFilter(); bite.type = "peaking"; bite.frequency.value = dark ? 750 : 2500; bite.Q.value = 1.0; bite.gain.value = dark ? 2 : 6; // brass's bright middle
+      var shine = ac.createBiquadFilter(); shine.type = "peaking"; shine.frequency.value = 4200; shine.Q.value = 0.8; shine.gain.value = dark ? 0 : 7;
+      f.connect(drive); drive.connect(bite); bite.connect(shine); shine.connect(g);
+      if (!dark) notes.slice(-3).forEach(function (hz) { // a shimmer: the top notes doubled an octave up, quietly
+        var o = ac.createOscillator(), og = ac.createGain(); o.type = "sawtooth"; o.frequency.value = hz * 2; o.detune.value = 3; og.gain.value = 0.35;
+        o.connect(og); og.connect(f); os.push(o);
+      });
+      var lvl = (vol || 1) / Math.sqrt(Math.max(1, notes.length / 3)); // a bigger chord, each note quieter
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.14 * lvl, t + 0.03); g.gain.exponentialRampToValueAtTime(0.09 * lvl, t + 0.35); g.gain.setValueAtTime(0.09 * lvl, t + dur * 0.55); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      if (stab) { osc(t, stab, "sawtooth", 0.05 * (vol || 1), 0.005, 0.22, stab * 0.99); } // a short punch on the low note
+      // the hall: a long decaying noise impulse, made once
+      if (!reverb || reverb.context !== ac) {
+        reverb = ac.createConvolver(); var len = Math.round(ac.sampleRate * 2.4), ir = ac.createBuffer(2, len, ac.sampleRate);
+        for (var ch = 0; ch < 2; ch++) { var d = ir.getChannelData(ch); for (var n = 0; n < len; n++) d[n] = (Math.random() * 2 - 1) * Math.pow(1 - n / len, 2.6); }
+        reverb.buffer = ir;
+      }
+      var wet = ac.createGain(); wet.gain.value = dark ? 0.35 : 0.2;
+      g.connect(dest); g.connect(wet); wet.connect(reverb); reverb.connect(dest);
+      setTimeout(function () { try { wet.disconnect(); } catch (e) {} }, (t - ac.currentTime + dur + 2.6) * 1000);
+      os.forEach(function (o) { o.start(t); o.stop(t + dur + 0.05); });
+    },
     growl: function (t, dur) {
       var o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
       o.type = "sawtooth"; o.frequency.setValueAtTime(70, t); o.frequency.linearRampToValueAtTime(95, t + dur * 0.4); o.frequency.linearRampToValueAtTime(60, t + dur);
