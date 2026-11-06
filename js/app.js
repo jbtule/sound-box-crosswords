@@ -920,9 +920,11 @@ function statsPacks() {
 }
 function renderProgressSheet() {
   renderCalendar();
-  var rows = $("#progressPacks"); rows.innerHTML = "";
+  var rows = $("#progressPacks"), shown = 0; rows.innerHTML = "";
   statsPacks().forEach(function (id) {
     var c = coverage(id), stats = packProgress(id).stats;
+    if (!c.done && !stars[id]) return; // not started: left out, less to read
+    shown++;
     var firsts = entries(id).filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
     var li = document.createElement("li"), name = document.createElement("b");
     name.textContent = (isHard(id) ? "🥋 " : "") + PACKS[id].name;
@@ -930,6 +932,7 @@ function renderProgressSheet() {
       (stars[id] || 0) + (stars[id] === 1 ? " puzzle" : " puzzles"));
     rows.appendChild(li);
   });
+  $("#packsEmpty").hidden = shown > 0;
   renderSlips();
   renderTricky();
   renderGuessing();
@@ -939,15 +942,28 @@ function renderProgressSheet() {
   $("#comebackNote").textContent = cb
     ? cb + (cb === 1 ? " word" : " words") + " spelled right on the first try after being missed before."
     : "None yet: a word spelled right on the first try after being missed before counts here.";
-  var list = $("#progressLog"); list.innerHTML = "";
-  var fmt = { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" };
-  log.slice(0, 30).forEach(function (e) {
-    var li = document.createElement("li");
-    li.textContent = new Date(e.t).toLocaleString(undefined, fmt) + " · " + (PACKS[e.pack] ? PACKS[e.pack].name : e.pack) +
-      " · " + e.n + " words · " + (e.m === 0 ? "no slips" : e.m === 1 ? "1 try again" : e.m + " try-agains");
+  renderDays();
+}
+// Under the calendar: each recent practice day and the packs played on it, newest first,
+// e.g. "Thu, Nov 6: Blends ×2, Unit 3" (puzzles finished, from the log).
+function renderDays() {
+  var list = $("#progressLog"), byDay = [], at = {};
+  list.innerHTML = "";
+  log.forEach(function (e) {
+    var k = dayKey(e.t);
+    if (!at[k]) { at[k] = { t: e.t, packs: [], n: {} }; byDay.push(at[k]); }
+    var d = at[k];
+    if (!d.n[e.pack]) { d.n[e.pack] = 0; d.packs.push(e.pack); }
+    d.n[e.pack]++;
+  });
+  byDay.slice(0, 14).forEach(function (d) {
+    var li = document.createElement("li"), when = document.createElement("b");
+    when.textContent = new Date(d.t).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    li.append(when, ": " + d.packs.map(function (id) {
+      return (PACKS[id] ? (isHard(id) ? "🥋 " : "") + PACKS[id].name : id) + (d.n[id] > 1 ? " ×" + d.n[id] : "");
+    }).join(", "));
     list.appendChild(li);
   });
-  $("#progressEmpty").hidden = log.length > 0;
 }
 // Practice days: the last 4 weeks, Sunday first, a filled dot per day with a finished puzzle.
 function renderCalendar() {
@@ -1011,7 +1027,7 @@ function renderTricky() {
       var st = stats[e.w];
       if (!st || !st.miss || st.miss <= st.ok) return;
       var score = st.miss - st.ok, have = found[e.w];
-      if (!have || score > have.score) found[e.w] = { e: e, score: score, miss: st.miss, sticker: stickers[e.w] };
+      if (!have || score > have.score) found[e.w] = { e: e, id: id, score: score, miss: st.miss, sticker: stickers[e.w] };
     });
   });
   var top = Object.keys(found).map(function (w) { return found[w]; })
@@ -1020,13 +1036,30 @@ function renderTricky() {
   $("#trickyNote").textContent = top.length
     ? "Missed more often than spelled right the first time. Tap a picture to hear the word."
     : "None yet: words missed more often than spelled right will show here.";
-  top.forEach(function (t) {
-    var b = document.createElement("button");
-    b.type = "button"; b.className = "col-slot got";
-    b.setAttribute("aria-label", "Tricky word, hear it");
-    if (t.e.pic) b.textContent = t.e.pic; else b.innerHTML = t.sticker;
-    b.addEventListener("click", function () { say("w", t.e.w, 0.85, true); });
-    list.appendChild(b);
+  byPack(list, top, "Tricky word, hear it");
+}
+// Pictures (or sound stickers) to tap and hear, grouped under their pack's name: packs in the
+// order of their first (worst) word, each a row of tiles. `items` are sorted worst first:
+// [{ e, id (pack), sticker }].
+function byPack(list, items, label) {
+  var groups = [], at = {};
+  items.forEach(function (t) {
+    if (!at[t.id]) { at[t.id] = []; groups.push(t.id); }
+    at[t.id].push(t);
+  });
+  groups.forEach(function (id) {
+    var head = document.createElement("span"), grid = document.createElement("div");
+    head.className = "pack-sub"; head.textContent = PACKS[id] ? (isHard(id) ? "🥋 " : "") + PACKS[id].name : id;
+    grid.className = "col-grid";
+    at[id].forEach(function (t) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "col-slot got";
+      b.setAttribute("aria-label", label);
+      if (t.e.pic) b.textContent = t.e.pic; else b.innerHTML = t.sticker;
+      b.addEventListener("click", function () { say("w", t.e.w, 0.85, true); });
+      grid.appendChild(b);
+    });
+    list.append(head, grid);
   });
 }
 // Guessing: how often the nudge fired (all time and the last 4 weeks) and on which words, as
@@ -1041,16 +1074,15 @@ function renderGuessing() {
   var found = {};
   statsPacks().forEach(function (id) {
     var words = entries(id), stickers = listenStickers(words);
-    words.forEach(function (e) { if (guessing.words[e.w] && !found[e.w]) found[e.w] = { e: e, n: guessing.words[e.w], sticker: stickers[e.w] }; });
+    var stats = packProgress(id).stats;
+    words.forEach(function (e) {
+      if (!guessing.words[e.w]) return;
+      // A word in two packs goes under the one where it was missed most.
+      var miss = (stats[e.w] && stats[e.w].miss) || 0, have = found[e.w];
+      if (!have || miss > have.miss) found[e.w] = { e: e, id: id, miss: miss, n: guessing.words[e.w], sticker: stickers[e.w] };
+    });
   });
-  Object.keys(found).map(function (w) { return found[w]; }).sort(function (a, b) { return b.n - a.n; }).slice(0, TRICKY_MAX).forEach(function (t) {
-    var b = document.createElement("button");
-    b.type = "button"; b.className = "col-slot got";
-    b.setAttribute("aria-label", "Guessed word, hear it");
-    if (t.e.pic) b.textContent = t.e.pic; else b.innerHTML = t.sticker;
-    b.addEventListener("click", function () { say("w", t.e.w, 0.85, true); });
-    list.appendChild(b);
-  });
+  byPack(list, Object.keys(found).map(function (w) { return found[w]; }).sort(function (a, b) { return b.n - a.n; }).slice(0, TRICKY_MAX), "Guessed word, hear it");
 }
 // More → Edition, above the tabs (Settings and Stats are per edition): a dropdown of editions; switching reloads into that edition's own
 // lists, progress and settings. Hidden when there's only one.

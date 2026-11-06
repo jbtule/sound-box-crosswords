@@ -408,14 +408,15 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     reads as the grown-ups' door beside the 🏆): above the tabs, the profile picker (two or more profiles; a quiet line under the title, "Playing as Sam", `#whoPill`, opens More; not at the very top, where iOS blurs under the status bar) and Edition; tabs Settings, Stats, Link (two tasks, the players on this device, sync status, under a short note on how linking works; `renderLink`) and About (license, Home Screen steps); `openSheet(tab)` opens
     on Settings or the named tab (`SHEET_TABS`; the Home Screen tip's How? shows the same steps as About in a popover, `#installPop`), with
     `closeSheet` and the change handlers below them. `selectTab` switches tabs here and in 🏆.
-  - Stats (`renderProgressSheet`): practice days, the last 4 weeks (`renderCalendar`); each
+  - Stats (`renderProgressSheet`): practice days, the last 4 weeks (`renderCalendar`), with the
+    packs played each recent day under it (`renderDays`, from `sbx:log`: "Thu, Nov 6: Blends ×2, Unit 3"); each
     pack's words done and right on the first try; comebacks (`counts.comeback`: words right on
     the first try after an earlier miss); where the slips happen (`renderSlips`: the
     wrong letters in try-agains by place, beginning / middle / end, and by kind, vowel / letter
     in a blend / other consonant, from `slipSpots` in `phonics.js`, counted in `checkWord` into
-    `sbx:slips`; shown from 10); tricky words (`renderTricky`: missed more often than right
+    `sbx:slips`; shown from 10); tricky words (`renderTricky`, grouped under pack names by `byPack`: missed more often than right
     first try, as pictures or sound stickers to tap and hear); guessing (`renderGuessing`, once the
-    nudge below has fired: how often, and on which words); recent puzzles. Like the rest
+    nudge below has fired: how often, and on which words). Packs not started yet are left out. Like the rest
     of the sheet it isn't locked, so it never shows a spelling.
   - Start over (Settings): clears this edition's `achievements`, `progress`, `counts`, `days`,
     `log`, `stars`, `puzzle`, `pending`, `slips`, `seenEntrances`, `entranceQueue` and `entranceDue` (`RESET_KEYS`) and the color scheme, once "start over" is

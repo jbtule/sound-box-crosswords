@@ -247,9 +247,11 @@
         <h3>Practice days</h3>
         <div class="cal" id="calendar" role="img"></div>
         <p class="help" id="calSum"></p>
+        <ul class="plain log" id="progressLog"></ul>
       </div>
       <div>
         <h3>Packs</h3>
+        <p class="help" id="packsEmpty">No packs started yet.</p>
         <ul class="plain" id="progressPacks"></ul>
       </div>
       <div>
@@ -264,17 +266,12 @@
       <div>
         <h3>Tricky words</h3>
         <p class="help" id="trickyNote"></p>
-        <div class="col-grid" id="trickyList"></div>
+        <div class="by-pack" id="trickyList"></div>
       </div>
       <div id="guessSec" hidden>
         <h3>Guessing</h3>
         <p class="help" id="guessNote"></p>
-        <div class="col-grid" id="guessList"></div>
-      </div>
-      <div>
-        <h3>Recent puzzles</h3>
-        <p class="help" id="progressEmpty">No finished puzzles yet.</p>
-        <ul class="plain log" id="progressLog"></ul>
+        <div class="by-pack" id="guessList"></div>
       </div>
     </div>
     <div class="tabpanel" id="linkPanel" role="tabpanel" aria-labelledby="tabLink" hidden>

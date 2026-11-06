@@ -82,7 +82,7 @@ h1 span { color: var(--accent); }
 .progress .track { flex: 1; max-width: 220px; height: 6px; border-radius: 999px; background: var(--key-edge); overflow: hidden; }
 .progress .fill { height: 100%; width: 0; border-radius: 999px; background: var(--ok); transition: width 0.4s; }
 .plain { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; }
-.plain.log { color: var(--muted); font-size: 0.85rem; max-height: 220px; overflow-y: auto; }
+.plain.log { color: var(--muted); font-size: 0.85rem; max-height: 220px; overflow-y: auto; margin-top: 6px; }
 .panel h3.sub { margin-top: 12px; }
 
 .board-card { scroll-margin: 12px; position: relative; background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 16px 12px; min-height: 160px; display: flex; justify-content: center; }
@@ -180,6 +180,9 @@ html.standalone { touch-action: pan-x pan-y; }
 .col-pack { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .col-pack h3 { margin: 0; }
 .col-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+/* Stats' tricky and guessed words, a row of pictures under each pack's name. */
+.by-pack { display: flex; flex-direction: column; gap: 6px; }
+.by-pack .pack-sub { font-size: 0.8rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
 .col-slot { aspect-ratio: 1; border-radius: 14px; border: 2px dashed var(--key-edge); display: grid; place-items: center; font-size: 1.9rem; line-height: 1; padding: 0; background: transparent; }
 .col-slot.got { border-style: solid; background: var(--key); }
 .col-slot .sound-sticker { width: 78%; height: 78%; }
