@@ -1469,8 +1469,12 @@ function showStart(continuing) {
   onAccent();
   $("#startLabel").textContent = continuing ? "Continue" : "Start";
   $("#startOverlay").hidden = false;
+  placeStart();
   $("#startBtn").focus({ preventScroll: true });
 }
+// The button sits on the puzzle, just below the clue it covers too (whose height varies).
+function placeStart() { $("#startOverlay").style.setProperty("--clue-h", $("#cluebar").offsetHeight + "px"); }
+window.addEventListener("resize", placeStart);
 function start() {
   if ($("#startOverlay").hidden) return;
   $("#startOverlay").hidden = true;

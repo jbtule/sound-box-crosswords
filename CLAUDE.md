@@ -312,8 +312,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   - Saved progress (`sbx:progress`, per pack): `done`, `round` (coverage), and
     `stats[word]` = `{ n, ok, miss }` (typed completions, first-try right, wrong tries);
     words finished by a crossing word don't count as typed. `sbx:log`: finished puzzles.
-  - Start / Continue (`showStart` / `start`): one big button over the board at launch (it covers
-    only the puzzle card, so the packs, 🏆 and More stay usable), since
+  - Start / Continue (`showStart` / `start`): one big button over the clue and board at launch (it covers
+    only them, `.play`, so the packs, 🏆 and More stay usable), since
     iOS plays recorded words, the device voice and the chime only after a tap; tapping it (or
     any key or letter pad tap, which isn't typed) dismisses it and says the current word if auto-speak is on.
     The letter pad is hidden meanwhile (`.asleep`, its space kept and still tappable).
