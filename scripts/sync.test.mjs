@@ -16,7 +16,7 @@ function service() {
     PROFILE: {
       idFromName: (name) => name,
       get: (id) => {
-        if (!profiles.has(id)) profiles.set(id, new Profile({ store: memoryStore(), storage: { at: null, async setAlarm(t) { this.at = t; } } }, env));
+        if (!profiles.has(id)) profiles.set(id, new Profile({ store: memoryStore(), storage: { at: null, async setAlarm(t) { this.at = t; }, async getAlarm() { return this.at; } } }, env));
         return { fetch: (req) => profiles.get(id).fetch(req) };
       }
     },
@@ -374,7 +374,7 @@ test("room: a profile from before blocks reserves its room at its next save; a f
   const { call, profiles, space } = service();
   const old = await keysFor(newKey());
   const sealed = await seal(old, "g3", { log: Array.from({ length: 200 }, (_, t) => ({ t, pack: "blends", n: 6 })) });
-  const p = new Profile({ store: memoryStore(), storage: { async setAlarm() {} } }, { SPACE: { idFromName: (n) => n, get: () => ({ fetch: (u, i) => space.fetch(new Request(u, i)) }) } });
+  const p = new Profile({ store: memoryStore(), storage: { at: null, async setAlarm(t) { this.at = t; }, async getAlarm() { return this.at; } } }, { SPACE: { idFromName: (n) => n, get: () => ({ fetch: (u, i) => space.fetch(new Request(u, i)) }) } });
   profiles.set(old.lookup, p);
   p.store.put("g3", 1, sealed);
   assert.equal(p.store.reserved(), 0);
@@ -419,4 +419,98 @@ test("a deliberately oversized, realistic record still fits in MAX_BYTES", async
   const sealed = await seal(keys, "g3", rec);
   assert.ok(sealed.length < MAX_BYTES, `a busy record sealed to ${sealed.length} bytes, over MAX_BYTES (${MAX_BYTES}): raise it in sync/src/api.js`);
   assert.ok(looksRandom(sealed.subarray(13)));
+});
+
+test("a save that's going to be refused reserves and counts nothing", async () => {
+  const { call, profiles, space, limiters, alarmAt } = service();
+  const k = await keysFor(newKey());
+  // A brand-new lookup, saved at a version it doesn't have: refused before the limits or room.
+  assert.equal((await put(call, k.lookup, "g3", 7, await seal(k, "g3", {}), k.writeToken, "203.0.113.9")).status, 409);
+  assert.equal(space.store.used(), 0);
+  assert.equal(profiles.get(k.lookup).store.reserved(), 0);
+  assert.equal(limiters.has("net:203.0.113.9"), false);
+  assert.equal(alarmAt(k.lookup), null);
+  // Any room a profile does hold comes with an alarm, so it's always given back in time.
+  assert.equal((await put(call, k.lookup, "g3", 0, await seal(k, "g3", {}), k.writeToken)).status, 200);
+  assert.ok(alarmAt(k.lookup) > Date.now());
+  assert.equal(space.store.used(), 1);
+});
+
+test("a profile from before alarms gets one (only if it has none)", async () => {
+  const { call, profiles } = service();
+  const old = await keysFor(newKey());
+  const storage = { at: null, async setAlarm(t) { this.at = t; }, async getAlarm() { return this.at; } };
+  const p = new Profile({ store: memoryStore(), storage }); profiles.set(old.lookup, p);
+  p.store.setOwner(await (async () => { const d = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(old.writeToken))); return Array.from(d, (b) => b.toString(16).padStart(2, "0")).join(""); })());
+  p.store.put("g3", 1, await seal(old, "g3", {}));
+  await call(`/v1/p/${old.lookup}`, { headers: { "x-write-token": old.writeToken } });
+  assert.ok(storage.at > Date.now() + (KEEP_DAYS - 1) * 86400000);
+  const set = storage.at;
+  await call(`/v1/p/${old.lookup}`, { headers: { "x-write-token": old.writeToken } });
+  assert.equal(storage.at, set);
+});
+
+test("syncGrade names a record too big to save", async () => {
+  const { call } = service();
+  const keys = await keysFor(newKey());
+  const tooBig = (url, init = {}) => (init.method === "PUT" ? Promise.resolve(new Response("{}", { status: 413 })) : client(call)(url, init));
+  const a = deviceFor("a"); a.data.counts.clean = 1;
+  await assert.rejects(syncGrade(a.opts(tooBig, keys)), (e) => e.big === true);
+});
+
+// The real SQL (sqlStore, limiterStore, spaceStore), on Node's built-in SQLite where there is
+// one, shaped like a Durable Object's ctx.storage.sql.
+let sqlite = null;
+try { sqlite = await import("node:sqlite"); } catch (e) { /* older Node: skipped */ }
+function doSql() {
+  const db = new sqlite.DatabaseSync(":memory:");
+  const blob = (v) => (v instanceof ArrayBuffer ? new Uint8Array(v) : v);
+  return {
+    db,
+    exec(q, ...params) {
+      const st = db.prepare(q), rows = /^\s*SELECT/i.test(q) ? st.all(...params.map(blob)) : (st.run(...params.map(blob)), []);
+      return { toArray: () => rows };
+    }
+  };
+}
+test("the real SQL: profiles, limits and room", { skip: !sqlite && "node:sqlite isn't available" }, async () => {
+  const { sqlStore, limiterStore, spaceStore } = await import("../sync/src/profile.js");
+  const sqls = new Map(), sqlFor = (name) => { if (!sqls.has(name)) sqls.set(name, doSql()); return sqls.get(name); };
+  const env = {};
+  const ns = (make) => {
+    const objects = new Map();
+    return { objects, idFromName: (n) => n, get: (id) => { if (!objects.has(id)) objects.set(id, make(id)); return { fetch: (u, i) => objects.get(id).fetch(u instanceof Request ? u : new Request(u, i)) }; } };
+  };
+  env.PROFILE = ns((id) => new Profile({ storage: { sql: sqlFor(id), at: null, async setAlarm(t) { this.at = t; }, async getAlarm() { return this.at; } } }, env));
+  env.LIMITER = ns((id) => new Limiter({ store: limiterStore(sqlFor("limiter:" + id)) }));
+  env.SPACE = ns((id) => new Space({ store: spaceStore(sqlFor("space:" + id)) }));
+  const call = (path, init = {}) => handle(new Request("https://sound-box-sync.asset-data.stream" + path, { ...init, headers: { origin: SITE, ...init.headers } }), env);
+  const k = await keysFor(newKey()), as = { headers: { "x-write-token": k.writeToken } };
+  // A read of a lookup nobody has saved leaves no tables behind.
+  assert.deepEqual(await (await call(`/v1/p/${k.lookup}`, as)).json(), { grades: {} });
+  assert.equal(sqlFor(k.lookup).db.prepare("SELECT COUNT(*) AS n FROM sqlite_master").get().n, 0);
+  // Save, read back, a stale save, a stranger, a second grade.
+  const rec = await seal(k, "g3", { log: Array.from({ length: 200 }, (_, t) => ({ t, pack: "blends", n: 6 })) });
+  assert.equal((await put(call, k.lookup, "g3", 0, rec, k.writeToken)).status, 200);
+  const got = await call(`/v1/p/${k.lookup}/g3`, as);
+  assert.equal(got.headers.get("x-version"), "1");
+  assert.deepEqual(await unseal(k, "g3", new Uint8Array(await got.arrayBuffer())), await unseal(k, "g3", rec));
+  assert.equal((await put(call, k.lookup, "g3", 0, rec, k.writeToken)).status, 409);
+  assert.equal((await call(`/v1/p/${k.lookup}`, { headers: { "x-write-token": (await keysFor(newKey())).writeToken } })).status, 403);
+  assert.equal((await put(call, k.lookup, "k", 0, await seal(k, "k", {}), k.writeToken)).status, 200);
+  const p = env.PROFILE.objects.get(k.lookup);
+  assert.equal(p.store.bytes(""), rec.length + (await seal(k, "k", {})).length);
+  assert.equal(p.store.reserved(), 1);
+  assert.deepEqual(await (await call(`/v1/p/${k.lookup}`, as)).json(), { grades: { g3: 1, k: 1 } });
+  // Expiry: records gone, owner kept, room given back.
+  await p.alarm();
+  assert.deepEqual(p.store.list(), []);
+  assert.ok(p.store.owner());
+  assert.equal(env.SPACE.objects.get("everyone").store.used(), 0);
+  // Limits on the real tables: a network's count rolls over by day.
+  const lim = new Limiter({ store: limiterStore(sqlFor("limiter-test")) });
+  for (let i = 0; i < 3; i++) assert.equal((await lim.fetch(new Request("https://limiter/take?limit=3", { method: "POST" }))).status, 200);
+  assert.equal((await lim.fetch(new Request("https://limiter/take?limit=3", { method: "POST" }))).status, 429);
+  lim.store.set("2000-01-01", 99);
+  assert.equal((await lim.fetch(new Request("https://limiter/take?limit=3", { method: "POST" }))).status, 200);
 });

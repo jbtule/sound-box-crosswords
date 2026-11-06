@@ -20,21 +20,28 @@ export const BLOCK = 16 * 1024, SPACE_BYTES = 50 * 1024 * 1024;
 export const KEEP_DAYS = 90;
 export const NEW_PER_NETWORK = 20, NEW_PER_DAY = 1000;
 
-// Storage: SQLite in the Durable Object, or Maps in the tests.
+// Storage: SQLite in the Durable Object, or Maps in the tests. The tables are made only when
+// something is first written, so a read of a lookup nobody has saved leaves nothing behind.
 export function sqlStore(sql) {
-  sql.exec("CREATE TABLE IF NOT EXISTS records (grade TEXT PRIMARY KEY, version INTEGER NOT NULL, body BLOB NOT NULL, saved INTEGER NOT NULL)");
-  sql.exec("CREATE TABLE IF NOT EXISTS owner (one INTEGER PRIMARY KEY CHECK (one = 1), token TEXT NOT NULL)");
-  sql.exec("CREATE TABLE IF NOT EXISTS room (one INTEGER PRIMARY KEY CHECK (one = 1), blocks INTEGER NOT NULL)");
+  let made = sql.exec("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'records'").toArray()[0].n > 0;
+  const make = () => {
+    if (made) return;
+    sql.exec("CREATE TABLE IF NOT EXISTS records (grade TEXT PRIMARY KEY, version INTEGER NOT NULL, body BLOB NOT NULL, saved INTEGER NOT NULL)");
+    sql.exec("CREATE TABLE IF NOT EXISTS owner (one INTEGER PRIMARY KEY CHECK (one = 1), token TEXT NOT NULL)");
+    sql.exec("CREATE TABLE IF NOT EXISTS room (one INTEGER PRIMARY KEY CHECK (one = 1), blocks INTEGER NOT NULL)");
+    made = true;
+  };
+  const read = (q, ...p) => (made ? sql.exec(q, ...p).toArray() : []);
   return {
-    bytes: (except) => sql.exec("SELECT COALESCE(SUM(length(body)), 0) AS n FROM records WHERE grade <> ?", except).toArray()[0].n,
-    reserved: () => (sql.exec("SELECT blocks FROM room").toArray()[0] || {}).blocks || 0,
-    setReserved: (n) => { sql.exec("INSERT OR REPLACE INTO room (one, blocks) VALUES (1, ?)", n); },
-    list: () => sql.exec("SELECT grade, version FROM records").toArray(),
-    get: (grade) => sql.exec("SELECT version, body FROM records WHERE grade = ?", grade).toArray()[0] || null,
-    put: (grade, version, body) => { sql.exec("INSERT OR REPLACE INTO records (grade, version, body, saved) VALUES (?, ?, ?, ?)", grade, version, body, Date.now()); },
-    owner: () => (sql.exec("SELECT token FROM owner").toArray()[0] || {}).token || null,
-    setOwner: (token) => { sql.exec("INSERT OR REPLACE INTO owner (one, token) VALUES (1, ?)", token); },
-    clear: () => { sql.exec("DELETE FROM records"); }
+    bytes: (except) => (read("SELECT COALESCE(SUM(length(body)), 0) AS n FROM records WHERE grade <> ?", except)[0] || { n: 0 }).n,
+    reserved: () => (read("SELECT blocks FROM room")[0] || {}).blocks || 0,
+    setReserved: (n) => { make(); sql.exec("INSERT OR REPLACE INTO room (one, blocks) VALUES (1, ?)", n); },
+    list: () => read("SELECT grade, version FROM records"),
+    get: (grade) => read("SELECT version, body FROM records WHERE grade = ?", grade)[0] || null,
+    put: (grade, version, body) => { make(); sql.exec("INSERT OR REPLACE INTO records (grade, version, body, saved) VALUES (?, ?, ?, ?)", grade, version, body, Date.now()); },
+    owner: () => (read("SELECT token FROM owner")[0] || {}).token || null,
+    setOwner: (token) => { make(); sql.exec("INSERT OR REPLACE INTO owner (one, token) VALUES (1, ?)", token); },
+    clear: () => { if (made) sql.exec("DELETE FROM records"); }
   };
 }
 export function memoryStore() {
@@ -92,6 +99,12 @@ export class Profile {
     const grade = new URL(request.url).pathname.slice(1);
     const token = await sha256(request.headers.get("x-write-token") || "");
     if (this.store.owner() && this.store.owner() !== token) return json(403, { error: "token" });
+    // A profile saved before alarms has records and no alarm: give it one (a missing alarm
+    // only; reads never move one that's set).
+    if (this.storage && !this.alarmChecked) {
+      this.alarmChecked = true;
+      if (this.store.list().length && (await this.storage.getAlarm()) == null) await this.storage.setAlarm(Date.now() + KEEP_DAYS * 86400000);
+    }
     if (request.method === "GET" && !grade) {
       return json(200, { grades: Object.fromEntries(this.store.list().map((r) => [r.grade, r.version])) });
     }
@@ -102,6 +115,11 @@ export class Profile {
     }
     if (request.method === "PUT") {
       const body = await request.arrayBuffer();
+      const base = Number(request.headers.get("x-base-version"));
+      // A save that's going to be refused is refused before anything is counted or reserved.
+      const was = this.store.get(grade);
+      if (base !== (was ? was.version : 0)) return json(409, { version: was ? was.version : 0 });
+      if (!was && this.store.list().length >= MAX_GRADES) return json(403, { error: "too many grades" });
       // A new profile (no owner, nothing saved): its network, and everyone, have to have room
       // for one more today.
       if (!this.store.owner() && !this.store.list().length && this.env && this.env.LIMITER) {
@@ -111,16 +129,18 @@ export class Profile {
         if ((await take("everyone", NEW_PER_DAY)).status !== 200) return json(429, { error: "too many new profiles today" });
       }
       // Room: enough blocks for all its records with this one. Reserved before the save (and kept
-      // even if the save is then refused, to be used by the next try).
+      // even if the save is then refused, to be used by the next try), and the profile then has
+      // an alarm, so reserved room is always given back in time even if nothing is ever saved.
       const need = Math.ceil((this.store.bytes(grade) + body.byteLength) / BLOCK), have = this.store.reserved();
       if (need > have && this.env && this.env.SPACE) {
         if ((await this.room("reserve", need - have)).status !== 200) return json(507, { error: "full" });
         this.store.setReserved(this.store.reserved() + need - have);
+        if (this.storage && (await this.storage.getAlarm()) == null) await this.storage.setAlarm(Date.now() + KEEP_DAYS * 86400000);
       }
-      // No awaits from here on: the checks and the save happen together.
+      // No awaits from here on: the checks (again: things may have changed while it waited) and
+      // the save happen together.
       const owner = this.store.owner();
       if (owner && owner !== token) return json(403, { error: "write token" });
-      const base = Number(request.headers.get("x-base-version"));
       const cur = this.store.get(grade);
       const version = cur ? cur.version : 0;
       if (base !== version) return json(409, { version });

@@ -293,7 +293,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   record (up to 8 grades), answering only the profile's token (403; the first save sets its
   owner, a hash of the token), refusing a save from an out-of-date version (409: fetch, merge,
   try again), and its records deleted 90 days after its last save, reads not counting
-  (`alarm`; its owner stays, and devices send theirs again);
+  (`alarm`; its owner stays, and devices send theirs again; a profile holding room always has
+  an alarm, and a save that's going to be refused reserves and counts nothing; tables are made
+  on the first write, so reading an unknown lookup leaves nothing behind);
   `Limiter` counts new profiles a day: 20 per network (an IPv4 address or IPv6 /64,
   `networkOf`) and 1,000 for everyone (429); and `Space` caps everything stored at 50 MB:
   each profile reserves 16 KB blocks as its records grow and gives them back when it expires

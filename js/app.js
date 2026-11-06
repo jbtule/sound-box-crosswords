@@ -1664,7 +1664,7 @@ function syncAll() {
   if (!PROFILES.some(function (p) { return linkKey(p.id); })) return Promise.resolve();
   syncing = (async function () {
     for (var p of PROFILES) {
-      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) { syncErr[p.id] = e && e.newer ? "newer" : e && e.limited ? "limited" : e && e.full ? "full" : true; }
+      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) { syncErr[p.id] = e && e.newer ? "newer" : e && e.limited ? "limited" : e && e.full ? "full" : e && e.big ? "big" : true; }
     }
   })().finally(function () {
     syncing = null;
@@ -1716,6 +1716,7 @@ function renderLinkStatus() {
   el.textContent = !linked ? "Not linked with another device yet"
     : syncErr[PROFILE] === "newer" ? "Linked · another device has a newer version; this one syncs once it updates"
     : syncErr[PROFILE] === "limited" || syncErr[PROFILE] === "full" ? "Linked · the sync service is busy today, will try again"
+    : syncErr[PROFILE] === "big" ? "Linked · this player’s progress is too big to sync; it’s still saved on this device"
     : syncErr[PROFILE] ? "Linked · couldn’t sync just now, will try again"
     : syncing ? "Linked · syncing…"
     : "Linked · synced " + (t ? ago(t) : "soon");
