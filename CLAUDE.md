@@ -400,6 +400,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     are accepted until the word is full; then wrong letters flash and clear. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
     player guess letters until one stuck.)
+  - Switching packs mid-puzzle (letters typed, `played`) asks first in a popover under the chip
+    (`askSwitch` / `switchPack`): the puzzle starts over, finished words still count.
   - `clap`: the Break it down scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
   - The More sheet (`#settingsBtn`, a quiet line gear + "More" in the muted color, no pill, so it
