@@ -140,10 +140,8 @@ html.standalone { touch-action: pan-x pan-y; }
 @keyframes toast { 0% { opacity: 0; transform: translate(-50%, -6px); } 12%, 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
 /* New-achievement card: one big card per achievement, over a scrim. */
 /* Start / Continue: one big button over the board at launch (iOS plays sound only after a tap). */
-.clues.covered { position: relative; }
-.clues.covered::after { content: ""; position: absolute; inset: -8px; border-radius: 18px; background: var(--scrim); cursor: pointer; } /* under Start / Continue, like the clue and puzzle */
 .play { position: relative; display: flex; flex-direction: column; gap: 14px; }
-.start { position: absolute; inset: 0; z-index: 6; border-radius: 18px; background: var(--scrim); display: grid; place-items: start center; padding: calc(var(--clue-h, 120px) + 14px + min(12vh, 80px)) 16px 16px; } /* over the clue and the puzzle only; the packs, 🏆 and More stay usable */
+.start { position: absolute; inset: 0; z-index: 6; border-radius: 18px; background: var(--scrim); display: grid; place-items: start center; padding: calc(var(--clue-h, 120px) + 14px + min(12vh, 80px)) 16px 16px; } /* over the clue, puzzle, letter pad and pictures; the packs, 🏆 and More stay usable */
 .start .start-btn { display: inline-flex; align-items: center; gap: 10px; font-size: 1.6rem; padding: 18px 40px 18px 30px; min-height: 68px; background: var(--accent); color: var(--on-accent); box-shadow: 0 6px 24px rgba(0,0,0,.25); cursor: pointer; }
 .start .start-btn svg { width: 30px; height: 30px; }
 .start .start-btn:active { transform: scale(0.97); }
