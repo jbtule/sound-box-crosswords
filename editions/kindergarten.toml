@@ -148,6 +148,38 @@ plant 🪴 {p l a n t}
 skunk 🦨 {s k u n=ng k}
 """
 
+# Hard mode (🥋, opens after any other pack is finished): compound words, two whole words in
+# one. Break it down splits them into their two words; no Sound it out (no sounds listed).
+[[pack]]
+id = "k-compound"
+name = "Compound Words"
+note = "Two small words make one big word. Keep every sound of both!"
+hard = true
+words = """
+cup-cake 🧁 (cup-cake)
+pop-corn 🍿 (pop-corn)
+snow-man ⛄ (snow-man)
+cow-boy 🤠 (cow-boy)
+sun-set 🌅 (sun-set)
+rain-bow 🌈 (rain-bow)
+foot-ball 🏈 (foot-ball)
+base-ball ⚾ (base-ball)
+sail-boat ⛵ (sail-boat)
+mail-box 📬 (mail-box)
+tooth-brush 🪥 (tooth-brush)
+pan-cake 🥞 (pan-cake)
+bath-tub 🛁 (bath-tub)
+air-plane ✈️ (air-plane)
+back-pack 🎒 (back-pack)
+snow-flake ❄️ (snow-flake)
+lip-stick 💄 (lip-stick)
+sea-shell 🐚 (sea-shell)
+pea-nut 🥜 (pea-nut)
+hand-bag 👜 (hand-bag)
+skate-board 🛹 (skate-board)
+fire-works 🎆 (fire-works)
+"""
+
 # The starter Custom list for this grade (Settings → Custom words). Swap in this week's words.
 [custom]
 words = """
