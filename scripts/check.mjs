@@ -4,7 +4,8 @@
 // 2. packs.toml parses, and every word list follows the `syl-la-bles emoji` format.
 // 3. The generator builds valid puzzles from every pack.
 // 4. Every color scheme keeps the syllable colors clearly apart and readable.
-// 5. The tests for combining two devices' progress (scripts/merge.test.mjs) pass.
+// 5. The tests (scripts/*.test.mjs) pass: combining two devices' progress, sealing it, and
+//    the sync service.
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -20,7 +21,7 @@ for (const f of readdirSync(join(root, "js")).filter((f) => f.endsWith(".js"))) 
     errors.push(`js/${f} syntax error:\n` + e.stderr.toString());
   }
 }
-for (const f of ["sw.js", "listen/listen.js"]) {
+for (const f of ["sw.js", "listen/listen.js", ...readdirSync(join(root, "sync", "src")).map((f) => "sync/src/" + f)]) {
   try {
     execFileSync(process.execPath, ["--check", join(root, f)], { stdio: "pipe" });
   } catch (e) {
@@ -433,11 +434,13 @@ for (const pal of PALETTES) {
   }
 }
 
-// Combining two devices' progress (js/merge.js).
+// The tests: combining two devices' progress (js/merge.js), sealing it (js/seal.js), and the
+// sync service (sync/).
+const tests = readdirSync(join(root, "scripts")).filter((f) => f.endsWith(".test.mjs")).map((f) => join(root, "scripts", f));
 try {
-  execFileSync(process.execPath, ["--test", "--test-reporter=dot", join(root, "scripts", "merge.test.mjs")], { stdio: "pipe" });
+  execFileSync(process.execPath, ["--test", "--test-reporter=dot", ...tests], { stdio: "pipe" });
 } catch (e) {
-  errors.push("scripts/merge.test.mjs failed:\n" + e.stdout.toString() + e.stderr.toString());
+  errors.push("scripts/*.test.mjs failed:\n" + e.stdout.toString() + e.stderr.toString());
 }
 
 if (errors.length) {
@@ -447,4 +450,4 @@ if (errors.length) {
 console.log(`✓ scripts parse; ${lists.length} word lists OK; ${RUNS} puzzles built per list`);
 console.log(`✓ puzzles to cover each pack: ${coverage.join(", ")}`);
 console.log(`✓ ${PALETTES.length} color schemes keep syllables apart in light and dark`);
-console.log("✓ merging two devices' progress passes its tests");
+console.log(`✓ ${tests.length} test files pass (merging, sealing, the sync service)`);

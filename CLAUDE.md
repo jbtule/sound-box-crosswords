@@ -243,6 +243,19 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `progress`); settings and Custom list words go by an edit counter, never the clock, and a
   removed Custom word stays removed. Tests: `scripts/merge.test.mjs`, run by the check. A
   new saved key must be added there or left out of sync on purpose.
+- `js/seal.js`: no DOM, nothing calls it yet. Seals sync records with the browser's own Web
+  Crypto: a profile key (`newKey`, 43 base64url characters, carried only after `#link=` in a
+  link: `linkFor` / `keyFromLink`) gives, by HKDF, the lookup ID the server sees and an
+  AES-256-GCM key (`keysFor`); `seal` / `unseal` gzip the JSON and bind it to its profile and
+  grade. Tests: `scripts/seal.test.mjs`.
+- `sync/`: the sync service, a Cloudflare Worker at `sound-box-sync.asset-data.stream`
+  (`wrangler.jsonc`; deployed by the `sync-deploy` job, not part of the site). `src/api.js`
+  checks requests (CORS to the site and localhost, sealed records up to 64 KB) and routes
+  them; `src/profile.js` is one SQLite Durable Object per profile, keeping each grade's latest
+  record and refusing a save from an out-of-date version (409: fetch, merge, try again);
+  `src/index.js` only exports them (the runtime refuses other exports there). Tests:
+  `scripts/sync.test.mjs` (in memory). To try it in the real runtime: `npx wrangler dev`
+  in `sync/`. It can't read what it stores and holds no names or accounts.
 - `js/confetti.js`: `confetti(host)`, the solve celebration (skipped with reduced motion).
 - `js/entrances.js`: new-puzzle entrances, how a fresh puzzle's boxes arrive (designed in the
   Board Entrances spike). `ENTRANCES` (each a `plan` of keyframes per box plus timed sounds;
@@ -379,7 +392,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   which is gitignored); stage files by name rather than `git add -A`.
 - Run locally with any static server, e.g. `python3 -m http.server`, then open
   http://localhost:8000. Opening `index.html` as a file won't work (modules need http).
-- After editing, run `npm run check` (needs `npm install` once): syntax-checks `js/`,
+- After editing, run `npm run check` (needs `npm install` once): runs `scripts/*.test.mjs`, syntax-checks `js/` and `sync/src/`,
   checks local links in `index.html`, validates `packs.toml` and every word list, checks
   the import map matches `package.json`, and builds 50 puzzles per pack. CI runs it too.
 - GitHub Actions workflows must pass `zizmor .`: SHA-pinned actions, minimal `permissions`,

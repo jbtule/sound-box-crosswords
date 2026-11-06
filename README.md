@@ -40,6 +40,9 @@ settings are saved in the browser's localStorage.
 - The same push first builds the recorded audio and deploys it to Cloudflare Pages
   (`sound-box-crosswords.asset-data.stream`); only new or changed words are generated.
   Setup and details are in the comment at the top of `ci.yml`.
+- It also deploys the sync service in `sync/` (a Cloudflare Worker at
+  `sound-box-sync.asset-data.stream`), which keeps sealed copies of a profile's progress for
+  its linked devices. It can't read them. Try it locally with `npx wrangler dev` in `sync/`.
 
 See `CLAUDE.md` for the goals behind the design and a map of the code.
 

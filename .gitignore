@@ -5,3 +5,6 @@ audio.json
 .claude/worktrees/
 __pycache__/
 .DS_Store
+
+# wrangler dev state (sync/)
+.wrangler/
