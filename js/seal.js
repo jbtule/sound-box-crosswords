@@ -4,8 +4,9 @@
 //
 // A profile key is 32 random bytes, written as 43 base64url characters: short enough for a
 // small QR code, and it travels only in a link's #fragment, which never reaches a server.
-// From it, HKDF-SHA-256 makes two things: the lookup ID (all the server sees; it can't work
-// back to the key) and the AES-256-GCM key that seals each record. A sealed record is
+// From it, HKDF-SHA-256 makes three things: the lookup ID (all the server sees; it can't work
+// back to the key), the AES-256-GCM key that seals each record, and a write token sent with
+// every save (the server keeps only its hash and takes saves only with it). A sealed record is
 //   [format 1][12-byte random IV][gzip'd JSON, encrypted, with GCM's 16-byte tag]
 // and its "additional data" names the lookup ID, the grade and the format, so a record
 // can't be passed off as another profile's or another grade's.
@@ -30,14 +31,16 @@ export function newKey() {
   return toB64url(globalThis.crypto.getRandomValues(new Uint8Array(32)));
 }
 
-// The lookup ID (string) and the sealing key (CryptoKey) for a profile key.
+// The lookup ID (string), the sealing key (CryptoKey) and the write token for a profile key.
 export async function keysFor(key) {
   if (!isKey(key)) throw new Error("not a profile key");
   const base = await subtle().importKey("raw", fromB64url(key), "HKDF", false, ["deriveBits", "deriveKey"]);
   const hkdf = (label) => ({ name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: enc.encode(label) });
   const lookup = toB64url(new Uint8Array(await subtle().deriveBits(hkdf("sbx lookup v1"), base, 256)));
   const sealKey = await subtle().deriveKey(hkdf("sbx seal v1"), base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
-  return { lookup, sealKey };
+  // Sent with every save; the server keeps only its hash and refuses saves without it.
+  const writeToken = toB64url(new Uint8Array(await subtle().deriveBits(hkdf("sbx write v1"), base, 256)));
+  return { lookup, sealKey, writeToken };
 }
 
 const aad = (lookup, grade) => enc.encode(`sbx|${FORMAT}|${lookup}|${grade}`);

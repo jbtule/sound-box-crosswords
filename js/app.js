@@ -1662,7 +1662,7 @@ function syncAll() {
   if (!PROFILES.some(function (p) { return linkKey(p.id); })) return Promise.resolve();
   syncing = (async function () {
     for (var p of PROFILES) {
-      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) { syncErr[p.id] = e && e.newer ? "newer" : true; }
+      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) { syncErr[p.id] = e && e.newer ? "newer" : e && e.limited ? "limited" : true; }
     }
   })().finally(function () {
     syncing = null;
@@ -1785,7 +1785,9 @@ async function prepareSend() {
   if (syncing) await syncing;
   if ($("#linkSend").hidden) return;
   if (syncErr[PROFILE]) {
-    $("#sendMsg").textContent = "Couldn’t reach the sync service. Check the connection, then try again.";
+    $("#sendMsg").textContent = syncErr[PROFILE] === "limited"
+      ? "Too many players were linked from this network today. Try again tomorrow."
+      : "Couldn’t reach the sync service. Check the connection, then try again.";
     $("#sendRetry").hidden = false;
     return;
   }

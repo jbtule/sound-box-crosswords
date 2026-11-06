@@ -7,7 +7,8 @@
   // Only at its own address, not on workers.dev.
   "workers_dev": false,
   "routes": [{ "pattern": "sound-box-sync.asset-data.stream", "custom_domain": true }],
-  // One SQLite Durable Object per profile (free plan).
-  "durable_objects": { "bindings": [{ "name": "PROFILE", "class_name": "Profile" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Profile"] }]
+  // SQLite Durable Objects (free plan): one per profile, and one per network counting the
+  // new profiles it makes each day.
+  "durable_objects": { "bindings": [{ "name": "PROFILE", "class_name": "Profile" }, { "name": "LIMITER", "class_name": "Limiter" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Profile"] }, { "tag": "v2", "new_sqlite_classes": ["Limiter"] }]
 }
