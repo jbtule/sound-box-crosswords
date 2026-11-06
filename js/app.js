@@ -1637,18 +1637,23 @@ async function syncProfile(id) {
   if (!key) return;
   var keys = await keysFor(key), net = function (u, o) { return fetch(u, o); };
   var remote = await remoteGrades({ fetch: net, url: SYNC_AT, keys: keys });
+  // Each grade on its own: one that can't sync (a record from a newer app) doesn't hold up the rest.
+  var failed = null;
   for (var ed of EDITIONS) {
     if (remote.indexOf(ed.id) < 0 && !hasData(id, ed)) continue;
     var g = gradeStore(id, ed);
-    await syncGrade({
-      fetch: net, url: SYNC_AT, keys: keys, grade: ed.id, me: ME, base: g.get("syncBase", null),
-      read: readGrade.bind(null, id, ed),
-      apply: function (data, rec) {
-        if (linkKey(id) !== key) return; // unlinked meanwhile (Start over)
-        writeGrade(id, ed, data); g.set("syncBase", rec);
-      }
-    });
+    try {
+      await syncGrade({
+        fetch: net, url: SYNC_AT, keys: keys, grade: ed.id, me: ME, base: g.get("syncBase", null),
+        read: readGrade.bind(null, id, ed),
+        apply: function (data, rec) {
+          if (linkKey(id) !== key) return; // unlinked meanwhile (Start over)
+          writeGrade(id, ed, data); g.set("syncBase", rec);
+        }
+      });
+    } catch (e) { failed = failed || e; }
   }
+  if (failed) throw failed;
   whoOf(id).set("syncedAt", Date.now());
 }
 function syncAll() {
@@ -1657,7 +1662,7 @@ function syncAll() {
   if (!PROFILES.some(function (p) { return linkKey(p.id); })) return Promise.resolve();
   syncing = (async function () {
     for (var p of PROFILES) {
-      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) { syncErr[p.id] = true; }
+      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) { syncErr[p.id] = e && e.newer ? "newer" : true; }
     }
   })().finally(function () {
     syncing = null;
@@ -1707,6 +1712,7 @@ function renderLinkStatus() {
   var t = who.get("syncedAt", 0), linked = !!linkKey(PROFILE), el = $("#linkStatus");
   el.classList.toggle("on", linked && !syncErr[PROFILE]);
   el.textContent = !linked ? "Not linked with another device yet"
+    : syncErr[PROFILE] === "newer" ? "Linked · another device has a newer version; this one syncs once it updates"
     : syncErr[PROFILE] ? "Linked · couldn’t sync just now, will try again"
     : syncing ? "Linked · syncing…"
     : "Linked · synced " + (t ? ago(t) : "soon");

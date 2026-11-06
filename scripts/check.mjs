@@ -434,6 +434,17 @@ for (const pal of PALETTES) {
   }
 }
 
+// Saved keys: a player's data is moved (storage upgrades), replaced and removed by the key
+// lists in app.js, so every key saved per grade must be in GRADE_KEYS, and every key of a
+// player's own in OWN_KEYS, or it would be left behind.
+{
+  const app = readFileSync(join(root, "js", "app.js"), "utf8");
+  const list = (name) => JSON.parse("[" + app.match(new RegExp("var " + name + " = \\[([^\\]]*)\\]"))[1].replace(/\s+/g, " ") + "]");
+  const grade = new Set(list("GRADE_KEYS")), own = new Set(list("OWN_KEYS"));
+  for (const [, k] of app.matchAll(/\b(?:store|g)\.(?:get|set)\("([^"]+)"/g)) if (!grade.has(k)) errors.push(`js/app.js saves "${k}" per grade, but it isn't in GRADE_KEYS`);
+  for (const [, k] of app.matchAll(/\b(?:who|whoOf\([^)]*\))\.(?:get|set)\("([^"]+)"/g)) if (!own.has(k)) errors.push(`js/app.js saves "${k}" for a player, but it isn't in OWN_KEYS`);
+}
+
 // The tests: combining two devices' progress (js/merge.js), sealing it (js/seal.js), and the
 // sync service (sync/).
 const tests = readdirSync(join(root, "scripts")).filter((f) => f.endsWith(".test.mjs")).map((f) => join(root, "scripts", f));

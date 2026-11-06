@@ -263,7 +263,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   merged, so the app keeps saving plain totals; a pack's later round wins (`rounds` in
   `progress`); settings and Custom list words go by an edit counter, never the clock, and a
   removed Custom word stays removed. Tests: `scripts/merge.test.mjs`, run by the check. A
-  new saved key must be added there or left out of sync on purpose.
+  new saved key must be added there or left out of sync on purpose. **The record's format is
+  gated**: every device merges and saves records back, and an older app drops what it doesn't
+  know, so changing the format needs a new `RECORD_VERSION` (older apps then leave that grade
+  alone until they update: `NewerRecord` in `sync.js`) and its shape in `SHAPES` in the test,
+  which fails otherwise. The check also fails on a key saved per grade that isn't in
+  `GRADE_KEYS`, or for a player that isn't in `OWN_KEYS` (`app.js`).
 - `js/sync.js`: no DOM. `syncGrade`, one sync of one grade: fetch, merge (`merge.js`), save
   from the fetched version (409: again), then keep the result plus anything played meanwhile;
   saves nothing when nothing changed (`canon`). `remoteGrades`. `fetch` is passed in; tested
