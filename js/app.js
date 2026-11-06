@@ -1715,7 +1715,8 @@ function renderLinkStatus() {
   el.classList.toggle("on", linked && !syncErr[PROFILE]);
   el.textContent = !linked ? "Not linked with another device yet"
     : syncErr[PROFILE] === "newer" ? "Linked · another device has a newer version; this one syncs once it updates"
-    : syncErr[PROFILE] === "limited" || syncErr[PROFILE] === "full" ? "Linked · the sync service is busy today, will try again"
+    : syncErr[PROFILE] === "limited" ? "Linked · the sync service is busy today, will try again"
+    : syncErr[PROFILE] === "full" ? "Linked · the sync service is full for now, will try again"
     : syncErr[PROFILE] === "big" ? "Linked · this player’s progress is too big to sync; it’s still saved on this device"
     : syncErr[PROFILE] ? "Linked · couldn’t sync just now, will try again"
     : syncing ? "Linked · syncing…"
@@ -1778,6 +1779,14 @@ document.querySelectorAll("#linkPanel [data-back]").forEach(function (b) { b.add
 $("#goSend").addEventListener("click", function () { linkView("Send"); prepareSend(); });
 $("#goRecv").addEventListener("click", function () { linkView("Recv"); showScan(); startScan(); });
 
+// What Send says when the player couldn't be saved first (syncErr's kinds).
+var SEND_TROUBLE = {
+  limited: "Too many players were linked from this network today. Try again tomorrow.",
+  full: "The sync service is full for now. Try again in a few days.",
+  big: "This player’s progress is too big to sync. It’s still saved on this device.",
+  newer: "Another device has a newer version of Sound Box. Close Sound Box and open it again to update, then try again.",
+  other: "Couldn’t reach the sync service. Check the connection, then try again."
+};
 // Send: makes the player's key the first time (that links it), saves their progress to the
 // server, then shows the code.
 async function prepareSend() {
@@ -1789,9 +1798,7 @@ async function prepareSend() {
   if (syncing) await syncing;
   if ($("#linkSend").hidden) return;
   if (syncErr[PROFILE]) {
-    $("#sendMsg").textContent = syncErr[PROFILE] === "limited" || syncErr[PROFILE] === "full"
-      ? "The sync service can’t take more today. Try again tomorrow."
-      : "Couldn’t reach the sync service. Check the connection, then try again.";
+    $("#sendMsg").textContent = SEND_TROUBLE[syncErr[PROFILE]] || SEND_TROUBLE.other;
     $("#sendRetry").hidden = false;
     return;
   }

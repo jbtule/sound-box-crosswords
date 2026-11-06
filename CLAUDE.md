@@ -298,8 +298,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   on the first write, so reading an unknown lookup leaves nothing behind);
   `Limiter` counts new profiles a day: 20 per network (an IPv4 address or IPv6 /64,
   `networkOf`) and 1,000 for everyone (429); and `Space` caps everything stored at 50 MB:
-  each profile reserves 16 KB blocks as its records grow and gives them back when it expires
-  (507 when full). It's built so it can't serve as storage for anything else; denial of
+  it keeps how many 16 KB blocks each profile holds ("hold at least N", "release": both safe to
+  repeat, so a lost reply or retried alarm never counts twice), grown as records grow and
+  released at expiry (507 when full). It's built so it can't serve as storage for anything else; denial of
   service is accepted. `src/index.js` only exports them (the runtime refuses other exports there). Tests:
   `scripts/sync.test.mjs` (in memory). To try it in the real runtime: `npx wrangler dev`
   in `sync/`. It can't read what it stores and holds no names or accounts.

@@ -11,8 +11,10 @@
 // toward its network's new profiles for the day and everyone's (Limiter), and a profile no
 // device has saved in 90 days has its records deleted (alarm): the server is only a relay,
 // since every device keeps its own copy and sends it again. And everything stored, by everyone, fits in
-// SPACE_BYTES: each profile reserves room in BLOCK-sized pieces from one shared count (Space)
-// as its records grow, and gives it back when it's deleted. A real profile fits in one or two
+// SPACE_BYTES: each profile holds room in BLOCK-sized pieces in one shared count (Space), which
+// keeps how many blocks each profile holds, as its records grow, and gives it back when they're
+// deleted. "Hold at least N" and "release" can be repeated safely, so a lost reply or a retry
+// never counts anything twice. A real profile fits in one or two
 // blocks; when it's full, saves that need more room are refused until some expire. So it's no
 // use for keeping anything else.
 export const MAX_GRADES = 8;
@@ -73,22 +75,24 @@ export class Profile {
     this.store = ctx.store || sqlStore(ctx.storage.sql);
     this.storage = ctx.storage; // for the alarm (none in the tests)
     this.env = env;
+    // Who it is in the shared count: its Durable Object id (a name in the tests).
+    this.name = ctx.id ? ctx.id.toString() : ctx.name || crypto.randomUUID();
   }
   // 90 days after the last save (reads don't count): its records are gone, and its room given
   // back. Its owner stays, so when its devices come back and send theirs again, it's the same
-  // profile, not a new one counted against today's limits. The records and this profile's
-  // count go first, so if giving the room back then fails, those blocks are lost to the shared
-  // count (it reads a little fuller than it is), never given back twice.
+  // profile, not a new one counted against today's limits. If giving the room back fails, it
+  // throws, so the runtime runs the alarm again later (releasing twice is harmless).
   async alarm() {
-    const blocks = this.store.reserved();
     this.store.setReserved(0);
     this.store.clear();
-    if (blocks && this.env && this.env.SPACE) {
-      try { await this.room("release", blocks); } catch (e) { /* lost to the count; see above */ }
+    if (this.env && this.env.SPACE) {
+      const res = await this.room("release");
+      if (res.status !== 200) throw new Error("sync: releasing room failed (" + res.status + ")");
     }
   }
-  room(what, n) {
-    return this.env.SPACE.get(this.env.SPACE.idFromName("everyone")).fetch("https://space/" + what + "?blocks=" + n, { method: "POST" });
+  room(what, blocks) {
+    const q = "?profile=" + encodeURIComponent(this.name) + (blocks == null ? "" : "&blocks=" + blocks);
+    return this.env.SPACE.get(this.env.SPACE.idFromName("everyone")).fetch("https://space/" + what + q, { method: "POST" });
   }
 
   // Every request: X-Write-Token must be the owner's (a profile with no owner yet has nothing
@@ -135,8 +139,8 @@ export class Profile {
       // an alarm, so reserved room is always given back in time even if nothing is ever saved.
       const need = Math.ceil((this.store.bytes(grade) + body.byteLength) / BLOCK), have = this.store.reserved();
       if (need > have && this.env && this.env.SPACE) {
-        if ((await this.room("reserve", need - have)).status !== 200) return json(507, { error: "full" });
-        this.store.setReserved(this.store.reserved() + need - have);
+        if ((await this.room("hold", need)).status !== 200) return json(507, { error: "full" });
+        this.store.setReserved(Math.max(this.store.reserved(), need));
         if (this.storage && (await this.storage.getAlarm()) == null) await this.storage.setAlarm(Date.now() + KEEP_DAYS * 86400000);
       }
       // No awaits from here on: the checks (again: things may have changed while it waited) and
@@ -185,30 +189,46 @@ export class Limiter {
   }
 }
 
-// Everyone's room: how many BLOCKs all profiles have reserved, in one SQLite Durable Object.
+// Everyone's room, in one SQLite Durable Object: how many BLOCKs each profile holds, and the
+// total. Holding is "at least N" and releasing is "none", so both can be repeated, arrive in
+// any order, or follow a lost reply without counting anything twice: whatever a profile last
+// asked for is what it holds.
 export function spaceStore(sql) {
-  sql.exec("CREATE TABLE IF NOT EXISTS used (one INTEGER PRIMARY KEY CHECK (one = 1), blocks INTEGER NOT NULL)");
+  sql.exec("CREATE TABLE IF NOT EXISTS holds (profile TEXT PRIMARY KEY, blocks INTEGER NOT NULL)");
+  sql.exec("CREATE TABLE IF NOT EXISTS total (one INTEGER PRIMARY KEY CHECK (one = 1), blocks INTEGER NOT NULL)");
   return {
-    used: () => (sql.exec("SELECT blocks FROM used").toArray()[0] || {}).blocks || 0,
-    setUsed: (n) => { sql.exec("INSERT OR REPLACE INTO used (one, blocks) VALUES (1, ?)", n); }
+    held: (p) => (sql.exec("SELECT blocks FROM holds WHERE profile = ?", p).toArray()[0] || {}).blocks || 0,
+    setHeld: (p, n) => { if (n) sql.exec("INSERT OR REPLACE INTO holds (profile, blocks) VALUES (?, ?)", p, n); else sql.exec("DELETE FROM holds WHERE profile = ?", p); },
+    total: () => (sql.exec("SELECT blocks FROM total").toArray()[0] || {}).blocks || 0,
+    setTotal: (n) => { sql.exec("INSERT OR REPLACE INTO total (one, blocks) VALUES (1, ?)", n); }
   };
 }
 export function memorySpaceStore() {
-  let n = 0;
-  return { used: () => n, setUsed: (v) => { n = v; } };
+  const m = new Map();
+  let t = 0;
+  return { held: (p) => m.get(p) || 0, setHeld: (p, n) => { if (n) m.set(p, n); else m.delete(p); }, total: () => t, setTotal: (n) => { t = n; } };
 }
 export class Space {
   constructor(ctx) {
     this.store = ctx.store || spaceStore(ctx.storage.sql);
   }
-  // POST /reserve?blocks=N → 200 if they fit under SPACE_BYTES (and counts them), else 507.
-  // POST /release?blocks=N → gives them back.
+  // POST /hold?profile=P&blocks=N   → P holds at least N blocks: 200, or 507 if that wouldn't
+  //                                    fit under SPACE_BYTES (and nothing changes).
+  // POST /release?profile=P         → P holds none.
   async fetch(request) {
-    const url = new URL(request.url), n = Math.max(0, Number(url.searchParams.get("blocks")) || 0);
-    const used = this.store.used();
-    if (url.pathname === "/release") { this.store.setUsed(Math.max(0, used - n)); return json(200, { used: Math.max(0, used - n) }); }
-    if ((used + n) * BLOCK > SPACE_BYTES) return json(507, { error: "full" });
-    this.store.setUsed(used + n);
-    return json(200, { used: used + n });
+    const url = new URL(request.url), p = url.searchParams.get("profile") || "";
+    const n = Math.max(0, Math.floor(Number(url.searchParams.get("blocks")) || 0));
+    if (!p) return json(400, { error: "profile" });
+    const cur = this.store.held(p), total = this.store.total();
+    if (url.pathname === "/release") {
+      if (cur) { this.store.setHeld(p, 0); this.store.setTotal(Math.max(0, total - cur)); }
+      return json(200, { held: 0 });
+    }
+    if (url.pathname !== "/hold") return json(404, { error: "path" });
+    if (n <= cur) return json(200, { held: cur });
+    if ((total - cur + n) * BLOCK > SPACE_BYTES) return json(507, { error: "full" });
+    this.store.setHeld(p, n);
+    this.store.setTotal(total - cur + n);
+    return json(200, { held: n });
   }
 }
