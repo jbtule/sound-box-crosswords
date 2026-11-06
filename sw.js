@@ -6,6 +6,7 @@
 // - Audio clips: Safari's <audio> asks for byte ranges, so the worker saves the whole clip
 //   and answers each range from it.
 // Only the newest copy of each of our own files is kept, so the cache doesn't grow per deploy.
+// Anything else, like the sync service (sync/), isn't touched: it always goes to the network.
 const CACHE = "sbx-1";
 const SCOPE = self.registration.scope;
 const CLIPS = "https://sound-box-crosswords.asset-data.stream/a/";

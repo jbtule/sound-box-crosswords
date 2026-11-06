@@ -1,0 +1,13 @@
+// The sync service's Cloudflare Worker (see src/index.js). Deployed by the sync-deploy
+// job in .github/workflows/ci.yml with `wrangler deploy` from this folder.
+{
+  "name": "sound-box-sync",
+  "main": "src/index.js",
+  "compatibility_date": "2025-10-01",
+  // Only at its own address, not on workers.dev.
+  "workers_dev": false,
+  "routes": [{ "pattern": "sound-box-sync.asset-data.stream", "custom_domain": true }],
+  // One SQLite Durable Object per profile (free plan).
+  "durable_objects": { "bindings": [{ "name": "PROFILE", "class_name": "Profile" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Profile"] }]
+}
