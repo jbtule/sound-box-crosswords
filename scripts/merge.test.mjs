@@ -185,3 +185,31 @@ test("tallies the app adds to in place are always numbers", () => {
   assert.equal(d.counts.clean, 0);
   assert.equal(d.counts.comeback, 0);
 });
+
+// The gate on the sync record's format. Every device merges records and saves them back, and
+// an older app drops whatever it doesn't know, so a new or changed field would be lost to a
+// device that hasn't updated yet. A format change therefore needs a new RECORD_VERSION (older
+// apps then leave that grade alone until they update: NewerRecord in js/sync.js) and its
+// shape added below. The shape is the record's fields and nesting for one full sample.
+import { createHash } from "node:crypto";
+import { RECORD_VERSION } from "../js/merge.js";
+const SHAPES = { 1: "6758970610f8" };
+function shape(v) {
+  if (Array.isArray(v)) return "[" + [...new Set(v.map(shape))].sort().join("|") + "]";
+  if (v && typeof v === "object") return "{" + Object.keys(v).sort().map((k) => k + ":" + shape(v[k])).join(",") + "}";
+  return typeof v;
+}
+test("the sync record's format matches its RECORD_VERSION", () => {
+  const d = empty();
+  play(device("x", d), { t: 1, words: ["frog"], miss: 1 });
+  d.progress.blends.rounds = 2; d.progress.blends.stats.frog.cb = true;
+  d.counts.entrances = 3; d.counts.twofer = 1; d.slips.place.middle = 1; d.slips.kind.blend = 1;
+  d.guessing = { t: [5], words: { frog: 1 } }; d.seenEntrances = ["rain"];
+  d.achievements = { clean1: 1 }; d.settings = { syl: true, kb: "abc", palette: "ocean" }; d.custom = "gi-raffe 🦒";
+  const rec = toRecord(d, null, "dev");
+  assert.equal(rec.v, RECORD_VERSION);
+  const got = createHash("sha256").update(shape(rec)).digest("hex").slice(0, 12);
+  assert.equal(got, SHAPES[RECORD_VERSION],
+    "The sync record's format changed (shape " + got + "). Older devices would drop what they don't know when they merge and save, " +
+    "so bump RECORD_VERSION in js/merge.js and add SHAPES[" + (RECORD_VERSION + 1) + "] = \"" + got + "\" in scripts/merge.test.mjs.");
+});

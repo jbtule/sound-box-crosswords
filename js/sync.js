@@ -4,10 +4,17 @@
 // back what to keep here. Used by app.js; `fetch` is passed in so the tests can use the
 // service directly.
 import { seal, unseal } from "./seal.js";
-import { toRecord, merge, fromRecord } from "./merge.js";
+import { toRecord, merge, fromRecord, RECORD_VERSION } from "./merge.js";
 
 export const SYNC_URL = "https://sound-box-sync.asset-data.stream";
 const TRIES = 5;
+
+// A record saved by a newer version of the app, in a format this one doesn't know all of:
+// merging and saving it back would drop what it doesn't know, so that grade isn't synced
+// until this device updates (which it does the next time it comes back on screen).
+export class NewerRecord extends Error {
+  constructor(v) { super("sync: record version " + v + " is newer than " + RECORD_VERSION); this.newer = true; }
+}
 
 // JSON with keys in order, to tell whether a merge changed anything (key order can differ).
 export function canon(v) {
@@ -35,6 +42,7 @@ export async function syncGrade({ fetch, url = SYNC_URL, keys, grade, me, read, 
     if (res.status !== 200 && res.status !== 404) throw new Error("sync: " + res.status);
     const version = res.status === 404 ? 0 : Number(res.headers.get("x-version"));
     const server = version ? await unseal(keys, grade, new Uint8Array(await res.arrayBuffer())) : null;
+    if (server && server.v > RECORD_VERSION) throw new NewerRecord(server.v);
     const merged = merge(mine, server);
     if (!server || canon(merged) !== canon(server)) {
       const put = await fetch(at, {

@@ -161,3 +161,18 @@ test("syncGrade: a record it can't open is an error, and nothing is kept", async
 test("canon ignores key order", () => {
   assert.equal(canon({ b: 1, a: [{ d: 2, c: 3 }] }), canon({ a: [{ c: 3, d: 2 }], b: 1 }));
 });
+
+test("syncGrade: a record from a newer app is left alone", async () => {
+  const { call } = service();
+  const keys = await keysFor(newKey());
+  const newer = { v: 2, progress: {}, futureField: { kept: true } };
+  await put(call, keys.lookup, "g3", 0, await seal(keys, "g3", newer));
+  let puts = 0;
+  const fetch = (url, init = {}) => { if (init.method === "PUT") puts++; return client(call)(url, init); };
+  const a = deviceFor("a"); a.data.counts.clean = 1;
+  await assert.rejects(syncGrade(a.opts(fetch, keys)), (e) => e.newer === true);
+  assert.equal(puts, 0);
+  assert.equal(a.base, null);
+  const res = await call(`/v1/p/${keys.lookup}/g3`);
+  assert.deepEqual(await unseal(keys, "g3", new Uint8Array(await res.arrayBuffer())), newer);
+});
