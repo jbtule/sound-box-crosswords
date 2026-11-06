@@ -8,7 +8,7 @@ import { PALETTES, EVERYDAY, unlockedCount, paletteCSS } from "./palettes.js";
 import { catalog, award, dayKey, daysThisWeek, spokenParts } from "./achievements.js";
 import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle } from "./crossword.js";
 import { speak, say, sayAfter, sayRecorded, hasClip, splitOf, onClips, stopSpeech, speechEpoch, hasSpeech } from "./speech.js";
-import { blendsIn, slipSpots } from "./phonics.js";
+import { blendsIn, slipSpots, isClose } from "./phonics.js";
 
 var $ = function (s) { return document.querySelector(s); };
 
@@ -214,13 +214,13 @@ var newPics = 0;  // pictures added to the collection in this puzzle
 // For the secret achievements, this puzzle so far: words a listening helper was used on
 // before they were finished (`helped`), words finished by a crossing word (`crossed`), a
 // word that finished a crossing word too (`twofer`), and letters typed on real keys (`keys`).
-var pz = { helped: {}, crossed: {}, twofer: false, keys: false };
+var pz = { helped: {}, crossed: {}, twofer: false, keys: false, guess: {}, nudged: {} };
 
 function newPuzzle(solved) {
   if (updateReady) { location.reload(); return; }
   skipEntrance();
   $("#done").hidden = true; $("#cluebar").classList.remove("spent");
-  finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {}; newPics = 0; pz = { helped: {}, crossed: {}, twofer: false, keys: false };
+  finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {}; newPics = 0; pz = { helped: {}, crossed: {}, twofer: false, keys: false, guess: {}, nudged: {} };
   var pool = entries(packId);
   if (pool.length < 3) { P = null; renderEmpty(); return; }
   var pp = packProgress(packId), words = pool.map(function (e) { return e.w; });
@@ -503,7 +503,7 @@ function flash(kk, cls, ms) {
 // Letters are accepted until the word is full, then checked together, so the player
 // has to recall the whole spelling instead of guessing letter by letter.
 function input(ch) {
-  if (!P || finished) return;
+  if (!P || finished || Date.now() < padPausedUntil) return;
   var W = P.words[cur];
   if (doneW[cur]) { var nx = nextUnfinished(); if (nx < 0) return; select(nx, null, true); W = P.words[cur]; }
   if (locked[W.cells[pos]]) { var fe = firstEmpty(cur, pos); if (fe < 0) return; pos = fe; }
@@ -532,6 +532,7 @@ function checkWord(i) {
   });
   slipSpots(W.w, W.sounds, wrong).forEach(function (s) { slips.place[s.place]++; slips.kind[s.kind]++; });
   store.set("slips", slips);
+  noteGuesses(i, wrong);
   update();
   setTimeout(function () {
     W.cells.forEach(function (c, j) { if (fill[c] !== W.w[j] && !locked[c]) delete fill[c]; });
@@ -539,6 +540,34 @@ function checkWord(i) {
     update();
   }, 700);
 }
+// The guessing nudge: a 4th letter that isn't close (phonics.js isClose) in the same box of a
+// word, counted across its tries, with no listening in between (listened() clears the count),
+// reads as throwing letters at the box. Once per word: the toast "Slow down and sound it
+// out." (a strategy, not a button: anyone can sound a word out) and the letter pad paused for
+// a second, looking paused (.paused) so it doesn't seem broken. Nothing is lost.
+var GUESSES = 4, PAD_PAUSE = 1000, padPausedUntil = 0;
+var guessing = store.get("guessing", null) || { t: [], words: {} }; // for Stats: when, and on which words
+function noteGuesses(i, wrong) {
+  var W = P.words[i];
+  pz.guess = pz.guess || {}; pz.nudged = pz.nudged || {};
+  var g = pz.guess[i] = pz.guess[i] || {}, hit = false;
+  wrong.forEach(function (j) {
+    if (isClose(W.w, j, fill[W.cells[j]])) return;
+    g[j] = (g[j] || 0) + 1;
+    if (g[j] >= GUESSES) hit = true;
+  });
+  if (!hit || pz.nudged[i]) return;
+  pz.nudged[i] = true;
+  toast("Slow down and sound it out.");
+  padPausedUntil = Date.now() + PAD_PAUSE;
+  kbEl.classList.add("paused");
+  setTimeout(function () { kbEl.classList.remove("paused"); }, PAD_PAUSE);
+  guessing.t.push(Date.now()); guessing.t = guessing.t.slice(-200);
+  guessing.words[W.w] = (guessing.words[W.w] || 0) + 1;
+  store.set("guessing", guessing);
+}
+// Hear it, Break it down, Sound it out or the picture: listening wipes the word's guess count.
+function listened() { if (P && pz.guess) delete pz.guess[cur]; }
 function nextUnfinished() {
   var o = order(), k = o.indexOf(cur);
   for (var s = 1; s <= o.length; s++) { var i = o[(k + s) % o.length]; if (!doneW[i]) return i; }
@@ -826,6 +855,7 @@ function renderProgressSheet() {
   });
   renderSlips();
   renderTricky();
+  renderGuessing();
   // Comebacks: words spelled right on the first try after an earlier miss, each counted once
   // (counts.comeback, the Bounce Back achievements' input).
   var cb = counts.comeback || 0;
@@ -922,6 +952,29 @@ function renderTricky() {
     list.appendChild(b);
   });
 }
+// Guessing: how often the nudge fired (all time and the last 4 weeks) and on which words, as
+// pictures to tap and hear. Shown once it has fired. Never the letters guessed.
+function renderGuessing() {
+  var n = guessing.t.length, month = guessing.t.filter(function (t) { return t > Date.now() - 28 * 86400000; }).length;
+  $("#guessSec").hidden = !n;
+  if (!n) return;
+  $("#guessNote").textContent = "Guessing letter after letter instead of listening: " + n + (n === 1 ? " time" : " times") +
+    " (" + month + " in the last 4 weeks). These words set it off; tap one to hear it.";
+  var list = $("#guessList"); list.innerHTML = "";
+  var found = {};
+  statsPacks().forEach(function (id) {
+    var words = entries(id), stickers = listenStickers(words);
+    words.forEach(function (e) { if (guessing.words[e.w] && !found[e.w]) found[e.w] = { e: e, n: guessing.words[e.w], sticker: stickers[e.w] }; });
+  });
+  Object.keys(found).map(function (w) { return found[w]; }).sort(function (a, b) { return b.n - a.n; }).slice(0, TRICKY_MAX).forEach(function (t) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "col-slot got";
+    b.setAttribute("aria-label", "Guessed word, hear it");
+    if (t.e.pic) b.textContent = t.e.pic; else b.innerHTML = t.sticker;
+    b.addEventListener("click", function () { say("w", t.e.w, 0.85, true); });
+    list.appendChild(b);
+  });
+}
 // More → Edition, above the tabs (Settings and Stats are per edition): a dropdown of editions; switching reloads into that edition's own
 // lists, progress and settings. Hidden when there's only one.
 function renderGrades() {
@@ -947,7 +1000,7 @@ $("#editionSel").addEventListener("change", function (e) {
 // achievements would bring them straight back. Typing the phrase keeps it from happening
 // by accident.
 var RESET_PHRASE = "start over";
-var RESET_KEYS = ["achievements", "progress", "counts", "days", "log", "stars", "puzzle", "pending", "slips", "seenEntrances", "entranceQueue", "entranceDue"];
+var RESET_KEYS = ["achievements", "progress", "counts", "days", "log", "stars", "puzzle", "pending", "slips", "seenEntrances", "entranceQueue", "entranceDue", "guessing"];
 function resetMatches() { return $("#resetText").value.trim().toLowerCase() === RESET_PHRASE; }
 $("#resetOpen").addEventListener("click", function () {
   $("#resetOpen").hidden = true; $("#resetBox").hidden = false; $("#resetText").focus();
@@ -1455,10 +1508,10 @@ $("#shareCopy").addEventListener("click", function () {
 });
 
 /* ---------- start ---------- */
-$("#pic").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0.85); });
-$("#hearBtn").addEventListener("click", function () { if (P) sayWord(P.words[cur], 0.75); });
-$("#clapBtn").addEventListener("click", clap);
-$("#soundBtn").addEventListener("click", soundOut);
+$("#pic").addEventListener("click", function () { if (P) { listened(); sayWord(P.words[cur], 0.85); } });
+$("#hearBtn").addEventListener("click", function () { if (P) { listened(); sayWord(P.words[cur], 0.75); } });
+$("#clapBtn").addEventListener("click", function () { listened(); clap(); });
+$("#soundBtn").addEventListener("click", function () { listened(); soundOut(); });
 $("#newBtn").addEventListener("click", function () { startNewPuzzle(); });
 $("#nextBtn").addEventListener("click", function () { startNewPuzzle(true); });
 window.addEventListener("resize", sizeBoard);

@@ -170,6 +170,14 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
   }
 }
 
+// The guessing nudge's idea of a close letter (phonics.js isClose): the examples from its plan.
+{
+  const { isClose } = await import("../js/phonics.js");
+  const want = [["stomp", 2, "a", true], ["stomp", 2, "u", true], ["frog", 1, "l", true], ["frog", 1, "w", false], ["frog", 1, "m", false],
+    ["frog", 1, "z", false], ["cat", 0, "k", true], ["cat", 1, "m", false], ["ship", 1, "c", true], ["phone", 0, "f", true], ["cake", 3, "x", true], ["tent", 0, "d", true]];
+  for (const [w, i, t, close] of want) if (isClose(w, i, t) !== close) errors.push(`js/phonics.js: isClose("${w}", ${i}, "${t}") should be ${close}`);
+}
+
 // Every word list in every edition: { id (for messages), text, custom }.
 const lists = [];
 const textOk = new Set(); // packs with words_in_text = true
