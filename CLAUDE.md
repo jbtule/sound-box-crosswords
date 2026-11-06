@@ -330,6 +330,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     the new puzzle (`startNewPuzzle`). On return from the background, the button shows only if
     `audioAwake()` (`chime.js`) can't wake the sound.
     Its text color is navy or white, whichever stands out more on the scheme's accent (`onAccent`).
+  - The guessing nudge (`noteGuesses`): a 4th wrong letter that isn't close (`isClose` in
+    `phonics.js`: any vowel for a vowel, c/k/s, b/p, d/t...) in the same box of a word, with no
+    listening in between (Hear it, Break it down, Sound it out or the picture clear the count,
+    `listened`), says "Slow down and sound it out." and pauses the letter pad for a second
+    (`.paused`), once per word. Counted in `sbx:guessing` for Stats. `GUESSES` / `PAD_PAUSE` tune it.
   - `input` / `checkWord` / `complete` / `settleCrossings`: whole-word checking only. Letters
     are accepted until the word is full; then wrong letters flash and clear. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
@@ -346,7 +351,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     wrong letters in try-agains by place, beginning / middle / end, and by kind, vowel / letter
     in a blend / other consonant, from `slipSpots` in `phonics.js`, counted in `checkWord` into
     `sbx:slips`; shown from 10); tricky words (`renderTricky`: missed more often than right
-    first try, as pictures or sound stickers to tap and hear); recent puzzles. Like the rest
+    first try, as pictures or sound stickers to tap and hear); guessing (`renderGuessing`, once the
+    nudge below has fired: how often, and on which words); recent puzzles. Like the rest
     of the sheet it isn't locked, so it never shows a spelling.
   - Start over (Settings): clears this edition's `achievements`, `progress`, `counts`, `days`,
     `log`, `stars`, `puzzle`, `pending`, `slips`, `seenEntrances`, `entranceQueue` and `entranceDue` (`RESET_KEYS`) and the color scheme, once "start over" is

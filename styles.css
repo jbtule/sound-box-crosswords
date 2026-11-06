@@ -259,6 +259,7 @@ html.standalone { touch-action: pan-x pan-y; }
    arrive (runEntrance) or Start / Continue waits; pinned again after, rising in from below. */
 .keyboard.resting, .keyboard.asleep { position: relative; }
 .keyboard.rise { animation: pad-rise 0.3s ease-out; }
+.keyboard.paused { opacity: 0.4; pointer-events: none; transition: opacity 0.15s; } /* the guessing nudge's one-second pause */
 @keyframes pad-rise { from { transform: translateY(100%); } }
 .kb-end { height: 1px; margin-top: -15px; }
 .cell { scroll-margin-top: 12px; scroll-margin-bottom: calc(var(--kb-h, 0px) + 12px); }

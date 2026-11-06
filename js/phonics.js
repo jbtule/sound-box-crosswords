@@ -112,3 +112,22 @@ export function parseSounds(spec, word) {
   if (joined !== letters) return { error: 'the groups spell "' + joined + '", not "' + letters + '"' };
   return { segs: segs };
 }
+
+// The guessing nudge (app.js): is `typed` a close guess for the letter at `i` in `word`? Close =
+// a letter that can stand for a similar sound, an honest spelling mistake (any vowel for a vowel,
+// c/k/q/s/x, b/p, d/t...). Anything else, like m where a goes, looks like throwing letters at
+// the box. Generous on purpose: only clear guessing should ever count.
+var CLOSE = ["aeiouy", "ckqsx", "sz", "gj", "fv", "bp", "dt", "mn", "wh", "rl"];
+var PAIRS = ["ch", "sh", "th", "ph", "wh", "ck", "ng", "gh", "qu"]; // two letters, one sound
+export function isClose(word, i, typed) {
+  var right = word[i], t = (typed || "").toLowerCase();
+  if (t === right || right === "'" || t === "'") return true;
+  if (right === "e" && i === word.length - 1) return true; // a silent e at the end
+  // A letter in a two-letter sound (sh, ch, th, ph, ck...): its partner letters and the sound's
+  // usual spellings are close (s for c in "ch", f for p in "ph").
+  for (var d = -1; d <= 0; d++) {
+    var pair = word.slice(i + d, i + d + 2);
+    if (i + d >= 0 && PAIRS.indexOf(pair) >= 0 && "cshtpfwkgnq".indexOf(t) >= 0) return true;
+  }
+  return CLOSE.some(function (g) { return g.indexOf(right) >= 0 && g.indexOf(t) >= 0; });
+}
