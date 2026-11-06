@@ -1581,7 +1581,7 @@ $("#shareCopy").addEventListener("click", function () {
 var SYNC_KEYS = ["progress", "log", "counts", "days", "achievements", "slips", "stars", "guessing", "seenEntrances", "settings", "custom"];
 var ME = device.get("deviceId", "");
 if (!ME) { ME = newKey().slice(0, 12); device.set("deviceId", ME); }
-var syncing = null, syncAgain = false, syncErr = {}, receiving = false;
+var syncing = null, syncAgain = false, syncErr = {}, syncedGrades = {}, receiving = false;
 // Local testing only: ?sync=<address> (remembered) points at `npx wrangler dev` in sync/
 // instead of the live service.
 var SYNC_AT;
@@ -1638,7 +1638,11 @@ async function syncProfile(id) {
   var keys = await keysFor(key), net = function (u, o) { return fetch(u, o); };
   var remote = await remoteGrades({ fetch: net, url: SYNC_AT, keys: keys });
   // Each grade on its own: one that can't sync (a record from a newer app) doesn't hold up the rest.
-  var failed = null;
+  // Each grade on its own; the error reported is the most serious one (a too-big grade or a
+  // newer version elsewhere matter less than not being able to save at all), with how many
+  // grades did sync.
+  var failed = null, synced = 0;
+  var serious = function (e) { return e && (e.big || e.newer) ? 1 : 2; };
   for (var ed of EDITIONS) {
     // The grade being played always syncs, even with no progress yet: then a player sent from a
     // brand-new device still has something saved (its settings) for the other device to link to.
@@ -1653,9 +1657,10 @@ async function syncProfile(id) {
           writeGrade(id, ed, data); g.set("syncBase", rec);
         }
       });
-    } catch (e) { failed = failed || e; }
+      synced++;
+    } catch (e) { if (!failed || serious(e) > serious(failed)) failed = e; }
   }
-  if (failed) throw failed;
+  if (failed) { failed.synced = synced; throw failed; }
   whoOf(id).set("syncedAt", Date.now());
 }
 function syncAll() {
@@ -1664,7 +1669,10 @@ function syncAll() {
   if (!PROFILES.some(function (p) { return linkKey(p.id); })) return Promise.resolve();
   syncing = (async function () {
     for (var p of PROFILES) {
-      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) { syncErr[p.id] = e && e.newer ? "newer" : e && e.limited ? "limited" : e && e.full ? "full" : e && e.big ? "big" : true; }
+      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) {
+        syncErr[p.id] = e && e.newer ? "newer" : e && e.limited ? "limited" : e && e.full ? "full" : e && e.big ? "big" : true;
+        syncedGrades[p.id] = (e && e.synced) || 0;
+      }
     }
   })().finally(function () {
     syncing = null;
@@ -1797,11 +1805,11 @@ async function prepareSend() {
   await syncAll();
   if (syncing) await syncing;
   if ($("#linkSend").hidden) return;
-  // A grade that's too big, or saved by a newer version elsewhere, doesn't stop the code: the
-  // player's other grades were saved, and the other device gets those. Anything else (no
+  // A grade that's too big, or saved by a newer version elsewhere, doesn't stop the code when
+  // another grade did sync: the other device gets that one. Anything else (no
   // connection, full, a limit) means nothing may be saved yet, so the code waits.
   var kind = syncErr[PROFILE];
-  if (kind && kind !== "big" && kind !== "newer") {
+  if (kind && ((kind !== "big" && kind !== "newer") || !syncedGrades[PROFILE])) {
     $("#sendMsg").textContent = SEND_TROUBLE[kind] || SEND_TROUBLE.other;
     $("#sendRetry").hidden = false;
     return;

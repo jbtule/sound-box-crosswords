@@ -287,7 +287,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   (`wrangler.jsonc`; deployed by the `sync-deploy` job, not part of the site). `src/api.js`
   checks requests (only from the site and localhost, with the profile's token on every
   request, sealed records up to 16 KB whose encrypted part looks random, `looksRandom`, which
-  stops plain text but not compressed files;
+  refuses anything that isn't encrypted, including many compressed formats: a speed bump, not
+  a guarantee (encrypted data can't be told apart by design; the 50 MB cap is the real bound);
   replies `no-store`, `nosniff`, `attachment`) and routes
   them; `src/profile.js` is one SQLite Durable Object per profile, keeping each grade's latest
   record (up to 8 grades), answering only the profile's token (403; the first save sets its
@@ -302,7 +303,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   repeat, and numbered per profile so they apply in the order sent, whatever order they arrive
   in), grown as records grow and released at expiry (507 when full). Room is checked before
   the new-profile limits, a new profile is counted once (saves arriving together share one
-  count), and a save whose room reply is out of date (expired meanwhile: `gen`) gets 409. It's built so it can't serve as storage for anything else; denial of
+  count; a Limiter that can't be reached is 503, not a limit), a save whose room reply is out
+  of date (expired meanwhile: `gen`) gets 409, and an alarm that finds a save newer than 90 days
+  (a retried expiry) waits for that save's 90 days instead. It's built so it can't serve as storage for anything else; denial of
   service is accepted. `src/index.js` only exports them (the runtime refuses other exports there). Tests:
   `scripts/sync.test.mjs` (in memory). To try it in the real runtime: `npx wrangler dev`
   in `sync/`. It can't read what it stores and holds no names or accounts.

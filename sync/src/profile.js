@@ -45,6 +45,7 @@ export function sqlStore(sql) {
     list: () => read("SELECT grade, version FROM records"),
     get: (grade) => read("SELECT version, body FROM records WHERE grade = ?", grade)[0] || null,
     put: (grade, version, body) => { make(); sql.exec("INSERT OR REPLACE INTO records (grade, version, body, saved) VALUES (?, ?, ?, ?)", grade, version, body, Date.now()); },
+    lastSaved: () => (read("SELECT COALESCE(MAX(saved), 0) AS t FROM records")[0] || { t: 0 }).t,
     owner: () => (read("SELECT token FROM owner")[0] || {}).token || null,
     setOwner: (token) => { make(); sql.exec("INSERT OR REPLACE INTO owner (one, token) VALUES (1, ?)", token); },
     clear: () => { if (made) sql.exec("DELETE FROM records"); }
@@ -59,7 +60,8 @@ export function memoryStore() {
     setNum: (key, n) => { nums.set(key, n); },
     list: () => [...m].map(([grade, r]) => ({ grade, version: r.version })),
     get: (grade) => m.get(grade) || null,
-    put: (grade, version, body) => { m.set(grade, { version, body }); },
+    put: (grade, version, body) => { m.set(grade, { version, body, saved: Date.now() }); },
+    lastSaved: () => Math.max(0, ...[...m.values()].map((r) => r.saved || 0)),
     owner: () => owner,
     setOwner: (token) => { owner = token; },
     clear: () => { m.clear(); }
@@ -86,6 +88,7 @@ export class Profile {
     this.env = env;
     // Who it is in the shared count: its Durable Object id (a name in the tests).
     this.name = ctx.id ? ctx.id.toString() : ctx.name || crypto.randomUUID();
+    this.now = () => Date.now(); // the alarm's clock (moved ahead in the tests)
   }
   // 90 days after the last save (reads don't count): its records are gone, and its room given
   // back. Its owner stays, so when its devices come back and send theirs again, it's the same
@@ -94,6 +97,13 @@ export class Profile {
   // arriving meanwhile holds room again with a later-numbered message, which Space keeps even if
   // the release lands after it.
   async alarm() {
+    // Saved within the 90 days after all (a save while an earlier try of this alarm was being
+    // retried): not due yet, so wait until 90 days after that save.
+    const last = this.store.lastSaved(), due = last + KEEP_DAYS * 86400000;
+    if (last && due > this.now() + 60000) {
+      if (this.storage) await this.storage.setAlarm(due);
+      return;
+    }
     this.giveUp();
     this.store.clear();
     if (this.env && this.env.SPACE) {
@@ -108,10 +118,23 @@ export class Profile {
     this.store.setReserved(0);
   }
   // Counts a new profile against its network's and everyone's limits for today: null, or why not.
+  // Each count is taken once (`netCounted`, then `counted`), so a retry after a failure partway
+  // doesn't take its network's again. A Limiter that can't be reached is "unavailable", not
+  // a limit: the device just tries again later.
   async countNew(net) {
-    const take = (name, limit) => this.env.LIMITER.get(this.env.LIMITER.idFromName(name)).fetch("https://limiter/take?limit=" + limit, { method: "POST" });
-    if ((await take("net:" + net, NEW_PER_NETWORK)).status !== 200) return "too many new profiles from this network today";
-    if ((await take("everyone", NEW_PER_DAY)).status !== 200) return "too many new profiles today";
+    const take = async (name, limit) => {
+      try {
+        const res = await this.env.LIMITER.get(this.env.LIMITER.idFromName(name)).fetch("https://limiter/take?limit=" + limit, { method: "POST" });
+        return res.status === 200 ? "ok" : res.status === 429 ? "limit" : "unavailable";
+      } catch (e) { return "unavailable"; }
+    };
+    if (!this.store.num("netCounted")) {
+      const r = await take("net:" + net, NEW_PER_NETWORK);
+      if (r !== "ok") return r === "limit" ? { status: 429, error: "too many new profiles from this network today" } : { status: 503, error: "unavailable" };
+      this.store.setNum("netCounted", 1);
+    }
+    const r = await take("everyone", NEW_PER_DAY);
+    if (r !== "ok") return r === "limit" ? { status: 429, error: "too many new profiles today" } : { status: 503, error: "unavailable" };
     this.store.setNum("counted", 1);
     return null;
   }
@@ -178,12 +201,14 @@ export class Profile {
         // Saves arriving together share one count (and its answer).
         if (!this.counting) this.counting = this.countNew(request.headers.get("x-network") || "unknown").finally(() => { this.counting = null; });
         const refused = await this.counting;
+        // Unavailable: keep the room (it has an alarm) for the next try.
+        if (refused && refused.status === 503) return json(503, { error: refused.error });
         if (refused) {
           if (!this.store.list().length && this.store.reserved() && this.env.SPACE) {
             this.giveUp();
             try { await this.room("release"); } catch (e) { /* its alarm gives it back */ }
           }
-          return json(429, { error: refused });
+          return json(429, { error: refused.error });
         }
       }
       // No awaits from here on: the checks (again: things may have changed while it waited) and

@@ -42,7 +42,8 @@ settings are saved in the browser's localStorage.
   Setup and details are in the comment at the top of `ci.yml`.
 - It also deploys the sync service in `sync/` (a Cloudflare Worker at
   `sound-box-sync.asset-data.stream`), which keeps sealed copies of a profile's progress for
-  its linked devices. It can't read them. Try it locally with `npx wrangler dev` in `sync/`.
+  its linked devices. It can't read them, and refuses anything that isn't encrypted, including
+  many compressed formats. Try it locally with `npx wrangler dev` in `sync/`.
 
 See `CLAUDE.md` for the goals behind the design and a map of the code.
 

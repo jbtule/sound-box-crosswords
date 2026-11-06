@@ -10,9 +10,12 @@ import { toRecord, merge, fromRecord } from "../js/merge.js";
 const SITE = "https://tools.tuley.name";
 // A Durable Object's storage, for its alarm: set, read, and cleared when it goes off (expire).
 const fakeStorage = (sql) => ({ sql, at: null, async setAlarm(t) { this.at = t; }, async getAlarm() { return this.at; } });
+// The alarm going off 90 days after the last save (its clock moved ahead for it).
 async function expire(profile) {
   if (profile.storage) profile.storage.at = null; // the runtime clears an alarm as it fires
-  await profile.alarm();
+  const now = profile.now;
+  profile.now = () => Date.now() + (KEEP_DAYS + 1) * 86400000;
+  try { await profile.alarm(); } finally { profile.now = now; }
 }
 function service() {
   const profiles = new Map(), limiters = new Map(), space = new Space({ store: memorySpaceStore() });
@@ -626,6 +629,7 @@ test("a save during expiry: the release landing late doesn't undo the save's roo
   // Expiry: records cleared, its release held back on the way to Space.
   g.hold("release");
   p.storage.at = null;
+  p.now = () => Date.now() + (KEEP_DAYS + 1) * 86400000;
   const expiring = p.alarm();
   await tick();
   assert.equal(g.waiting("release"), 1);
@@ -651,6 +655,7 @@ test("a save whose room reply comes back after expiry has the device try again, 
   const saving = put(call, k.lookup, "k", 0, await seal(k, "k", { filler: filler() }), k.writeToken);
   await tick();
   p.storage.at = null;
+  p.now = () => Date.now() + (KEEP_DAYS + 1) * 86400000;
   await p.alarm();
   await g.letThrough("hold");
   assert.equal((await saving).status, 409); // its reply is out of date: try again
@@ -698,4 +703,56 @@ test("two first saves of a new profile at once: counted once, and the second is 
   assert.deepEqual(codes, [200, 409]);
   assert.equal(lim.store.count(new Date().toISOString().slice(0, 10)), 1);
   assert.equal(space.store.total(), p.store.reserved());
+});
+
+test("an expiry retried after a save leaves the save alone, and waits 90 days from it", async () => {
+  const space = new Space({ store: memorySpaceStore() });
+  const working = { SPACE: { idFromName: (n) => n, get: () => ({ fetch: (u, i) => space.fetch(new Request(u, i)) }) } };
+  const broken = { SPACE: { idFromName: (n) => n, get: () => ({ fetch: async () => { throw new Error("unreachable"); } }) } };
+  const k = await keysFor(newKey());
+  const p = new Profile({ name: "p", store: memoryStore(), storage: fakeStorage() }, working);
+  const call = (path, init = {}) => handle(new Request("https://sound-box-sync.asset-data.stream" + path, { ...init, headers: { origin: SITE, ...init.headers } }), { PROFILE: { idFromName: (n) => n, get: () => ({ fetch: (r) => p.fetch(r) }) } });
+  assert.equal((await put(call, k.lookup, "g3", 0, await seal(k, "g3", {}), k.writeToken)).status, 200);
+  // Expiry's release fails: it throws, for the runtime to retry later.
+  p.env = broken;
+  await assert.rejects(expire(p));
+  p.env = working;
+  // Minutes later, before the retry, the family saves again.
+  assert.equal((await put(call, k.lookup, "g3", 0, await seal(k, "g3", { back: 1 }), k.writeToken)).status, 200);
+  // The retry (at the real time): not due, so the save stays and the alarm moves to 90 days on.
+  p.storage.at = null;
+  await p.alarm();
+  assert.equal(p.store.list().length, 1);
+  assert.ok(p.storage.at > Date.now() + (KEEP_DAYS - 1) * 86400000);
+  assert.equal(space.store.held("p"), 1);
+});
+
+test("a Limiter that can't be reached is \"unavailable\" (503), not a limit; a retry isn't counted twice", async () => {
+  const space = new Space({ store: memorySpaceStore() });
+  const net = new Limiter({ store: memoryLimiterStore() }), all = new Limiter({ store: memoryLimiterStore() });
+  let everyoneDown = true;
+  const env = {
+    SPACE: { idFromName: (n) => n, get: () => ({ fetch: (u, i) => space.fetch(new Request(u, i)) }) },
+    LIMITER: { idFromName: (n) => n, get: (id) => ({ fetch: async (u, i) => {
+      if (id === "everyone" && everyoneDown) throw new Error("unreachable");
+      return (id === "everyone" ? all : net).fetch(new Request(u, i));
+    } }) }
+  };
+  const k = await keysFor(newKey());
+  const p = new Profile({ name: "p", store: memoryStore(), storage: fakeStorage() }, env);
+  const call = (path, init = {}) => handle(new Request("https://sound-box-sync.asset-data.stream" + path, { ...init, headers: { origin: SITE, ...init.headers } }), { PROFILE: { idFromName: (n) => n, get: () => ({ fetch: (r) => p.fetch(r) }) } });
+  const today = new Date().toISOString().slice(0, 10);
+  const res = await put(call, k.lookup, "g3", 0, await seal(k, "g3", {}), k.writeToken);
+  assert.equal(res.status, 503);
+  assert.equal(p.store.reserved(), 1); // its room is kept for the next try (it has an alarm)
+  assert.ok(p.storage.at);
+  everyoneDown = false;
+  assert.equal((await put(call, k.lookup, "g3", 0, await seal(k, "g3", {}), k.writeToken)).status, 200);
+  assert.equal(net.store.count(today), 1); // the network counted once, not once per try
+  assert.equal(all.store.count(today), 1);
+  // The client treats it as an ordinary failure, not "limited".
+  const { call: c2 } = service();
+  const down = (url, init = {}) => (init.method === "PUT" ? Promise.resolve(new Response("{}", { status: 503 })) : client(c2)(url, init));
+  const dev = deviceFor("d"); dev.data.counts.clean = 1;
+  await assert.rejects(syncGrade(dev.opts(down, await keysFor(newKey()))), (e) => !e.limited && !e.full && !e.big);
 });
