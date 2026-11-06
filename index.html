@@ -29,6 +29,8 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<!-- Who's playing, with two or more players (More → Link): a thin bar across the top; opens More. -->
+<button class="who-bar" id="whoPill" type="button" hidden></button>
 <div class="wrap">
   <div class="top">
     <h1>Sound Box <span>Crosswords</span></h1>
@@ -181,14 +183,19 @@
 <section class="sheet" id="sheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <div class="row" style="justify-content:space-between"><h2 id="sheetTitle">More</h2><button class="ghost" id="closeBtn" type="button">Done</button></div>
+    <div id="whoSec" hidden>
+      <h3>Player</h3>
+      <div class="row"><select id="profileSel" aria-label="Player"></select></div>
+    </div>
     <div id="gradeSec" hidden>
       <h3>Edition</h3>
       <div class="row"><select id="editionSel" aria-label="Edition"></select></div>
       <p class="help">Each edition keeps its own words, progress, achievements and settings on this device.</p>
     </div>
-    <div class="tabs" role="tablist" aria-label="Settings, stats and about">
+    <div class="tabs" role="tablist" aria-label="Settings, stats, link and about">
       <button type="button" role="tab" id="tabSet" aria-selected="true" aria-controls="setPanel">Settings</button>
       <button type="button" role="tab" id="tabStats" aria-selected="false" aria-controls="statsPanel">Stats</button>
+      <button type="button" role="tab" id="tabLink" aria-selected="false" aria-controls="linkPanel">Link</button>
       <button type="button" role="tab" id="tabAbout" aria-selected="false" aria-controls="aboutPanel">About</button>
     </div>
     <div class="tabpanel" id="setPanel" role="tabpanel" aria-labelledby="tabSet">
@@ -218,7 +225,7 @@
       </div>
       <div>
         <h3>Start over</h3>
-        <p class="help">Clears <span class="edName">this grade</span>’s achievements, stars, collected pictures, unlocked colors and puzzle history on this device. Settings and Custom words stay.</p>
+        <p class="help">Clears <span class="edName">this grade</span>’s achievements, stars, collected pictures, unlocked colors and puzzle history on this device. Settings and Custom words stay.<span id="resetLinked" hidden> This also unlinks this device; other devices keep their progress.</span></p>
         <button class="ghost" id="resetOpen" type="button">Start over…</button>
         <div id="resetBox" hidden>
           <label class="help" for="resetText">To confirm, type <b>start over</b></label>
@@ -261,6 +268,64 @@
         <ul class="plain log" id="progressLog"></ul>
       </div>
     </div>
+    <div class="tabpanel" id="linkPanel" role="tabpanel" aria-labelledby="tabLink" hidden>
+      <!-- One task at a time (linkView in app.js). -->
+      <div class="link-view" id="linkHome">
+        <p class="link-status" id="linkStatus" role="status"></p>
+        <button class="task" id="goSend" type="button"><span class="task-ico" aria-hidden="true">📲</span><span><b>Play on another device too</b><small>Show a code for the other device to scan.</small></span></button>
+        <button class="task" id="goRecv" type="button"><span class="task-ico" aria-hidden="true">📥</span><span><b>Get a player from another device</b><small>Scan the code it shows, or paste its link.</small></span></button>
+        <div id="profilesSec" hidden>
+          <h3>Players on this device</h3>
+          <ul class="plain" id="profileList"></ul>
+          <p class="help">Names stay on this device.</p>
+        </div>
+        <details class="link-about">
+          <summary>How linking works</summary>
+          <p class="help">Linked devices share a player’s progress, settings and Custom words, through a small server that keeps a sealed copy. Without the code no one can read it, the server included, and it holds no names. Each device keeps its own copy and plays offline.</p>
+        </details>
+      </div>
+      <div class="link-view" id="linkSend" hidden>
+        <button class="back" type="button" data-back>‹ Back</button>
+        <p class="step">Scan this on the other device</p>
+        <p class="help" id="sendMsg" role="status"></p>
+        <button class="primary" id="sendRetry" type="button" hidden>Try again</button>
+        <div id="sendBox" hidden>
+          <div class="share-qr" id="sendQr" role="img" aria-label="Link code" hidden></div>
+          <p class="help center">On the other device: More → Link → <b>Get a player from another device</b>.</p>
+          <div class="row center"><button class="ghost" id="sendShare" type="button">Share…</button><button class="ghost" id="sendCopy" type="button">Copy link</button></div>
+          <p class="help center fine">Anyone with this code can change this player’s progress. Show it only on your own devices.</p>
+          <code id="sendUrl" hidden></code>
+        </div>
+      </div>
+      <div class="link-view" id="linkRecv" hidden>
+        <button class="back" type="button" data-back>‹ Back</button>
+        <div class="arrive" id="arriveSec" hidden>
+          <p class="help">This page opened with a link code. If Sound Box is on your Home Screen, copy the link, then open Sound Box there: More → Link → Get a player → Paste link. Or link it right here, if you play in this browser.</p>
+          <button class="ghost" id="arriveCopy" type="button">Copy link</button>
+        </div>
+        <div id="recvScan">
+          <p class="step">Scan the code on the other device</p>
+          <div id="scanBox" hidden><video id="scanVideo" playsinline muted aria-label="Camera"></video></div>
+          <p class="help" id="receiveMsg" role="status"></p>
+          <div class="row center"><button class="ghost" id="scanAgain" type="button" hidden>Use the camera</button><button class="ghost" id="pasteBtn" type="button">Paste link instead</button></div>
+        </div>
+        <div id="receiveBox" hidden>
+          <p class="step">Who is this?</p>
+          <label class="task choice"><input type="radio" name="recv" id="recvReplace" value="replace"><span><b>The same player as this device</b><small id="recvWarn"></small></span></label>
+          <label class="task choice"><input type="radio" name="recv" id="recvAdd" value="add"><span><b>Someone else</b><small>Adds them to this device; switch players from More.</small></span></label>
+          <div id="recvNames" hidden>
+            <label class="help" for="recvName">Their name</label>
+            <input id="recvName" type="text" maxlength="24" autocomplete="off" autocorrect="off" spellcheck="false">
+            <div id="recvMineBox" hidden>
+              <label class="help" for="recvMine">And who plays on this device now?</label>
+              <input id="recvMine" type="text" maxlength="24" autocomplete="off" autocorrect="off" spellcheck="false">
+            </div>
+          </div>
+          <p class="help" id="recvMsg" role="status"></p>
+          <button class="primary wide" id="recvGo" type="button">Link</button>
+        </div>
+      </div>
+    </div>
     <div class="tabpanel" id="aboutPanel" role="tabpanel" aria-labelledby="tabAbout" hidden>
       <div>
         <h3>About</h3>
@@ -272,7 +337,7 @@
       </div>
       <div>
         <h3>Credits</h3>
-        <p class="help">Voice made with <a href="https://github.com/jbtule/sound-box-crosswords/blob/main/MODELS.md" target="_blank" rel="noopener">Kokoro</a> (af_heart). Fonts: Fredoka and Lexend. Uses smol-toml and qrcode. <a href="https://github.com/jbtule/sound-box-crosswords#license" target="_blank" rel="noopener">Licenses</a></p>
+        <p class="help">Voice made with <a href="https://github.com/jbtule/sound-box-crosswords/blob/main/MODELS.md" target="_blank" rel="noopener">Kokoro</a> (af_heart). Fonts: Fredoka and Lexend. Uses smol-toml, qrcode and jsQR. <a href="https://github.com/jbtule/sound-box-crosswords#license" target="_blank" rel="noopener">Licenses</a></p>
       </div>
       <div id="installSec" hidden>
         <h3>Home Screen</h3>
@@ -308,7 +373,8 @@
 <script type="importmap">
 { "imports": {
   "smol-toml": "https://cdn.jsdelivr.net/npm/smol-toml@1.9.1/+esm",
-  "qrcode": "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm"
+  "qrcode": "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm",
+  "jsqr": "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/+esm"
 } }
 </script>
 <script type="module" src="js/app.js"></script>

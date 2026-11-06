@@ -218,6 +218,34 @@ html.standalone { touch-action: pan-x pan-y; }
 .nudge-x { flex: none; width: 40px; height: 40px; border: none; border-radius: 999px; background: transparent; color: var(--muted); font-size: 1rem; }
 /* A secret achievement earned outside a puzzle waits here until it's tapped. */
 .secret-pill { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 18px; border: none; border-radius: 999px; background: var(--ink); color: var(--card); font-weight: 600; font-size: 0.95rem; box-shadow: var(--shadow); }
+/* Who's playing (two or more players): a thin bar across the top of the page, edge to edge. */
+.who-bar { display: block; width: calc(100% + max(16px, env(safe-area-inset-left, 0px)) + max(16px, env(safe-area-inset-right, 0px))); margin: -12px 0 10px calc(-1 * max(16px, env(safe-area-inset-left, 0px))); min-height: 30px; padding: 4px 16px; border: none; background: var(--ink); color: var(--card); font: 600 0.82rem var(--body); letter-spacing: 0.01em; }
+.who-bar[hidden] { display: none; }
+/* More → Link: one task at a time. */
+.link-view { display: grid; gap: 12px; }
+.link-status { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--muted); font-size: 0.9rem; font-weight: 600; }
+.link-status::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--key-edge); flex: none; }
+.link-status.on::before { background: var(--ok); }
+.task { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 64px; padding: 14px 16px; text-align: left; border: 1.5px solid var(--key-edge); border-radius: 16px; background: var(--card); color: var(--ink); font: inherit; cursor: pointer; }
+.task b { display: block; font-family: var(--display); font-size: 1.05rem; font-weight: 600; }
+.task small { display: block; margin-top: 2px; color: var(--muted); font-size: 0.88rem; }
+.task-ico { font-size: 1.8rem; line-height: 1; }
+.task.choice input { flex: none; width: 22px; height: 22px; margin: 0; accent-color: var(--ink); }
+.task.choice:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.step { margin: 0; font-family: var(--display); font-size: 1.2rem; font-weight: 600; }
+.back { justify-self: start; min-height: 44px; padding: 0; background: none; border: none; color: var(--muted); font: 600 0.95rem var(--body); }
+.link-about summary { min-height: 44px; display: flex; align-items: center; color: var(--muted); font-weight: 600; cursor: pointer; }
+.arrive { display: grid; gap: 8px; justify-items: start; padding: 12px 14px; border-radius: 14px; background: var(--accent-soft); }
+.arrive .help { margin: 0; color: var(--ink); }
+.center { text-align: center; justify-content: center; }
+.fine { font-size: 0.8rem; }
+.primary.wide { width: 100%; }
+#scanVideo { display: block; width: 100%; max-width: 360px; margin: 0 auto; border-radius: 16px; background: #000; aspect-ratio: 4 / 3; object-fit: cover; }
+.profile-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.profile-row input { flex: 1 1 auto; }
+#recvNames { display: grid; gap: 6px; }
+#recvMineBox { display: grid; gap: 6px; margin-top: 6px; }
+#sendQr { width: min(260px, 100%); } /* error correction H makes a finer grid */
 .secret-pill.show { animation: award-pop 0.45s cubic-bezier(.2, 1.4, .4, 1) both; }
 /* How?'s steps, a popover in the top layer, placed under the tip by app.js. */
 .install-pop { position: fixed; inset: auto; top: 80px; left: 50%; transform: translateX(-50%); width: min(340px, calc(100vw - 32px)); margin: 0; border: none; border-radius: 18px; background: var(--card); color: var(--ink); border: 2px solid var(--key-edge); box-shadow: 0 10px 30px rgba(0,0,0,0.22); padding: 14px 16px 16px; text-align: left; }
@@ -321,7 +349,7 @@ html.standalone { touch-action: pan-x pan-y; }
 .opt small { color: var(--muted); }
 select { flex: 1 1 200px; min-width: 0; min-height: 44px; border: 1.5px solid var(--key-edge); border-radius: 12px; background: var(--key); color: var(--ink); font: 1rem var(--body); padding: 8px 10px; } /* 16px+: iOS zooms into smaller form fields */
 select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-#resetText { flex: 1; min-width: 0; min-height: 44px; border: 1.5px solid var(--key-edge); border-radius: 12px; background: var(--key); color: var(--ink); font: 1rem var(--body); padding: 8px 12px; }
+#resetText, #recvName, #recvMine, .profile-row input { flex: 1; width: 100%; min-width: 0; min-height: 44px; border: 1.5px solid var(--key-edge); border-radius: 12px; background: var(--key); color: var(--ink); font: 1rem var(--body); padding: 8px 12px; }
 #resetBox { margin-top: 10px; }
 .danger { background: var(--bad); color: var(--card); border: 0; border-radius: 12px; min-height: 44px; padding: 0 16px; font-weight: 600; }
 .danger:disabled { opacity: 0.4; }

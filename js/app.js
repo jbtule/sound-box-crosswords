@@ -9,6 +9,9 @@ import { catalog, award, dayKey, daysThisWeek, spokenParts } from "./achievement
 import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle } from "./crossword.js";
 import { speak, say, sayAfter, sayRecorded, hasClip, splitOf, onClips, stopSpeech, speechEpoch, hasSpeech } from "./speech.js";
 import { blendsIn, slipSpots, isClose } from "./phonics.js";
+import { newKey, isKey, keysFor, linkFor, keyFromLink } from "./seal.js";
+import { syncGrade, remoteGrades, canon } from "./sync.js";
+import { linkQR } from "./linkqr.js";
 
 var $ = function (s) { return document.querySelector(s); };
 
@@ -40,6 +43,18 @@ function storage(prefix) {
 var PREFIX = "sbx:";
 var device = storage(function () { return "sbx:"; });
 var store = storage(function () { return PREFIX; });
+// Profiles: one player's progress each, in every grade. Every device starts with one, the
+// default, whose keys are the plain ones above, so nothing moved when profiles came. Others
+// arrive only by Receive (More → Link) and keep theirs under "sbx:@<id>:". Names are this
+// device's own and never sync. `who` is the active profile's own data: its grade and link key.
+var PROFILES = device.get("profiles", null) || [{ id: "", name: "" }];
+var PROFILE = device.get("profile", "");
+if (!PROFILES.some(function (p) { return p.id === PROFILE; })) PROFILE = "";
+function profilePrefix(id) { return id ? "sbx:@" + id + ":" : "sbx:"; }
+var who = storage(function () { return profilePrefix(PROFILE); });
+function whoOf(id) { return storage(function () { return profilePrefix(id); }); }
+// A grade's keys for a profile: the profile's prefix, then the grade's (words.js storagePrefix).
+function gradePrefix(id, ed) { return profilePrefix(id) + storagePrefix(ed).slice(4); }
 
 // Offline copy (sw.js), so a home-screen launch works without a connection. Skipped on
 // localhost so local edits always show. On the first visit everything loads before the
@@ -68,14 +83,14 @@ async function pickEdition(eds) {
 async function chooseEdition(eds) {
   var byId = function (id) { return eds.find(function (e) { return e.id === id; }); };
   var params = new URLSearchParams(location.search), asked = params.get("edition");
-  if (asked !== null && byId(asked)) { device.set("edition", asked); return byId(asked); }
-  var saved = byId(device.get("edition", ""));
+  if (asked !== null && byId(asked)) { who.set("edition", asked); return byId(asked); }
+  var saved = byId(who.get("edition", ""));
   if (saved) return saved;
   var start = byId(params.get("start") || "");
-  if (start) { device.set("edition", start.id); return start; }
-  var before = ["progress", "log", "settings", "achievements"].some(function (k) { return device.get(k, null) != null; });
+  if (start) { who.set("edition", start.id); return start; }
+  var before = !PROFILE && ["progress", "log", "settings", "achievements"].some(function (k) { return device.get(k, null) != null; });
   var original = eds.find(function (e) { return e.file === "packs.toml"; });
-  if (before && original) { device.set("edition", original.id); return original; }
+  if (before && original) { who.set("edition", original.id); return original; }
   if (eds.length === 1) return eds[0];
   gradeTapped = true; // that tap also lets sound play, so no Start button after it
   var chosen = await new Promise(function (resolve) {
@@ -90,7 +105,7 @@ async function chooseEdition(eds) {
     box.firstChild.focus();
   });
   $("#gradeAsk").hidden = true;
-  device.set("edition", chosen.id);
+  who.set("edition", chosen.id);
   return chosen;
 }
 // A Home Screen app starts with its own empty storage, so it can't know the grade picked in
@@ -115,7 +130,7 @@ try {
   var { loadPacks, loadEditions, storagePrefix } = await import("./words.js");
   EDITIONS = await loadEditions();
   EDITION = await pickEdition(EDITIONS);
-  PREFIX = storagePrefix(EDITION);
+  PREFIX = gradePrefix(PROFILE, EDITION);
   ({ packs: PACKS, starter: DEFAULT_CUSTOM } = await loadPacks(EDITION.file));
 } catch (e) {
   // A home-screen app has no reload button, so offer one.
@@ -629,6 +644,7 @@ function finish() {
   store.set("entranceDue", true); // the next new puzzle gets the next entrance (newPuzzle)
   var today = dayKey(Date.now());
   if (days.indexOf(today) < 0) { days.push(today); store.set("days", days); }
+  syncSoon();
   // Secret ones earned outside a puzzle and not opened yet join this puzzle's.
   var fresh = checkAchievements().concat(takePending());
   renderPacks();
@@ -997,11 +1013,8 @@ function renderGrades() {
 }
 $("#editionSel").addEventListener("change", function (e) {
   if (e.target.value === EDITION.id) return;
-  device.set("edition", e.target.value);
-  // Drop ?edition= (it would pick the old one again), then reload: a reload checks the server
-  // for the page, where going to the address could show the browser's older copy.
-  history.replaceState(null, "", location.pathname + (new URLSearchParams(location.search).has("backstage") ? "?backstage" : ""));
-  location.reload();
+  who.set("edition", e.target.value);
+  reloadClean();
 });
 // Start over: clears this edition's progress and everything earned from it. Achievements,
 // stars, pictures and colors are all worked out from progress, so clearing only the
@@ -1018,16 +1031,21 @@ $("#resetText").addEventListener("keydown", function (e) { if (e.key === "Enter"
 $("#resetGo").addEventListener("click", function () {
   if (!resetMatches()) return;
   RESET_KEYS.forEach(function (k) { try { localStorage.removeItem(PREFIX + k); } catch (e) {} });
-  delete settings.palette; saveSettings();
+  // A linked profile is unlinked here (Link: Send links it again), so the erased progress
+  // can't sync back; other devices keep the shared profile.
+  unlink(PROFILE);
+  delete settings.palette; store.set("settings", settings);
   location.reload();
 });
 function closeReset() { $("#resetText").value = ""; $("#resetGo").disabled = true; $("#resetBox").hidden = true; $("#resetOpen").hidden = false; }
-// The More sheet (the gear "More" button): Settings, Stats and About tabs. Opens on Settings, or `tab`.
-var SHEET_TABS = { set: ["#tabSet", "#setPanel"], stats: ["#tabStats", "#statsPanel"], about: ["#tabAbout", "#aboutPanel"] };
+// The More sheet (the gear "More" button): Settings, Stats, Link and About tabs. Opens on Settings, or `tab`.
+var SHEET_TABS = { set: ["#tabSet", "#setPanel"], stats: ["#tabStats", "#statsPanel"], link: ["#tabLink", "#linkPanel"], about: ["#tabAbout", "#aboutPanel"] };
 function openSheet(tab) {
   var first = SHEET_TABS[tab] ? tab : "set";
   selectTab(SHEET_TABS, first);
   renderGrades();
+  renderWho();
+  renderLink();
   closeReset();
   document.querySelectorAll(".edName").forEach(function (el) { el.textContent = EDITIONS.length > 1 ? EDITION.name : "this grade"; });
   $("#optSyl").checked = settings.syl;
@@ -1372,8 +1390,8 @@ function openAchievements() {
   $("#achClose").focus();
 }
 function closeAchievements() { $("#achSheet").hidden = true; $("#trophyBtn").focus(); refreshPill(); }
-function closeSheet() { $("#sheet").hidden = true; $("#settingsBtn").focus(); refreshPill(); }
-function saveSettings() { store.set("settings", settings); }
+function closeSheet() { endScan(); $("#sheet").hidden = true; $("#settingsBtn").focus(); refreshPill(); }
+function saveSettings() { store.set("settings", settings); syncSoon(); }
 $("#settingsBtn").addEventListener("click", function () { openSheet(); });
 $("#trophyBtn").addEventListener("click", openAchievements);
 $("#awardNext").addEventListener("click", nextAward);
@@ -1411,7 +1429,7 @@ $("#optCustom").addEventListener("change", function (e) {
 $("#saveBtn").addEventListener("click", function () {
   var txt = $("#customText").value, n = parseList(txt).length;
   if (n < 3) { $("#saveMsg").style.color = "var(--bad)"; $("#saveMsg").textContent = "Add at least 3 words (one per line)."; return; }
-  customText = txt; store.set("custom", txt);
+  customText = txt; store.set("custom", txt); syncSoon();
   $("#saveMsg").style.color = ""; $("#saveMsg").textContent = "Saved " + n + " words.";
   packId = "mine"; store.set("pack", "mine"); recent = [];
   renderPacks(); startNewPuzzle();
@@ -1514,6 +1532,338 @@ $("#shareCopy").addEventListener("click", function () {
     .then(function () { btn.textContent = "Copied!"; }, function () { btn.textContent = "Couldn't copy"; })
     .then(function () { setTimeout(function () { btn.textContent = "Copy link"; }, 2000); });
 });
+
+/* ---------- profiles and linked devices ---------- */
+// More → Link (called "players" there; "profiles" in the code). "Play on another device
+// too" (Send) shows the active profile's link code: a QR code and a link carrying its key
+// after # (seal.js). "Get a player from another device" (Receive) scans or pastes one, then
+// asks who it is: the same player as this device (Replace: from then on both devices are the
+// same player) or someone else (Add: a new, named profile, which brings the player picker
+// and the name pill). A linked profile syncs (sync.js) at launch,
+// on coming back to the screen, after a puzzle, after a settings or Custom list change, on
+// leaving, and when the network comes back. Unlinked, nothing goes over the network.
+var SYNC_KEYS = ["progress", "log", "counts", "days", "achievements", "slips", "stars", "guessing", "seenEntrances", "settings", "custom"];
+// Everything a profile keeps in a grade, for Replace (which takes another profile's place).
+var GRADE_KEYS = SYNC_KEYS.concat(RESET_KEYS, ["pack", "entrances", "syncBase"]);
+var ME = device.get("deviceId", "");
+if (!ME) { ME = newKey().slice(0, 12); device.set("deviceId", ME); }
+var syncing = null, syncAgain = false, syncErr = {}, receiving = false;
+// Local testing only: ?sync=<address> (remembered) points at `npx wrangler dev` in sync/
+// instead of the live service.
+var SYNC_AT;
+if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+  var devSync = new URLSearchParams(location.search).get("sync");
+  if (devSync) device.set("devSync", devSync);
+  SYNC_AT = device.get("devSync", undefined);
+}
+function saveProfiles() { device.set("profiles", PROFILES); }
+function linkKey(id) { var k = whoOf(id).get("linkKey", null); return isKey(k) ? k : null; }
+function unlink(id) {
+  try { localStorage.removeItem(profilePrefix(id) + "linkKey"); } catch (e) {}
+  EDITIONS.forEach(function (ed) { try { localStorage.removeItem(gradePrefix(id, ed) + "syncBase"); } catch (e) {} });
+}
+function gradeStore(id, ed) { return storage(function () { return gradePrefix(id, ed); }); }
+// The grade being played lives in this page's variables, which are what gets saved; others
+// are read and written in storage. (Not while Receive is replacing this profile.)
+function isLive(id, ed) { return !receiving && id === PROFILE && ed.id === EDITION.id; }
+function readGrade(id, ed) {
+  if (isLive(id, ed)) return { progress: progress, log: log, counts: counts, days: days, achievements: earned, slips: slips, stars: stars, guessing: guessing, seenEntrances: store.get("seenEntrances", []), settings: settings, custom: store.get("custom", null) };
+  var g = gradeStore(id, ed), d = {};
+  SYNC_KEYS.forEach(function (k) { d[k] = g.get(k, null); });
+  return d;
+}
+// Progress worth keeping: a word finished, a puzzle logged or an achievement (a puzzle just
+// opened makes empty pack entries).
+function hasData(id, ed) {
+  var d = readGrade(id, ed), prog = d.progress || {};
+  return (d.log || []).length > 0 || Object.keys(d.achievements || {}).length > 0 ||
+    Object.keys(prog).some(function (p) { return prog[p] && Object.keys(prog[p].done || {}).length; });
+}
+function writeGrade(id, ed, d) {
+  if (isLive(id, ed)) { applyLive(d); return; }
+  var g = gradeStore(id, ed);
+  SYNC_KEYS.forEach(function (k) { if (k !== "custom" || d.custom != null) g.set(k, d[k]); });
+}
+// Another device's progress, into this page. A changed setting or Custom list shows at the next puzzle.
+function applyLive(d) {
+  var was = canon([settings, store.get("custom", null)]);
+  progress = d.progress; log = d.log; counts = d.counts; days = d.days; earned = d.achievements;
+  slips = d.slips; stars = d.stars; guessing = d.guessing;
+  settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true }, d.settings);
+  store.set("progress", progress); store.set("log", log); store.set("counts", counts); store.set("days", days);
+  store.set("achievements", earned); store.set("slips", slips); store.set("stars", stars); store.set("guessing", guessing);
+  store.set("seenEntrances", d.seenEntrances); store.set("settings", settings);
+  if (d.custom != null) { customText = d.custom; store.set("custom", d.custom); }
+  if (canon([settings, store.get("custom", null)]) !== was) updateReady = true;
+  checkAchievements();
+  renderPacks();
+}
+async function syncProfile(id) {
+  var key = linkKey(id);
+  if (!key) return;
+  var keys = await keysFor(key), net = function (u, o) { return fetch(u, o); };
+  var remote = await remoteGrades({ fetch: net, url: SYNC_AT, keys: keys });
+  for (var ed of EDITIONS) {
+    if (remote.indexOf(ed.id) < 0 && !hasData(id, ed)) continue;
+    var g = gradeStore(id, ed);
+    await syncGrade({
+      fetch: net, url: SYNC_AT, keys: keys, grade: ed.id, me: ME, base: g.get("syncBase", null),
+      read: readGrade.bind(null, id, ed),
+      apply: function (data, rec) {
+        if (linkKey(id) !== key) return; // unlinked meanwhile (Start over)
+        writeGrade(id, ed, data); g.set("syncBase", rec);
+      }
+    });
+  }
+  whoOf(id).set("syncedAt", Date.now());
+}
+function syncAll() {
+  if (receiving) return Promise.resolve();
+  if (syncing) { syncAgain = true; return syncing; }
+  if (!PROFILES.some(function (p) { return linkKey(p.id); })) return Promise.resolve();
+  syncing = (async function () {
+    for (var p of PROFILES) {
+      try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) { syncErr[p.id] = true; }
+    }
+  })().finally(function () {
+    syncing = null;
+    renderLinkStatus();
+    if (syncAgain) { syncAgain = false; syncAll(); }
+  });
+  renderLinkStatus();
+  return syncing;
+}
+var syncTimer = 0;
+function syncSoon() { clearTimeout(syncTimer); syncTimer = setTimeout(syncAll, 1500); }
+document.addEventListener("visibilitychange", function () { syncAll(); });
+window.addEventListener("online", function () { syncAll(); });
+
+// Reload into another profile or grade. Drops ?edition= (it would pick the old one again);
+// a reload checks the server for the page, where going to the address could show an older copy.
+function reloadClean() {
+  history.replaceState(null, "", location.pathname + (new URLSearchParams(location.search).has("backstage") ? "?backstage" : ""));
+  location.reload();
+}
+function nameOf(p) { return p.name || "Unnamed"; }
+// The player picker (More, above the tabs) and the bar across the top with the name: only with two or more.
+function renderWho() {
+  var many = PROFILES.length > 1, me = PROFILES.find(function (p) { return p.id === PROFILE; });
+  $("#whoSec").hidden = !many;
+  $("#whoPill").hidden = !many;
+  $("#whoPill").textContent = "Playing as " + nameOf(me) + "  ›";
+  var sel = $("#profileSel"); sel.innerHTML = "";
+  PROFILES.forEach(function (p) {
+    var o = document.createElement("option");
+    o.value = p.id; o.textContent = nameOf(p);
+    sel.appendChild(o);
+  });
+  sel.value = PROFILE;
+}
+$("#profileSel").addEventListener("change", function (e) {
+  if (e.target.value === PROFILE) return;
+  device.set("profile", e.target.value);
+  reloadClean();
+});
+$("#whoPill").addEventListener("click", function () { openSheet("link"); });
+function ago(t) {
+  var m = Math.round((Date.now() - t) / 60000);
+  return m < 1 ? "just now" : m < 60 ? m + " min ago" : m < 1440 ? Math.round(m / 60) + " h ago" : "on " + new Date(t).toLocaleDateString();
+}
+function renderLinkStatus() {
+  var t = who.get("syncedAt", 0), linked = !!linkKey(PROFILE), el = $("#linkStatus");
+  el.classList.toggle("on", linked && !syncErr[PROFILE]);
+  el.textContent = !linked ? "Not linked with another device yet"
+    : syncErr[PROFILE] ? "Linked · couldn’t sync just now, will try again"
+    : syncing ? "Linked · syncing…"
+    : "Linked · synced " + (t ? ago(t) : "soon");
+  $("#resetLinked").hidden = !linked;
+}
+function renderProfiles() {
+  var list = $("#profileList"); list.innerHTML = "";
+  $("#profilesSec").hidden = PROFILES.length < 2;
+  PROFILES.forEach(function (p) {
+    var li = document.createElement("li"); li.className = "profile-row";
+    var input = document.createElement("input");
+    input.type = "text"; input.value = p.name; input.placeholder = "Name"; input.maxLength = 24;
+    input.setAttribute("aria-label", "Player’s name");
+    input.addEventListener("change", function () { p.name = input.value.trim(); saveProfiles(); renderWho(); });
+    li.appendChild(input);
+    if (p.id === PROFILE) {
+      var now = document.createElement("span"); now.className = "help"; now.textContent = "playing now";
+      li.appendChild(now);
+    } else if (p.id) {
+      var rm = document.createElement("button"); rm.type = "button"; rm.className = "ghost"; rm.textContent = "Remove";
+      rm.addEventListener("click", function () {
+        if (rm.dataset.sure !== "1") { rm.dataset.sure = "1"; rm.textContent = "Remove from this device?"; return; }
+        removeProfile(p.id);
+      });
+      li.appendChild(rm);
+    }
+    list.appendChild(li);
+  });
+}
+// From this device only: other devices holding it keep it and keep syncing.
+function removeProfile(id) {
+  var pre = profilePrefix(id);
+  try {
+    var gone = [];
+    for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf(pre) === 0) gone.push(k); }
+    gone.forEach(function (k) { localStorage.removeItem(k); });
+  } catch (e) {}
+  PROFILES = PROFILES.filter(function (p) { return p.id !== id; });
+  saveProfiles();
+  renderProfiles(); renderWho();
+}
+// The Link tab shows one task at a time: Home (the two tasks, the players here, the
+// status), Send ("Play on another device too") or Recv ("Get a player from another device").
+function linkView(name) {
+  ["Home", "Send", "Recv"].forEach(function (v) { $("#link" + v).hidden = v !== name; });
+  if (name !== "Recv") endScan();
+  if (name === "Home") { incoming = null; $("#arriveSec").hidden = true; renderLinkStatus(); }
+}
+function renderLink() {
+  renderProfiles();
+  renderLinkStatus();
+  if (!incoming) linkView("Home");
+}
+document.querySelectorAll("#linkPanel [data-back]").forEach(function (b) { b.addEventListener("click", function () { linkView("Home"); }); });
+$("#goSend").addEventListener("click", function () { linkView("Send"); prepareSend(); });
+$("#goRecv").addEventListener("click", function () { linkView("Recv"); showScan(); startScan(); });
+
+// Send: makes the player's key the first time (that links it), saves their progress to the
+// server, then shows the code.
+async function prepareSend() {
+  $("#sendBox").hidden = true; $("#sendRetry").hidden = true;
+  $("#sendMsg").textContent = "Getting the code ready…";
+  var key = linkKey(PROFILE);
+  if (!key) { key = newKey(); who.set("linkKey", key); }
+  await syncAll();
+  if (syncing) await syncing;
+  if ($("#linkSend").hidden) return;
+  if (syncErr[PROFILE]) {
+    $("#sendMsg").textContent = "Couldn’t reach the sync service. Check the connection, then try again.";
+    $("#sendRetry").hidden = false;
+    return;
+  }
+  $("#sendMsg").textContent = "";
+  var url = linkFor(SHARE_BASE, key);
+  $("#sendUrl").textContent = url;
+  $("#sendBox").hidden = false;
+  // Drawn its own way (linkqr.js), so it isn't mistaken for the share sheet's QR code.
+  loadQR().then(function (Q) { $("#sendQr").innerHTML = linkQR(Q, url); $("#sendQr").hidden = false; }, function () { $("#sendQr").hidden = true; });
+}
+$("#sendRetry").addEventListener("click", prepareSend);
+$("#sendShare").hidden = typeof navigator.share !== "function";
+$("#sendShare").addEventListener("click", function () { navigator.share({ url: $("#sendUrl").textContent }).catch(function () {}); });
+function copyButton(btn, text) {
+  var was = btn.textContent;
+  Promise.resolve().then(function () { return navigator.clipboard.writeText(text); })
+    .then(function () { btn.textContent = "Copied!"; }, function () { btn.textContent = "Couldn't copy"; })
+    .then(function () { setTimeout(function () { btn.textContent = was; }, 2000); });
+}
+$("#sendCopy").addEventListener("click", function () { copyButton($("#sendCopy"), $("#sendUrl").textContent); });
+
+// Receive: the camera starts at once; a key can also come from a pasted link, or a link
+// this page was opened with. Then one question: who is this?
+var incoming = null, stopScan = null;
+function endScan() { if (stopScan) stopScan(); stopScan = null; $("#scanBox").hidden = true; }
+function showScan() { incoming = null; $("#recvScan").hidden = false; $("#receiveBox").hidden = true; $("#receiveMsg").textContent = ""; }
+async function startScan() {
+  endScan();
+  $("#scanBox").hidden = false; $("#scanAgain").hidden = true;
+  try {
+    var { scan } = await import("./scan.js");
+    var stop = await scan($("#scanVideo"), function (text) {
+      var k = keyFromLink(text);
+      if (k) gotKey(k);
+      return !!k;
+    });
+    if ($("#linkRecv").hidden || incoming || $("#sheet").hidden) stop(); // left meanwhile
+    else stopScan = stop;
+  } catch (e) {
+    endScan();
+    $("#scanAgain").hidden = false;
+    $("#receiveMsg").textContent = "Couldn’t use the camera. Paste the link instead, or allow the camera and try again.";
+  }
+}
+$("#scanAgain").addEventListener("click", startScan);
+function gotKey(key) {
+  endScan();
+  if (PROFILES.some(function (p) { return linkKey(p.id) === key; })) {
+    $("#receiveMsg").textContent = "That player is already on this device.";
+    $("#scanAgain").hidden = false;
+    return;
+  }
+  incoming = key;
+  $("#recvScan").hidden = true; $("#receiveBox").hidden = false; $("#recvMsg").textContent = "";
+  var mine = EDITIONS.some(function (ed) { return hasData(PROFILE, ed); });
+  $("#recvReplace").checked = !mine; $("#recvAdd").checked = mine;
+  $("#recvWarn").textContent = mine ? "This device’s progress is replaced by theirs." : "Nothing is played here yet, so nothing is lost.";
+  $("#recvName").value = "";
+  $("#recvMine").value = PROFILES.find(function (p) { return p.id === PROFILE; }).name;
+  showRecvNames();
+}
+function showRecvNames() {
+  var add = $("#recvAdd").checked;
+  $("#recvNames").hidden = !add;
+  $("#recvMineBox").hidden = !add || PROFILES.length > 1;
+}
+["recvAdd", "recvReplace"].forEach(function (id) { $("#" + id).addEventListener("change", showRecvNames); });
+$("#pasteBtn").addEventListener("click", async function () {
+  endScan();
+  var text = null;
+  try { text = await navigator.clipboard.readText(); } catch (e) { text = window.prompt("Paste the link from the other device:"); }
+  var k = keyFromLink(text);
+  if (k) gotKey(k);
+  else { $("#scanAgain").hidden = false; $("#receiveMsg").textContent = "No link code there. On the other device: More → Link → Play on another device too → Copy link."; }
+});
+$("#recvGo").addEventListener("click", async function () {
+  var key = incoming, add = $("#recvAdd").checked;
+  var name = $("#recvName").value.trim(), mineName = $("#recvMine").value.trim();
+  if (add && !name) { $("#recvMsg").textContent = "What’s the new player’s name?"; $("#recvName").focus(); return; }
+  if (add && PROFILES.length < 2 && !mineName) { $("#recvMsg").textContent = "And who plays on this device now?"; $("#recvMine").focus(); return; }
+  $("#recvGo").disabled = true; $("#recvMsg").textContent = "Linking…";
+  var grades;
+  try {
+    if (syncing) await syncing;
+    grades = await remoteGrades({ fetch: function (u, o) { return fetch(u, o); }, url: SYNC_AT, keys: await keysFor(key) });
+  } catch (e) {
+    $("#recvGo").disabled = false;
+    $("#recvMsg").textContent = "Couldn’t reach the sync service. Check the connection, then try again.";
+    return;
+  }
+  receiving = true;
+  var target = PROFILE;
+  if (add) {
+    target = newKey().slice(0, 10);
+    PROFILES.forEach(function (p) { if (p.id === PROFILE && mineName) p.name = mineName; });
+    PROFILES.push({ id: target, name: name });
+    saveProfiles();
+  } else {
+    // Replace: this player's own progress goes, in every grade, and the sent one takes its place.
+    unlink(PROFILE);
+    EDITIONS.forEach(function (ed) { GRADE_KEYS.forEach(function (k) { try { localStorage.removeItem(gradePrefix(PROFILE, ed) + k); } catch (e) {} }); });
+  }
+  whoOf(target).set("linkKey", key);
+  try { await syncProfile(target); } catch (e) {} // otherwise it syncs at the next launch
+  var known = grades.filter(function (g) { return EDITIONS.some(function (ed) { return ed.id === g; }); });
+  whoOf(target).set("edition", known.indexOf(EDITION.id) >= 0 || !known.length ? EDITION.id : known[0]);
+  device.set("profile", target);
+  reloadClean();
+});
+// Opened with a link code (#link=…, from the Camera app or a pasted link): out of the
+// address bar at once. In a browser tab that isn't the Home Screen app, say how to take it
+// there; it can still be received here, for someone who plays in the browser.
+var arrived = keyFromLink(location.hash);
+if (arrived) history.replaceState(null, "", location.pathname + location.search);
+$("#arriveCopy").addEventListener("click", function () { copyButton($("#arriveCopy"), linkFor(SHARE_BASE, arrived)); });
+function welcomeLink() {
+  if (!arrived) return;
+  openSheet("link");
+  linkView("Recv");
+  $("#arriveSec").hidden = installed;
+  gotKey(arrived);
+}
 
 /* ---------- start ---------- */
 $("#pic").addEventListener("click", function () { if (P) { listened(); sayWord(P.words[cur], 0.85); } });
@@ -1633,3 +1983,6 @@ var resumed = loadPuzzle();
 if (!resumed) newPuzzle();
 else if (!played() && !gradeTapped) board.classList.add("waiting"); // untouched: it's new, so Start plays its entrance
 if (!gradeTapped) showStart(resumed && played());
+renderWho();
+syncAll();
+welcomeLink();

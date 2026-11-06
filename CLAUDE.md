@@ -77,7 +77,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - **Dependencies are fine** when they earn their place. Browser deps load from a CDN via
   the import map in `index.html`, pinned to an exact version that matches `package.json`
   (the check enforces this), so the same bare import works in the browser and Node.
-  Currently `smol-toml` and `qrcode` (the share sheet's QR code, loaded when it opens),
+  Currently `smol-toml`, `qrcode` (the share sheet's and Send's QR codes, loaded when they open)
+  and `jsqr` (Receive's camera scanner, `js/scan.js`, loaded when it starts),
   plus dev-only `playwright` (renders `social-card.png`). Fonts from Google Fonts (Fredoka for display, Lexend for body).
 - **Keep the custom letter pad; don't use the system keyboard** (no focused text input for
   play). The iPad keyboard's predictive text, autocorrect and dictation would hand over the
@@ -125,10 +126,26 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   copyrighted characters or images. A word with no emoji is listen-only: the app draws a
   sound-wave icon (`WAVE` / `setPic` in `app.js`).
 - **State** (settings, custom list, stars, selected pack) lives in `localStorage`, always
-  wrapped in try/catch. It's per device; no accounts or server. Each edition's data is under
-  its own prefix (`storagePrefix` in `words.js`: plain `sbx:` for `packs.toml`'s edition,
-  `sbx:<id>:` for others), through `store` in `app.js`; `device` (plain `sbx:`) holds
-  what's shared: the chosen edition and the Home Screen tip. (The chime was the device's until
+  wrapped in try/catch. No accounts. Each edition's data is under its own prefix
+  (`storagePrefix` in `words.js`: plain `sbx:` for `packs.toml`'s edition, `sbx:<id>:` for
+  others), through `store` in `app.js`; `device` (plain `sbx:`) holds what's shared: the
+  profiles (`profiles`, `profile`), the device id and the Home Screen tip.
+  **Profiles**: one player's progress each. The default keeps the plain keys above; others
+  (which only arrive by Receive, never made here) add `@<id>:` (`gradePrefix`,
+  `profilePrefix`), and `who` holds a profile's own: its grade (`edition`) and link key.
+  Names are the device's own and never sync. **Linking** (More → Link, which says "player",
+  one task at a time, `linkView`): Send ("Play on another device too") shows the active
+  profile's link code (`linkFor`: the site's address + `#link=<key>`, also as a QR code);
+  Receive ("Get a player from another device") starts the camera (`js/scan.js`), or pastes
+  the link, then asks "Who is this?": the same player as this device (Replace: its progress
+  here goes) or someone else (Add: a new, named profile; the first time, the default is named
+  too). A linked profile syncs every grade it has (`syncAll` / `syncProfile`, `sync.js`) at
+  launch, on visibility changes, when back online, and shortly after a puzzle, a setting or
+  a Custom list change (`syncSoon`); each grade keeps the last merged record as `syncBase`.
+  The grade being played is read from and written to the page's variables (`readGrade`,
+  `applyLive`; a changed setting shows at the next puzzle). `?sync=<address>` on localhost
+  points at `npx wrangler dev` in `sync/`. A page opened with `#link=` drops it from the
+  address and opens Link (`welcomeLink`). (The chime was the device's until
   it became each edition's; `moveChime` in `app.js` copied the device's choice into every
   edition once.)
 - Light and dark themes via CSS custom properties on `:root`, with
@@ -234,8 +251,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   the rest of its pack, since it could never cross in), max 11 columns × 12 rows so it
   fits a phone, avoids `recent` words. Returns `P` (`words`, `cells`, `rows`, `cols`); each
   word has `cells`, `chunks` (syllables) and `sylOf` (syllable index per letter).
-- `js/merge.js`: no DOM, nothing calls it yet (the first step of syncing a profile between
-  devices). `toRecord` turns a grade's saved data into a sync record, `merge` combines two
+- `js/merge.js`: no DOM. Combining two copies of a profile's progress, for syncing (`sync.js`). `toRecord` turns a grade's saved data into a sync record, `merge` combines two
   records (order doesn't matter; merging twice changes nothing), `fromRecord` turns one back.
   Earned things only grow; tallies (word stats, counts, slips, stars) are kept per device in
   the record, each device's share being its total less the others' in the last record it
@@ -243,7 +259,16 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   `progress`); settings and Custom list words go by an edit counter, never the clock, and a
   removed Custom word stays removed. Tests: `scripts/merge.test.mjs`, run by the check. A
   new saved key must be added there or left out of sync on purpose.
-- `js/seal.js`: no DOM, nothing calls it yet. Seals sync records with the browser's own Web
+- `js/sync.js`: no DOM. `syncGrade`, one sync of one grade: fetch, merge (`merge.js`), save
+  from the fetched version (409: again), then keep the result plus anything played meanwhile;
+  saves nothing when nothing changed (`canon`). `remoteGrades`. `fetch` is passed in; tested
+  against the service in `scripts/sync.test.mjs`.
+- `js/scan.js`: the camera QR reader for Receive (jsQR), loaded only when it starts.
+- `js/linkqr.js`: no DOM. Send's QR code, drawn from the `qrcode` grid so it isn't mistaken for
+  the share sheet's: round dots, rounded corner eyes with an orange box, the icon's empty box
+  and waves in the middle (error correction H). Fixed dark colors on white, so cameras read
+  them; after changing it, check that rendered codes still decode.
+- `js/seal.js`: no DOM. Seals sync records with the browser's own Web
   Crypto: a profile key (`newKey`, 43 base64url characters, carried only after `#link=` in a
   link: `linkFor` / `keyFromLink`) gives, by HKDF, the lookup ID the server sees and an
   AES-256-GCM key (`keysFor`); `seal` / `unseal` gzip the JSON and bind it to its profile and
@@ -366,7 +391,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   - `clap`: the Break it down scaffold. `back`: erase.
   - `renderBoard`, `update`, `renderClues`, `renderKeyboard`, `renderPacks`: UI.
   - The More sheet (`#settingsBtn`, a quiet line gear + "More" in the muted color, no pill, so it
-    reads as the grown-ups' door beside the 🏆): tabs Settings, Stats and About (license, Home Screen steps); `openSheet(tab)` opens
+    reads as the grown-ups' door beside the 🏆): above the tabs, the profile picker (two or more profiles; a thin bar across the top, "Playing as Sam", `#whoPill`, opens More) and Edition; tabs Settings, Stats, Link (two tasks, the players on this device, sync status, and "How linking works"; `renderLink`) and About (license, Home Screen steps); `openSheet(tab)` opens
     on Settings or the named tab (`SHEET_TABS`; the Home Screen tip's How? shows the same steps as About in a popover, `#installPop`), with
     `closeSheet` and the change handlers below them. `selectTab` switches tabs here and in 🏆.
   - Stats (`renderProgressSheet`): practice days, the last 4 weeks (`renderCalendar`); each
@@ -382,6 +407,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     `log`, `stars`, `puzzle`, `pending`, `slips`, `seenEntrances`, `entranceQueue` and `entranceDue` (`RESET_KEYS`) and the color scheme, once "start over" is
     typed. Achievements, stars, pictures and colors are all worked out from progress, so
     clearing only achievements would bring them back. Settings and the Custom list stay.
+    A linked profile is unlinked too (`unlink`), so the erased progress can't sync back;
+    other devices keep the shared profile.
 
 ## Working on it
 
