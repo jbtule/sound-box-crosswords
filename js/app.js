@@ -1453,7 +1453,10 @@ function openAchievements() {
     var icon = document.createElement("span"), text = document.createElement("span"), sub = document.createElement("small");
     icon.className = "icon"; icon.textContent = hide ? "❓" : a.icon;
     text.className = "text"; text.textContent = hide ? "???" : a.title;
-    sub.textContent = hide ? "Secret achievement" : got ? a.detail + " · " + new Date(earned[a.id]).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    // A secret that counts up (Triple Digits, Touch Typist, Front Row Seat) shows its count once
+    // it has started, "37 of 100", never what it counts.
+    var secretCount = hide && a.goal > 1 && a.have > 0 ? " · " + Math.min(a.have, a.goal) + " of " + a.goal : "";
+    sub.textContent = hide ? "Secret achievement" + secretCount : got ? a.detail + " · " + new Date(earned[a.id]).toLocaleDateString(undefined, { month: "short", day: "numeric" })
       : a.detail + " · " + Math.min(a.have, a.goal) + " of " + a.goal;
     text.appendChild(sub);
     li.append(icon, text);
