@@ -514,3 +514,29 @@ test("the real SQL: profiles, limits and room", { skip: !sqlite && "node:sqlite 
   lim.store.set("2000-01-01", 99);
   assert.equal((await lim.fetch(new Request("https://limiter/take?limit=3", { method: "POST" }))).status, 200);
 });
+
+test("the real SQL: a profile made by the service now live (records and owner, no room) keeps working", { skip: !sqlite && "node:sqlite isn't available" }, async () => {
+  const { sqlStore, spaceStore } = await import("../sync/src/profile.js");
+  const k = await keysFor(newKey()), as = { headers: { "x-write-token": k.writeToken } };
+  // Exactly the tables the deployed service makes in every profile it has read or saved.
+  const sql = doSql();
+  sql.db.exec("CREATE TABLE records (grade TEXT PRIMARY KEY, version INTEGER NOT NULL, body BLOB NOT NULL, saved INTEGER NOT NULL)");
+  sql.db.exec("CREATE TABLE owner (one INTEGER PRIMARY KEY CHECK (one = 1), token TEXT NOT NULL)");
+  const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(k.writeToken))), (b) => b.toString(16).padStart(2, "0")).join("");
+  sql.db.prepare("INSERT INTO owner (one, token) VALUES (1, ?)").run(hash);
+  sql.db.prepare("INSERT INTO records (grade, version, body, saved) VALUES (?, ?, ?, ?)").run("g3", 3, await seal(k, "g3", { n: 1 }), Date.now());
+  const space = new Space({ store: spaceStore(doSql()) });
+  const storage = { sql, at: null, async setAlarm(t) { this.at = t; }, async getAlarm() { return this.at; } };
+  const env = { SPACE: { idFromName: (n) => n, get: () => ({ fetch: (u, i) => space.fetch(new Request(u, i)) }) } };
+  const p = new Profile({ storage }, env);
+  env.PROFILE = { idFromName: (n) => n, get: () => ({ fetch: (r) => p.fetch(r) }) };
+  const call = (path, init = {}) => handle(new Request("https://sound-box-sync.asset-data.stream" + path, { ...init, headers: { origin: SITE, ...init.headers } }), env);
+  assert.deepEqual(await (await call(`/v1/p/${k.lookup}`, as)).json(), { grades: { g3: 3 } });
+  assert.ok(storage.at, "an old profile gets its missing alarm");
+  assert.equal((await put(call, k.lookup, "g3", 3, await seal(k, "g3", { n: 2 }), k.writeToken)).status, 200);
+  assert.equal(p.store.reserved(), 1);
+  assert.equal(space.store.used(), 1);
+  await p.alarm();
+  assert.deepEqual(p.store.list(), []);
+  assert.equal(space.store.used(), 0);
+});

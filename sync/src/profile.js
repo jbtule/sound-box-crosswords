@@ -23,14 +23,16 @@ export const NEW_PER_NETWORK = 20, NEW_PER_DAY = 1000;
 // Storage: SQLite in the Durable Object, or Maps in the tests. The tables are made only when
 // something is first written, so a read of a lookup nobody has saved leaves nothing behind.
 export function sqlStore(sql) {
-  let made = sql.exec("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'records'").toArray()[0].n > 0;
-  const make = () => {
-    if (made) return;
+  const create = () => {
     sql.exec("CREATE TABLE IF NOT EXISTS records (grade TEXT PRIMARY KEY, version INTEGER NOT NULL, body BLOB NOT NULL, saved INTEGER NOT NULL)");
     sql.exec("CREATE TABLE IF NOT EXISTS owner (one INTEGER PRIMARY KEY CHECK (one = 1), token TEXT NOT NULL)");
     sql.exec("CREATE TABLE IF NOT EXISTS room (one INTEGER PRIMARY KEY CHECK (one = 1), blocks INTEGER NOT NULL)");
-    made = true;
   };
+  // A profile that has any tables (including ones made by earlier versions, which had no
+  // `room`) gets all of them now; one that has none gets them at its first write.
+  let made = sql.exec("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table'").toArray()[0].n > 0;
+  if (made) create();
+  const make = () => { if (!made) { create(); made = true; } };
   const read = (q, ...p) => (made ? sql.exec(q, ...p).toArray() : []);
   return {
     bytes: (except) => (read("SELECT COALESCE(SUM(length(body)), 0) AS n FROM records WHERE grade <> ?", except)[0] || { n: 0 }).n,
