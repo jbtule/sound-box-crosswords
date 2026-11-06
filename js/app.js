@@ -1645,12 +1645,12 @@ function reloadClean() {
   location.reload();
 }
 function nameOf(p) { return p.name || "Unnamed"; }
-// The profile picker (More, above the tabs) and the name pill under the title: only with two or more.
+// The player picker (More, above the tabs) and the bar across the top with the name: only with two or more.
 function renderWho() {
   var many = PROFILES.length > 1, me = PROFILES.find(function (p) { return p.id === PROFILE; });
   $("#whoSec").hidden = !many;
   $("#whoPill").hidden = !many;
-  $("#whoPill").textContent = nameOf(me);
+  $("#whoPill").textContent = "Playing as " + nameOf(me) + "  ›";
   var sel = $("#profileSel"); sel.innerHTML = "";
   PROFILES.forEach(function (p) {
     var o = document.createElement("option");

@@ -29,6 +29,8 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<!-- Who's playing, with two or more players (More → Link): a thin bar across the top; opens More. -->
+<button class="who-bar" id="whoPill" type="button" hidden></button>
 <div class="wrap">
   <div class="top">
     <h1>Sound Box <span>Crosswords</span></h1>
@@ -37,8 +39,6 @@
       <button class="quiet-btn" id="settingsBtn" type="button"><svg class="gear" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="label">More</span></button>
     </div>
   </div>
-  <!-- Who's playing, with two or more profiles (More → Link); opens More. -->
-  <button class="who-pill" id="whoPill" type="button" hidden></button>
   <div class="install-nudge" id="installNudge" hidden>
     <span>Add Sound Box to your Home Screen to save your progress and play offline.</span>
     <button class="tool" id="installHow" type="button">How?</button>
