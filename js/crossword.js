@@ -97,23 +97,31 @@ function tryBuild(first, rest, target) {
   }
   var order = shuffle(first.slice()).concat(shuffle(rest.slice()));
   put(order[0], 0, 0, Math.random() < 0.5 ? "A" : "D");
-  for (var i = 1; i < order.length && placed.length < target; i++) {
-    var e = order[i], opts = [], best = 0;
-    placed.forEach(function (p) {
-      for (var a = 0; a < p.w.length; a++) for (var b = 0; b < e.w.length; b++) {
-        if (p.w[a] !== e.w[b]) continue;
-        var dir = p.dir === "A" ? "D" : "A";
-        var r = p.dir === "A" ? p.r - b : p.r + a;
-        var c = p.dir === "A" ? p.c + a : p.c - b;
-        var s = canPlace(e.w, r, c, dir, false);
-        if (s > 0 && bboxOk(e.w, r, c, dir)) { opts.push({ r: r, c: c, dir: dir, s: s }); if (s > best) best = s; }
-      }
-    });
-    if (opts.length) {
+  // A word that crosses nothing yet may cross a word placed after it, so keep sweeping the
+  // ones left over until a sweep places none.
+  var left = order.slice(1), placedOne = true;
+  while (placedOne && left.length && placed.length < target) {
+    placedOne = false;
+    left = left.filter(function (e) {
+      if (placed.length >= target) return true;
+      var opts = [], best = 0;
+      placed.forEach(function (p) {
+        for (var a = 0; a < p.w.length; a++) for (var b = 0; b < e.w.length; b++) {
+          if (p.w[a] !== e.w[b]) continue;
+          var dir = p.dir === "A" ? "D" : "A";
+          var r = p.dir === "A" ? p.r - b : p.r + a;
+          var c = p.dir === "A" ? p.c + a : p.c - b;
+          var s = canPlace(e.w, r, c, dir, false);
+          if (s > 0 && bboxOk(e.w, r, c, dir)) { opts.push({ r: r, c: c, dir: dir, s: s }); if (s > best) best = s; }
+        }
+      });
+      if (!opts.length) return true;
       var top = opts.filter(function (o) { return o.s === best; });
       var o = top[Math.floor(Math.random() * top.length)];
       put(e, o.r, o.c, o.dir);
-    }
+      placedOne = true;
+      return false;
+    });
   }
   return placed;
 }
@@ -122,6 +130,7 @@ function tryBuild(first, rest, target) {
 // `fresh` words it fits (not yet done this round, so the pack is covered in as few
 // puzzles as possible), then total words, then smallest area. Other words are filler,
 // least recent first; `recent` words are used last.
+var MIN_WORDS = 3;
 function build(pool, recent, fresh) {
   var isFresh = function (e) { return fresh.indexOf(e.w) >= 0; };
   var first = shuffle(pool.filter(isFresh)).slice(0, 10);
@@ -131,14 +140,20 @@ function build(pool, recent, fresh) {
   var base = first.concat(rest);
   var avg = base.reduce(function (s, e) { return s + e.w.length; }, 0) / base.length;
   var target = Math.min(base.length, avg > 7 ? 5 : 6);
-  var bestSet = null, bestScore = -Infinity;
-  for (var t = 0; t < 80; t++) {
-    var p = first.length ? tryBuild(first, rest, target) : tryBuild(rest, [], target);
+  var bestSet = null, bestScore = -Infinity, need = Math.min(MIN_WORDS, pool.length);
+  for (var t = 0; t < 400; t++) {
+    // Short of a real crossword after 80 tries: build from the whole pack in any order (the
+    // fresh words still score higher, but no longer have to come first).
+    if (t >= 80 && bestSet.length >= need) break;
+    var p = t >= 80 ? tryBuild(first.concat(others), [], target) : first.length ? tryBuild(first, rest, target) : tryBuild(rest, [], target);
     var rs = [], cs = [];
     p.forEach(function (q) { rs.push(q.r, q.r + (q.dir === "D" ? q.w.length - 1 : 0)); cs.push(q.c, q.c + (q.dir === "A" ? q.w.length - 1 : 0)); });
     var area = (Math.max.apply(null, rs) - Math.min.apply(null, rs) + 1) * (Math.max.apply(null, cs) - Math.min.apply(null, cs) + 1);
     var nFresh = p.filter(isFresh).length;
-    var score = nFresh * 10000 + p.length * 1000 - area;
+    // A real crossword first (at least 3 words, or the whole pool if smaller): covering a fresh
+    // word never wins over that, or a word that crosses nothing ends up a puzzle on its own.
+    var full = p.length >= need ? 1e6 : 0;
+    var score = full + nFresh * 10000 + p.length * 1000 - area;
     if (score > bestScore) { bestScore = score; bestSet = p; }
     if (p.length >= target && nFresh >= Math.min(target, first.length) && t > 20) break;
   }
