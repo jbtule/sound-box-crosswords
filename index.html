@@ -37,6 +37,8 @@
       <button class="quiet-btn" id="settingsBtn" type="button"><svg class="gear" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="label">More</span></button>
     </div>
   </div>
+  <!-- Who's playing, with two or more profiles (More → Link); opens More. -->
+  <button class="who-pill" id="whoPill" type="button" hidden></button>
   <div class="install-nudge" id="installNudge" hidden>
     <span>Add Sound Box to your Home Screen to save your progress and play offline.</span>
     <button class="tool" id="installHow" type="button">How?</button>
@@ -181,14 +183,19 @@
 <section class="sheet" id="sheet" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <div class="row" style="justify-content:space-between"><h2 id="sheetTitle">More</h2><button class="ghost" id="closeBtn" type="button">Done</button></div>
+    <div id="whoSec" hidden>
+      <h3>Profile</h3>
+      <div class="row"><select id="profileSel" aria-label="Profile"></select></div>
+    </div>
     <div id="gradeSec" hidden>
       <h3>Edition</h3>
       <div class="row"><select id="editionSel" aria-label="Edition"></select></div>
       <p class="help">Each edition keeps its own words, progress, achievements and settings on this device.</p>
     </div>
-    <div class="tabs" role="tablist" aria-label="Settings, stats and about">
+    <div class="tabs" role="tablist" aria-label="Settings, stats, link and about">
       <button type="button" role="tab" id="tabSet" aria-selected="true" aria-controls="setPanel">Settings</button>
       <button type="button" role="tab" id="tabStats" aria-selected="false" aria-controls="statsPanel">Stats</button>
+      <button type="button" role="tab" id="tabLink" aria-selected="false" aria-controls="linkPanel">Link</button>
       <button type="button" role="tab" id="tabAbout" aria-selected="false" aria-controls="aboutPanel">About</button>
     </div>
     <div class="tabpanel" id="setPanel" role="tabpanel" aria-labelledby="tabSet">
@@ -218,7 +225,7 @@
       </div>
       <div>
         <h3>Start over</h3>
-        <p class="help">Clears <span class="edName">this grade</span>’s achievements, stars, collected pictures, unlocked colors and puzzle history on this device. Settings and Custom words stay.</p>
+        <p class="help">Clears <span class="edName">this grade</span>’s achievements, stars, collected pictures, unlocked colors and puzzle history on this device. Settings and Custom words stay.<span id="resetLinked" hidden> This also unlinks this device; other devices keep their progress.</span></p>
         <button class="ghost" id="resetOpen" type="button">Start over…</button>
         <div id="resetBox" hidden>
           <label class="help" for="resetText">To confirm, type <b>start over</b></label>
@@ -261,6 +268,59 @@
         <ul class="plain log" id="progressLog"></ul>
       </div>
     </div>
+    <div class="tabpanel" id="linkPanel" role="tabpanel" aria-labelledby="tabLink" hidden>
+      <div id="arriveSec" hidden>
+        <h3>A link code</h3>
+        <p class="help">This page opened with a link code from another device. If Sound Box is on your Home Screen, copy the link, open Sound Box there, then More → Link → Paste link. Or receive it here, below, if you play in this browser.</p>
+        <div class="row"><button class="ghost" id="arriveCopy" type="button">Copy link</button></div>
+      </div>
+      <div>
+        <h3>Send</h3>
+        <p class="help">Shows this profile’s link code, for another device to receive. Linked devices share its progress, settings and Custom words.</p>
+        <button class="primary" id="sendBtn" type="button">Show link code</button>
+        <p class="help" id="sendMsg" role="status"></p>
+        <div id="sendBox" hidden>
+          <div class="share-qr" id="sendQr" role="img" aria-label="Link code" hidden></div>
+          <p class="help">On the other device: More → Link → Scan a code. Or send it this link: <code id="sendUrl"></code></p>
+          <div class="row"><button class="ghost" id="sendShare" type="button">Share…</button><button class="ghost" id="sendCopy" type="button">Copy link</button></div>
+          <p class="help">Anyone with this code can see and change this profile’s progress. Show it only to your own devices.</p>
+        </div>
+      </div>
+      <div>
+        <h3>Receive</h3>
+        <div class="row"><button class="primary" id="scanBtn" type="button">Scan a code</button><button class="ghost" id="pasteBtn" type="button">Paste link</button></div>
+        <div id="scanBox" hidden>
+          <video id="scanVideo" playsinline muted aria-label="Camera"></video>
+          <div class="row"><button class="ghost" id="scanStop" type="button">Cancel</button></div>
+        </div>
+        <p class="help" id="receiveMsg" role="status"></p>
+        <div id="receiveBox" hidden>
+          <div class="opt">
+            <label><input type="radio" name="recv" id="recvReplace" value="replace"> Replace this profile <span class="help" id="recvWarn"></span></label>
+            <label><input type="radio" name="recv" id="recvAdd" value="add"> Add as a new profile</label>
+          </div>
+          <div id="recvNames">
+            <label class="help" for="recvName">Name for the new profile</label>
+            <input id="recvName" type="text" maxlength="24" autocomplete="off" autocorrect="off" spellcheck="false">
+            <div id="recvMineBox" hidden>
+              <label class="help" for="recvMine">And a name for this device’s own profile</label>
+              <input id="recvMine" type="text" maxlength="24" autocomplete="off" autocorrect="off" spellcheck="false">
+            </div>
+          </div>
+          <div class="row"><button class="primary" id="recvGo" type="button">Link</button><button class="ghost" id="recvCancel" type="button">Cancel</button></div>
+        </div>
+      </div>
+      <div id="profilesSec" hidden>
+        <h3>Profiles on this device</h3>
+        <ul class="plain" id="profileList"></ul>
+        <p class="help">Names stay on this device. Removing a profile here leaves it on other devices.</p>
+      </div>
+      <div>
+        <h3>Syncing</h3>
+        <p class="help" id="linkStatus"></p>
+        <p class="help">Linked devices share a sealed copy of a profile’s progress through a small server. Without the link code no one can read it, the server included, and it holds no names. Each device keeps its own copy and plays offline.</p>
+      </div>
+    </div>
     <div class="tabpanel" id="aboutPanel" role="tabpanel" aria-labelledby="tabAbout" hidden>
       <div>
         <h3>About</h3>
@@ -272,7 +332,7 @@
       </div>
       <div>
         <h3>Credits</h3>
-        <p class="help">Voice made with <a href="https://github.com/jbtule/sound-box-crosswords/blob/main/MODELS.md" target="_blank" rel="noopener">Kokoro</a> (af_heart). Fonts: Fredoka and Lexend. Uses smol-toml and qrcode. <a href="https://github.com/jbtule/sound-box-crosswords#license" target="_blank" rel="noopener">Licenses</a></p>
+        <p class="help">Voice made with <a href="https://github.com/jbtule/sound-box-crosswords/blob/main/MODELS.md" target="_blank" rel="noopener">Kokoro</a> (af_heart). Fonts: Fredoka and Lexend. Uses smol-toml, qrcode and jsQR. <a href="https://github.com/jbtule/sound-box-crosswords#license" target="_blank" rel="noopener">Licenses</a></p>
       </div>
       <div id="installSec" hidden>
         <h3>Home Screen</h3>
@@ -308,7 +368,8 @@
 <script type="importmap">
 { "imports": {
   "smol-toml": "https://cdn.jsdelivr.net/npm/smol-toml@1.9.1/+esm",
-  "qrcode": "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm"
+  "qrcode": "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm",
+  "jsqr": "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/+esm"
 } }
 </script>
 <script type="module" src="js/app.js"></script>

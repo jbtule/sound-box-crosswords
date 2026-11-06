@@ -2,12 +2,13 @@
   "name": "sound-box-crosswords",
   "private": true,
   "type": "module",
-  "description": "No build step. The browser loads smol-toml and qrcode from a CDN via the import map in index.html; these copies are for scripts/check.mjs. Dev only: playwright renders social-card.png (npm run card).",
+  "description": "No build step. The browser loads smol-toml, qrcode and jsqr from a CDN via the import map in index.html; these copies are for scripts/check.mjs. Dev only: playwright renders social-card.png (npm run card).",
   "scripts": {
     "check": "node scripts/check.mjs",
     "card": "node scripts/card.mjs"
   },
   "dependencies": {
+    "jsqr": "1.4.0",
     "qrcode": "1.5.4",
     "smol-toml": "1.9.1"
   },

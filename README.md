@@ -31,7 +31,7 @@ settings are saved in the browser's localStorage.
 - `npm install` once, then `npm run check` before pushing. It checks syntax and
   links, validates every word list, and builds test puzzles from each pack. CI runs it on
   every push and PR.
-- Upgrading smol-toml or qrcode: change the version in both `package.json` and the import
+- Upgrading smol-toml, qrcode or jsqr: change the version in both `package.json` and the import
   map in `index.html`. The check fails if they differ.
 - Workflows are kept clean under [zizmor](https://docs.zizmor.sh/): `zizmor .`
 - Pushing to `main` deploys to GitHub Pages through `.github/workflows/ci.yml`, but only if
@@ -60,6 +60,8 @@ own licenses:
   from jsDelivr.
 - [qrcode](https://github.com/soldair/node-qrcode) (MIT), which draws the share sheet's QR code,
   loaded from jsDelivr when the share sheet opens.
+- [jsQR](https://github.com/cozmo/jsQR) (Apache-2.0), which reads a link code with the camera
+  (More → Link → Scan a code), loaded from jsDelivr then.
 - [Fredoka](https://fonts.google.com/specimen/Fredoka) and
   [Lexend](https://fonts.google.com/specimen/Lexend) (SIL Open Font License 1.1), from
   Google Fonts.

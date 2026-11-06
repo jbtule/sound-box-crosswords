@@ -99,3 +99,65 @@ test("a profile holds at most MAX_GRADES grades", async () => {
   assert.equal((await put(call, keys.lookup, "one-more", 0, await seal(keys, "one-more", {}))).status, 403);
   assert.equal((await put(call, keys.lookup, "g0", 1, await seal(keys, "g0", { again: true }))).status, 200);
 });
+
+// js/sync.js, the app's side, against the service.
+import { syncGrade, remoteGrades, canon } from "../js/sync.js";
+function client(call) {
+  return (url, init = {}) => call(new URL(url).pathname, { method: init.method, headers: init.headers, body: init.body });
+}
+function deviceFor(id) {
+  const dev = { id, data: { counts: { clean: 0, comeback: 0 }, stars: {}, progress: {} }, base: null };
+  dev.opts = (fetch, keys) => ({
+    fetch, url: "https://sound-box-sync.asset-data.stream", keys, grade: "g3", me: id,
+    read: () => JSON.parse(JSON.stringify(dev.data)), base: dev.base,
+    apply: (data, rec) => { dev.data = data; dev.base = rec; }
+  });
+  return dev;
+}
+
+test("syncGrade: two devices share progress, and a sync that changes nothing saves nothing", async () => {
+  const { call } = service();
+  let puts = 0;
+  const fetch = (url, init = {}) => { if (init.method === "PUT") puts++; return client(call)(url, init); };
+  const keys = await keysFor(newKey());
+  const a = deviceFor("a"), b = deviceFor("b");
+  a.data.counts.clean = 3; a.data.progress = { blends: { done: { frog: true }, round: ["frog"], stats: { frog: { n: 1, ok: 1, miss: 0 } } } };
+  b.data.counts.clean = 2;
+  await syncGrade(a.opts(fetch, keys)); await syncGrade(b.opts(fetch, keys)); await syncGrade(a.opts(fetch, keys));
+  assert.equal(a.data.counts.clean, 5);
+  assert.equal(b.data.counts.clean, 5);
+  assert.deepEqual(Object.keys(b.data.progress.blends.done), ["frog"]);
+  assert.deepEqual(await remoteGrades({ fetch, keys }), ["g3"]);
+  const before = puts;
+  await syncGrade(a.opts(fetch, keys)); await syncGrade(b.opts(fetch, keys));
+  assert.equal(puts, before);
+});
+
+test("syncGrade: a puzzle finished while it waits on the network is kept", async () => {
+  const { call } = service();
+  const keys = await keysFor(newKey());
+  const a = deviceFor("a"), b = deviceFor("b");
+  b.data.counts.clean = 2;
+  await syncGrade(b.opts(client(call), keys));
+  a.data.counts.clean = 1;
+  // a's save goes out with 1 clean; before the reply lands, another puzzle is finished.
+  const slow = async (url, init = {}) => { const r = await client(call)(url, init); if (init.method === "PUT") a.data.counts.clean = 2; return r; };
+  await syncGrade(a.opts(slow, keys));
+  assert.equal(a.data.counts.clean, 4); // b's 2, a's 1, and the one finished meanwhile
+  await syncGrade(a.opts(client(call), keys)); await syncGrade(b.opts(client(call), keys));
+  assert.equal(b.data.counts.clean, 4);
+  assert.equal(a.data.counts.clean, 4);
+});
+
+test("syncGrade: a record it can't open is an error, and nothing is kept", async () => {
+  const { call } = service();
+  const keys = await keysFor(newKey());
+  await put(call, keys.lookup, "g3", 0, await seal(keys, "kindergarten", { not: "this grade" }));
+  const a = deviceFor("a"); a.data.counts.clean = 1;
+  await assert.rejects(syncGrade(a.opts(client(call), keys)));
+  assert.equal(a.base, null);
+});
+
+test("canon ignores key order", () => {
+  assert.equal(canon({ b: 1, a: [{ d: 2, c: 3 }] }), canon({ a: [{ c: 3, d: 2 }], b: 1 }));
+});
