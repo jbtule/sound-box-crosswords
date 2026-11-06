@@ -45,6 +45,14 @@
     <button class="tool" id="installHow" type="button">How?</button>
     <button class="nudge-x" id="installNo" type="button" aria-label="Hide this tip">✕</button>
   </div>
+  <div class="install-pop" id="packWarn" popover role="alertdialog" aria-labelledby="packWarnTitle" aria-describedby="packWarnText">
+    <h3 id="packWarnTitle">Switch packs?</h3>
+    <p class="help" id="packWarnText">This puzzle will start over. Words you already finished still count.</p>
+    <div class="pop-actions">
+      <button class="ghost" id="packWarnKeep" type="button" popovertarget="packWarn" popovertargetaction="hide">Keep playing</button>
+      <button class="primary" id="packWarnGo" type="button">Switch</button>
+    </div>
+  </div>
   <div class="install-pop" id="installPop" popover role="dialog" aria-labelledby="installPopTitle">
     <h3 id="installPopTitle">Add to Home Screen</h3>
     <ol class="help steps">

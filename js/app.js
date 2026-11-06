@@ -874,17 +874,34 @@ function renderPacks() {
     b.addEventListener("click", function () {
       if (locked) { toast("🥋 Finish every word in a pack to unlock"); return; }
       if (packId === id) return;
-      packId = id; store.set("pack", id); recent = [];
-      // Its name, said (with auto-speak on) for players still learning to read the chips; the
-      // achievement cards already record every pack name. The first word follows it.
-      if (settings.speakSel) say("p", PACKS[id].name, 0.95, true);
-      renderPacks(); startNewPuzzle();
+      // A puzzle with letters typed would start over: ask first.
+      if (P && !finished && played()) { askSwitch(id, b); return; }
+      switchPack(id);
     });
     wrap.appendChild(b);
   });
   $("#packNote").textContent = PACKS[packId].note;
   renderProgress();
 }
+function switchPack(id) {
+  packId = id; store.set("pack", id); recent = [];
+  // Its name, said (with auto-speak on) for players still learning to read the chips; the
+  // achievement cards already record every pack name. The first word follows it.
+  if (settings.speakSel) say("p", PACKS[id].name, 0.95, true);
+  renderPacks(); startNewPuzzle();
+}
+// Switching packs mid-puzzle clears that puzzle (words already finished still count): a
+// popover under the chip asks first. Browsers without popovers use confirm().
+var switchTo = null, packWarn = $("#packWarn");
+function askSwitch(id, chip) {
+  switchTo = id;
+  $("#packWarnTitle").textContent = "Switch to " + PACKS[id].name + "?";
+  if (!packWarn.showPopover) { if (confirm($("#packWarnTitle").textContent + " " + $("#packWarnText").textContent)) switchPack(id); return; }
+  packWarn.style.top = Math.round(chip.getBoundingClientRect().bottom + 8) + "px";
+  packWarn.showPopover();
+  $("#packWarnKeep").focus();
+}
+$("#packWarnGo").addEventListener("click", function () { packWarn.hidePopover(); if (switchTo) switchPack(switchTo); });
 // Words in pack `id` completed at least once: { done, total }.
 function coverage(id) {
   var words = entries(id), done = packProgress(id).done;
