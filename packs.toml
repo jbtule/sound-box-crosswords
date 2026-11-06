@@ -38,6 +38,9 @@
 #               (kindergarten high-frequency words); normally the check forbids it.
 #   school = true   optional: the school's own list (a unit's spelling words, the class's
 #               high-frequency words), not one of the app's phonics packs. Its button gets 🏫.
+#   hard = true   optional: a hard mode pack, a real stretch for the grade. Its button gets 🥋
+#               and sits last; it opens once any other pack is finished (Champion), and
+#               finishing a puzzle in it earns Hard Mode. Name it for its theme, never "Hard mode".
 #
 # This is the 3rd grade edition; editions.toml lists every grade's file.
 # School units go first, newest at the top (add Unit 4 above Unit 3).

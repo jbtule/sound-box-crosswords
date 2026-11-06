@@ -158,13 +158,13 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
 {
   const { catalog, spokenLines } = await import("../js/achievements.js");
   const packs = ["Blends", "Bossy R", "Two Beats", "Three Beats", "Unit 1"].map((name, i) => ({ id: "p" + i, name, done: 5, total: 5, firsts: 5 }))
-    .concat({ id: "mine", name: "Custom", done: 3, total: 3, firsts: 3 });
+    .concat({ id: "mine", name: "Custom", done: 3, total: 3, firsts: 3 }, { id: "h", name: "Long Words", done: 5, total: 5, firsts: 5, hard: true });
   const lines = new Set(spokenLines(packs));
   const all = { listener: 1e6, twofer: 1e6, shared: 1e6, look: 1e6, peek: 1e6, words: 1e6, qwerty: 1e6, weekend: 1e6 };
-  const big = { packs, clean: 1e6, comeback: 1e6, days: Array.from({ length: 1000 }, (_, i) => "d" + i), edition: "3rd grade", secret: all };
+  const big = { packs, hard: 1e6, clean: 1e6, comeback: 1e6, days: Array.from({ length: 1000 }, (_, i) => "d" + i), edition: "3rd grade", secret: all };
   const { spokenParts } = await import("../js/achievements.js");
   const shown = catalog(big);
-  for (const id of ["grand:champion", "grand:legend", "secret:listener"]) if (!shown.some((a) => a.id === id)) errors.push(`scripts/check.mjs: catalog() no longer lists ${id}; update this check`);
+  for (const id of ["grand:champion", "grand:legend", "secret:listener", "hard:mode", "pack:h"]) if (!shown.some((a) => a.id === id)) errors.push(`scripts/check.mjs: catalog() no longer lists ${id}; update this check`);
   for (const a of shown) {
     for (const t of spokenParts(a)) if (!lines.has(t)) errors.push(`js/achievements.js: spokenLines() is missing "${t}"`);
   }
@@ -202,6 +202,8 @@ for (const ed of editions) {
     if (p.words_in_text !== undefined && typeof p.words_in_text !== "boolean") errors.push(`${label}: words_in_text should be true or false`);
     if (p.words_in_text === true) textOk.add(tag + p.id);
     if (p.school !== undefined && typeof p.school !== "boolean") errors.push(`${label}: school should be true or false`);
+    // hard = true: a hard mode pack (🥋), any number per edition.
+    if (p.hard !== undefined && typeof p.hard !== "boolean") errors.push(`${label}: hard should be true or false`);
     if (typeof p.note === "string" && typeof p.words === "string" && p.words_in_text !== true) {
       const shown = new Set(p.note.toLowerCase().replace(/[-'\u2019]/g, "").split(/[^a-z]+/));
       for (const e of parseList(p.words)) {

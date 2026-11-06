@@ -31,12 +31,20 @@ export var PALETTES = [
     ["#4c2f17", "#ffa552", "#362a5c", "#b195f5", "#45c4d6", "#16404a"]),
   p("space", "Space",
     ["#d2f3f7", "#1c98a8", "#f8d8f0", "#b8429a", "#5a5ce0", "#e0e0fb"],
-    ["#12404a", "#4fd3e3", "#4a1a42", "#f07ad8", "#8a8cff", "#2a2c5c"])
+    ["#12404a", "#4fd3e3", "#4a1a42", "#f07ad8", "#8a8cff", "#2a2c5c"]),
+  // Secret, last: only finishing a hard mode pack (its Champion) opens it, never the usual
+  // one-per-pack unlocks. Steel and maroon with a gold ring; maroon, not red, so a syllable
+  // doesn't read as a wrong letter.
+  Object.assign(p("blackbelt", "Black Belt",
+    ["#e2e5ea", "#5a6574", "#e7a3ae", "#7a1f2b", "#c9930a", "#faeccb"],
+    ["#2f3540", "#eef2f7", "#5a1f29", "#b84a59", "#f0c040", "#4a3a12"]), { secret: true })
 ];
+// The schemes unlocked one per pack, in order (every one but the secret ones).
+export var EVERYDAY = PALETTES.filter(function (pal) { return !pal.secret; }).length;
 
-// How many schemes are open: Classic plus one per pack finished.
+// How many of the everyday schemes are open: Classic plus one per (non-hard) pack finished.
 export function unlockedCount(packsDone) {
-  return Math.min(PALETTES.length, 1 + packsDone);
+  return Math.min(EVERYDAY, 1 + packsDone);
 }
 
 function block(sel, vars) {

@@ -4,8 +4,10 @@ import { ENTRANCES } from "./entrances.js";
 // taken away, so there are no streaks to lose). No DOM here; app.js shows them.
 //
 // state = {
-//   packs:    [{ id, name, done, total, firsts }]  per pack: words spelled at least once
-//             (done) and words ever spelled right on the first try (firsts)
+//   packs:    [{ id, name, done, total, firsts, hard }]  per pack: words spelled at least once
+//             (done) and words ever spelled right on the first try (firsts); hard: a hard mode
+//             pack (hard = true in its packs file)
+//   hard:     puzzles finished in a hard mode pack
 //   clean:    puzzles finished with no try-agains
 //   comeback: words spelled right on the first try after an earlier miss
 //   days:     ["YYYY-MM-DD", ...] local days with a finished puzzle
@@ -50,8 +52,11 @@ var SECRETS = [
   // Every new-puzzle entrance seen to the end; it unlocks the Director tab (pick the entrances' order).
   { key: "entrances", goal: ENTRANCES.length, icon: "🍿", title: "Front Row Seat", detail: "Saw every way the boxes arrive" }
 ];
-// The whole grade at once, for grades with at least this many packs (Custom doesn't count).
+// The whole grade at once, for grades with at least this many packs (Custom and hard mode
+// packs don't count).
 var GRAND_MIN = 5;
+// Hard mode: finishing any puzzle in a hard pack (🥋 on its chip). Listed in grades that have one.
+var HARD = { icon: "🥋", title: "Hard Mode", detail: "Took on the toughest words and won" };
 
 function tierItem(track, i, have) {
   var l = LABELS[track], n = TIERS[track][i];
@@ -59,7 +64,8 @@ function tierItem(track, i, have) {
 }
 
 // Every achievement that could be shown: [{ id, icon, title, detail, goal, have, met }],
-// plus `pack` (its id) on a pack's Champion and Legend. Their detail shows the pack's size
+// plus `pack` (its id) on a pack's Champion and Legend, and `hard` on hard mode ones (the cards
+// add "Hard mode" to the grade line). Their detail shows the pack's size
 // ("Cleared all 23 words in Blends"); what's said stays the same for every pack ("Cleared every word in
 // this pack"), so a pack needs no recording beyond its name.
 // For tiered tracks that's each tier up to and including the first one not yet met.
@@ -67,19 +73,19 @@ export function catalog(state) {
   var out = [];
   state.packs.forEach(function (p) {
     if (p.total < 3) return;
-    out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "Cleared all " + p.total + " words in " + p.name, goal: p.total, have: p.done, pack: p.id,
+    out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "Cleared all " + p.total + " words in " + p.name, goal: p.total, have: p.done, pack: p.id, hard: !!p.hard,
       spoken: ["Champion!", p.name, "Cleared every word in this pack"] });
     // Then a Legend: every word right on the first try (at some point, not all at once).
     // Shown once Champion is reached, as the next goal; not for the Custom list ("mine"). It
     // doesn't unlock colors (palettes count pack: achievements only).
     if (p.done >= p.total && p.id !== "mine") {
-      out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "All " + p.total + " words in " + p.name + ", first try, no misses", goal: p.total, have: p.firsts || 0, pack: p.id,
+      out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "All " + p.total + " words in " + p.name + ", first try, no misses", goal: p.total, have: p.firsts || 0, pack: p.id, hard: !!p.hard,
         spoken: ["Legend!", p.name, "Every word, first try. No misses."] });
     }
   });
   // Champion of Champions: every pack's Champion; then Legend of Legends: every pack's Legend.
   // On screen they name the grade; what's said is the same for every grade.
-  var real = state.packs.filter(function (p) { return p.id !== "mine" && p.total > 0; });
+  var real = state.packs.filter(function (p) { return p.id !== "mine" && !p.hard && p.total > 0; });
   if (real.length >= GRAND_MIN) {
     var champs = real.filter(function (p) { return p.done >= p.total; }).length;
     var legends = real.filter(function (p) { return (p.firsts || 0) >= p.total; }).length;
@@ -90,6 +96,9 @@ export function catalog(state) {
       out.push({ id: "grand:legend", icon: "🌠", title: "Legend of Legends", detail: "Every pack" + where + ", first try, no misses", goal: real.length, have: legends,
         spoken: ["Legend of Legends!", "Every pack. Every word. First try."] });
     }
+  }
+  if (state.packs.some(function (p) { return p.hard; })) {
+    out.push({ id: "hard:mode", icon: HARD.icon, title: HARD.title, detail: HARD.detail, goal: 1, have: state.hard || 0, hard: true });
   }
   var have = { clean: state.clean, comeback: state.comeback, days: state.days.length };
   Object.keys(TIERS).forEach(function (track) {
@@ -127,6 +136,7 @@ export function spokenLines(packs) {
     TIERS[track].forEach(function (n, i) { var t = tierItem(track, i, 0); out.push(t.title + "!", t.detail); });
   });
   SECRETS.forEach(function (x) { out.push(x.title + "!", x.detail); });
+  out.push(HARD.title + "!", HARD.detail);
   return out.filter(function (x, i) { return out.indexOf(x) === i; });
 }
 

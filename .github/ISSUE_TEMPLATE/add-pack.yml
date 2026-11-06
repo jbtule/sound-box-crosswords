@@ -28,6 +28,7 @@ body:
         - `id`: lowercase letters, digits and dashes, descriptive enough to stay unique: `<edition>-<year>-<pack>` works well (a school's Unit 4 in 3rd grade's 2026–27 year is `g3-2026-unit4`). Progress is saved under it, so it never changes once the pack is in use.
         - `name`: the label on the pack button, short.
         - `note`: one short line shown under the buttons. It must not spell any of the pack's words, even split up.
+        - Optional: `school = true` for a school's own list (its button shows 🏫), or `hard = true` for a hard mode pack, a real stretch for the grade (its button shows 🥋; name it for its theme, not "Hard mode").
 
         **Each word: one line, in this order** (only the word is always required)
         ```

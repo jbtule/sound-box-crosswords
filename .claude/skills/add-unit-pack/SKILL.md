@@ -67,7 +67,8 @@ words = """
 - `id`: `g<grade>-<year>-unit<N>`, with the same year as the earlier units of that school
   year (`2026` for 2026–27). Saved progress is keyed by it, so it can never change once shipped.
 - `name`: `Unit N`. `note`: the same line as the other units, with grade and year.
-- `school = true`: it's the school's own list, so its button shows 🏫.
+- `school = true`: it's the school's own list, so its button shows 🏫. (Never `hard = true`,
+  which marks the app's hard mode packs, 🥋.)
 - Keep the words in the school's order.
 
 ## 4. Each word
