@@ -6,6 +6,8 @@
 //
 //   GET /v1/p/<lookup>           which grades it has: { grades: { grade: version } }
 //   GET /v1/p/<lookup>/<grade>   the sealed record, its version in X-Version (404: none)
+//   Every request carries X-Write-Token (from the profile's key), reads too, and comes from the
+//   app's own pages (Origin), so the service can't be used to keep or hand out other things.
 //   PUT /v1/p/<lookup>/<grade>   save, with X-Base-Version: the version it was merged from
 //                                (0 for a first save), and X-Write-Token (from the profile's
 //                                key: only its devices have it); 409 { version } if another
@@ -13,8 +15,8 @@
 //                                the wrong token; 429 if the network has made too many new
 //                                profiles today
 //
-// It answers only the app's own pages (CORS), and refuses anything that isn't a sealed
-// record of a sensible size.
+// It refuses anything that isn't a sealed record of a sensible size, and a profile no device
+// has saved in 90 days is deleted (profile.js): devices keep their own copies and send them again.
 
 // A busy year in one grade seals to about 6 KB.
 export const MAX_BYTES = 32 * 1024;
@@ -46,25 +48,29 @@ function cors(origin) {
   };
 }
 const reply = (status, value, origin) =>
-  new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json", ...(origin ? cors(origin) : {}) } });
+  new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json", ...PLAIN_HEADERS, ...(origin ? cors(origin) : {}) } });
+// On every reply: never cached, never shown as a page (it's data, not a website).
+const PLAIN_HEADERS = { "cache-control": "no-store", "x-content-type-options": "nosniff", "content-disposition": "attachment" };
 
 export async function handle(request, env) {
   const origin = request.headers.get("origin");
   const allowed = origin && ORIGINS.some((re) => re.test(origin)) ? origin : null;
-  // A browser on another site gets nothing; a request with no Origin (curl) is let through,
-  // since anyone can send one anyway.
-  if (origin && !allowed) return reply(403, { error: "origin" }, null);
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: allowed ? cors(allowed) : {} });
+  // Only the app's own pages: another site, a link, an <img> or a plain download gets nothing.
+  // (A script can fake the header; the token below is what keeps what's stored to its owners.)
+  if (!allowed) return reply(403, { error: "origin" }, null);
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(allowed) });
 
   const m = new URL(request.url).pathname.match(/^\/v1\/p\/([^/]+)(?:\/([^/]+))?$/);
   if (!m || !LOOKUP.test(m[1]) || (m[2] !== undefined && !GRADE.test(m[2]))) return reply(404, { error: "path" }, allowed);
   const [, lookup, grade = ""] = m;
+  // Every request proves it has the profile's key, reads too: what's stored can only be
+  // fetched by its own devices, so it can't be handed out as a link.
+  if (!TOKEN.test(request.headers.get("x-write-token") || "")) return reply(400, { error: "x-write-token" }, allowed);
 
   let body = null;
   if (request.method === "PUT") {
     if (!grade) return reply(405, { error: "method" }, allowed);
     if (!/^\d+$/.test(request.headers.get("x-base-version") || "")) return reply(400, { error: "x-base-version" }, allowed);
-    if (!TOKEN.test(request.headers.get("x-write-token") || "")) return reply(400, { error: "x-write-token" }, allowed);
     if (Number(request.headers.get("content-length") || 0) > MAX_BYTES) return reply(413, { error: "too big" }, allowed);
     body = await request.arrayBuffer();
     const b = new Uint8Array(body);
@@ -77,15 +83,13 @@ export async function handle(request, env) {
   const stub = env.PROFILE.get(env.PROFILE.idFromName(lookup));
   const res = await stub.fetch(new Request("https://profile/" + grade, {
     method: request.method,
-    headers: body ? {
-      "x-base-version": request.headers.get("x-base-version"),
+    headers: {
       "x-write-token": request.headers.get("x-write-token"),
-      "x-network": networkOf(request.headers.get("cf-connecting-ip"))
-    } : {},
+      ...(body ? { "x-base-version": request.headers.get("x-base-version"), "x-network": networkOf(request.headers.get("cf-connecting-ip")) } : {})
+    },
     body
   }));
   const out = new Response(res.body, res);
-  out.headers.set("cache-control", "no-store");
-  if (allowed) for (const [k, v] of Object.entries(cors(allowed))) out.headers.set(k, v);
+  for (const [k, v] of Object.entries({ ...PLAIN_HEADERS, ...cors(allowed) })) out.headers.set(k, v);
   return out;
 }

@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { handle, MAX_BYTES, networkOf } from "../sync/src/api.js";
-import { Profile, memoryStore, MAX_GRADES, Limiter, memoryLimiterStore, NEW_PER_DAY } from "../sync/src/profile.js";
+import { Profile, memoryStore, MAX_GRADES, Limiter, memoryLimiterStore, NEW_PER_NETWORK, NEW_PER_DAY } from "../sync/src/profile.js";
 import { newKey, keysFor, seal, unseal } from "../js/seal.js";
 import { toRecord, merge, fromRecord } from "../js/merge.js";
 
@@ -27,7 +27,7 @@ function service() {
     }
   };
   const call = (path, init = {}) =>
-    handle(new Request("https://sound-box-sync.asset-data.stream" + path, { ...init, headers: { origin: SITE, ...init.headers } }), env);
+    handle(new Request("https://sound-box-sync.asset-data.stream" + path, { ...init, headers: { origin: SITE, "x-write-token": TOKEN, ...init.headers } }), env);
   return { call, profiles, limiters };
 }
 const TOKEN = "T".repeat(43);
@@ -177,26 +177,31 @@ test("syncGrade: a record from a newer app is left alone", async () => {
   const { call } = service();
   const keys = await keysFor(newKey());
   const newer = { v: 2, progress: {}, futureField: { kept: true } };
-  await put(call, keys.lookup, "g3", 0, await seal(keys, "g3", newer));
+  await put(call, keys.lookup, "g3", 0, await seal(keys, "g3", newer), keys.writeToken);
   let puts = 0;
   const fetch = (url, init = {}) => { if (init.method === "PUT") puts++; return client(call)(url, init); };
   const a = deviceFor("a"); a.data.counts.clean = 1;
   await assert.rejects(syncGrade(a.opts(fetch, keys)), (e) => e.newer === true);
   assert.equal(puts, 0);
   assert.equal(a.base, null);
-  const res = await call(`/v1/p/${keys.lookup}/g3`);
+  const res = await call(`/v1/p/${keys.lookup}/g3`, { headers: { "x-write-token": keys.writeToken } });
   assert.deepEqual(await unseal(keys, "g3", new Uint8Array(await res.arrayBuffer())), newer);
 });
 
-test("only the profile's own devices can save: the write token", async () => {
+test("only the profile's own devices can read or save: the token", async () => {
   const { call, profiles } = service();
   const keys = await keysFor(newKey()), other = await keysFor(newKey());
+  const as = (token) => ({ headers: { "x-write-token": token } });
   const rec = await seal(keys, "g3", { n: 1 });
   assert.equal((await put(call, keys.lookup, "g3", 0, rec, keys.writeToken)).status, 200);
-  // Someone who knows the lookup ID but not the key: refused, and the record is unchanged.
+  // Someone who knows the lookup ID but not the key can't save, read, or list it.
   assert.equal((await put(call, keys.lookup, "g3", 1, rec, other.writeToken)).status, 403);
   assert.equal((await put(call, keys.lookup, "g3", 1, rec, "")).status, 400);
-  assert.equal((await call(`/v1/p/${keys.lookup}/g3`)).headers.get("x-version"), "1");
+  assert.equal((await call(`/v1/p/${keys.lookup}/g3`, as(other.writeToken))).status, 403);
+  assert.equal((await call(`/v1/p/${keys.lookup}`, as(other.writeToken))).status, 403);
+  assert.equal((await call(`/v1/p/${keys.lookup}/g3`, as(""))).status, 400);
+  // Its own devices can.
+  assert.equal((await call(`/v1/p/${keys.lookup}/g3`, as(keys.writeToken))).headers.get("x-version"), "1");
   assert.equal((await put(call, keys.lookup, "g3", 1, rec, keys.writeToken)).status, 200);
   // The server keeps a hash, not the token.
   assert.notEqual(profiles.get(keys.lookup).store.owner(), keys.writeToken);
@@ -208,10 +213,41 @@ test("only the profile's own devices can save: the write token", async () => {
   assert.equal((await put(call, old.lookup, "g3", 2, await seal(old, "g3", { n: 3 }), other.writeToken)).status, 403);
 });
 
-test("a network makes at most NEW_PER_DAY new profiles a day; saving existing ones isn't limited", async () => {
+test("only the app's own pages, and replies that never show as a page", async () => {
   const { call } = service();
+  const keys = await keysFor(newKey());
+  await put(call, keys.lookup, "g3", 0, await seal(keys, "g3", {}), keys.writeToken);
+  // No Origin (a link, an <img>, curl) or another site's: refused.
+  const bare = await handle(new Request(`https://sound-box-sync.asset-data.stream/v1/p/${keys.lookup}/g3`, { headers: { "x-write-token": keys.writeToken } }), {});
+  assert.equal(bare.status, 403);
+  assert.equal((await call(`/v1/p/${keys.lookup}/g3`, { headers: { origin: "https://example.com", "x-write-token": keys.writeToken } })).status, 403);
+  for (const res of [await call(`/v1/p/${keys.lookup}/g3`, { headers: { "x-write-token": keys.writeToken } }), await call(`/v1/p/short/g3`)]) {
+    assert.equal(res.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(res.headers.get("content-disposition"), "attachment");
+    assert.equal(res.headers.get("cache-control"), "no-store");
+  }
+});
+
+test("a profile no device has saved in 90 days is deleted, and comes back from its devices", async () => {
+  const { call, profiles } = service();
+  const keys = await keysFor(newKey());
+  const a = deviceFor("a"); a.data.counts.clean = 3;
+  await syncGrade(a.opts(client(call), keys));
+  await profiles.get(keys.lookup).alarm(); // 90 days later
+  assert.equal((await call(`/v1/p/${keys.lookup}`, { headers: { "x-write-token": keys.writeToken } })).status, 200);
+  assert.deepEqual(await (await call(`/v1/p/${keys.lookup}`, { headers: { "x-write-token": keys.writeToken } })).json(), { grades: {} });
+  // The device still has everything, and its next sync saves it again.
+  a.data.counts.clean += 1;
+  await syncGrade(a.opts(client(call), keys));
+  const b = deviceFor("b");
+  await syncGrade(b.opts(client(call), keys));
+  assert.equal(b.data.counts.clean, 4);
+});
+
+test("new profiles: NEW_PER_NETWORK a day per network, NEW_PER_DAY for everyone; saving existing ones isn't limited", async () => {
+  const { call, limiters } = service();
   const made = [];
-  for (let i = 0; i < NEW_PER_DAY; i++) {
+  for (let i = 0; i < NEW_PER_NETWORK; i++) {
     const k = await keysFor(newKey()); made.push(k);
     assert.equal((await put(call, k.lookup, "g3", 0, await seal(k, "g3", {}), k.writeToken, "203.0.113.7")).status, 200);
   }
@@ -221,12 +257,16 @@ test("a network makes at most NEW_PER_DAY new profiles a day; saving existing on
   const k = made[0];
   assert.equal((await put(call, k.lookup, "g3", 1, await seal(k, "g3", { more: 1 }), k.writeToken, "203.0.113.7")).status, 200);
   assert.equal((await put(call, k.lookup, "k", 0, await seal(k, "k", {}), k.writeToken, "203.0.113.7")).status, 200);
+  // Everyone's limit: when it's used up, a new network can't make one either.
+  limiters.get("everyone").store.set(new Date().toISOString().slice(0, 10), NEW_PER_DAY);
+  const late = await keysFor(newKey());
+  assert.equal((await put(call, late.lookup, "g3", 0, await seal(late, "g3", {}), late.writeToken, "192.0.2.9")).status, 429);
   // Another address in the same IPv6 /64 is the same network.
   assert.equal(networkOf("2001:db8:1:2::1"), networkOf("2001:0db8:0001:0002:ffff:1:2:3"));
   assert.notEqual(networkOf("2001:db8:1:2::1"), networkOf("2001:db8:1:3::1"));
 });
 
-test("syncGrade sends the write token, and says when the network is at its limit", async () => {
+test("syncGrade sends the token, and says when the network is at its limit", async () => {
   const { call } = service();
   const keys = await keysFor(newKey());
   const a = deviceFor("a"); a.data.counts.clean = 1;
@@ -236,8 +276,8 @@ test("syncGrade sends the write token, and says when the network is at its limit
   // A new profile from a network that's used up today's: a "limited" error the app can name.
   const { call: call2, limiters } = service();
   const full = new Limiter({ store: memoryLimiterStore() });
-  full.store.set(new Date().toISOString().slice(0, 10), NEW_PER_DAY);
-  limiters.set("unknown", full);
+  full.store.set(new Date().toISOString().slice(0, 10), NEW_PER_NETWORK);
+  limiters.set("net:unknown", full);
   const fresh = await keysFor(newKey()), c = deviceFor("c"); c.data.counts.clean = 1;
   await assert.rejects(syncGrade(c.opts(client(call2), fresh)), (e) => e.limited === true);
 });

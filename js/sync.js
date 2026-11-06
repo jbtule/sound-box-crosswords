@@ -25,7 +25,7 @@ export function canon(v) {
 
 // The grades the server has for this profile.
 export async function remoteGrades({ fetch, url = SYNC_URL, keys }) {
-  const res = await fetch(`${url}/v1/p/${keys.lookup}`, { cache: "no-store" });
+  const res = await fetch(`${url}/v1/p/${keys.lookup}`, { cache: "no-store", headers: { "x-write-token": keys.writeToken } });
   if (!res.ok) throw new Error("sync: " + res.status);
   return Object.keys((await res.json()).grades || {});
 }
@@ -38,7 +38,7 @@ export async function syncGrade({ fetch, url = SYNC_URL, keys, grade, me, read, 
   const at = `${url}/v1/p/${keys.lookup}/${grade}`;
   for (let i = 0; i < TRIES; i++) {
     const mine = toRecord(read(), base, me);
-    const res = await fetch(at, { cache: "no-store" });
+    const res = await fetch(at, { cache: "no-store", headers: { "x-write-token": keys.writeToken } });
     if (res.status !== 200 && res.status !== 404) throw new Error("sync: " + res.status);
     const version = res.status === 404 ? 0 : Number(res.headers.get("x-version"));
     const server = version ? await unseal(keys, grade, new Uint8Array(await res.arrayBuffer())) : null;
