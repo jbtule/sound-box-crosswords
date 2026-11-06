@@ -316,7 +316,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     only them, `.play`, so the packs, 🏆 and More stay usable), since
     iOS plays recorded words, the device voice and the chime only after a tap; tapping it (or
     any key or letter pad tap, which isn't typed) dismisses it and says the current word if auto-speak is on.
-    The letter pad is hidden meanwhile (`.asleep`, its space kept and still tappable).
+    The letter pad is hidden meanwhile (`.asleep`, its space kept and still tappable), and the pictures under the puzzle covered (`.clues.covered`; a tap there starts).
     Skipped after the first-visit grade question (a tap already). It says Continue only for a
     puzzle with letters typed (`played`); an untouched saved puzzle counts as new (Start, with
     its entrance). New puzzle, Next puzzle or a pack tap while it shows dismisses it and starts

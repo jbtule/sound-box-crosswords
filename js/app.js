@@ -1491,9 +1491,19 @@ document.addEventListener("keydown", function (e) {
 }, true);
 // The letter pad stays hidden (its space kept, and a tap there still starts) while Start or
 // Continue waits, so the button is the one thing to tap.
-new MutationObserver(function () { kbEl.classList.toggle("asleep", !$("#startOverlay").hidden); })
-  .observe($("#startOverlay"), { attributes: true, attributeFilter: ["hidden"] });
-kbEl.classList.toggle("asleep", !$("#startOverlay").hidden);
+// The pictures under the puzzle are covered too (a tap there starts), so nothing is played with
+// before Start.
+function startShown() {
+  var up = !$("#startOverlay").hidden;
+  kbEl.classList.toggle("asleep", up);
+  $(".clues").classList.toggle("covered", up);
+}
+new MutationObserver(startShown).observe($("#startOverlay"), { attributes: true, attributeFilter: ["hidden"] });
+startShown();
+$(".clues").addEventListener("click", function (e) {
+  if ($("#startOverlay").hidden) return;
+  e.preventDefault(); e.stopPropagation(); start();
+}, true);
 kbEl.addEventListener("click", function (e) {
   if ($("#startOverlay").hidden) return;
   e.preventDefault(); e.stopPropagation(); start();
