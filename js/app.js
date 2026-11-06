@@ -1469,8 +1469,12 @@ function showStart(continuing) {
   onAccent();
   $("#startLabel").textContent = continuing ? "Continue" : "Start";
   $("#startOverlay").hidden = false;
+  placeStart();
   $("#startBtn").focus({ preventScroll: true });
 }
+// The button sits on the puzzle, just below the clue it covers too (whose height varies).
+function placeStart() { $("#startOverlay").style.setProperty("--clue-h", $("#cluebar").offsetHeight + "px"); }
+window.addEventListener("resize", placeStart);
 function start() {
   if ($("#startOverlay").hidden) return;
   $("#startOverlay").hidden = true;
@@ -1485,8 +1489,8 @@ document.addEventListener("keydown", function (e) {
   if ($("#startOverlay").hidden || !safeToReload() || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
   e.preventDefault(); e.stopPropagation(); start();
 }, true);
-// The letter pad stays hidden (its space kept, and a tap there still starts) while Start or
-// Continue waits, so the button is the one thing to tap.
+// The letter pad stays hidden (its space kept, under the cover) while Start or Continue waits,
+// so the button is the one thing to tap.
 new MutationObserver(function () { kbEl.classList.toggle("asleep", !$("#startOverlay").hidden); })
   .observe($("#startOverlay"), { attributes: true, attributeFilter: ["hidden"] });
 kbEl.classList.toggle("asleep", !$("#startOverlay").hidden);

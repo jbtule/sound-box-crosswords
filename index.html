@@ -56,6 +56,8 @@
   <p class="note" id="packNote"></p>
   <div class="progress" id="packProg" hidden><div class="track"><div class="fill"></div></div><span class="txt"></span></div>
 
+  <!-- The clue, the puzzle, the letter pad and the pictures together, so Start / Continue covers them all. -->
+  <div class="play">
   <section class="cluebar" id="cluebar">
     <button class="pic" id="pic" type="button" aria-label="Hear the word">🐸</button>
     <div class="clueinfo">
@@ -75,9 +77,6 @@
 
   <section class="board-card" aria-label="Crossword">
     <div class="board" id="board"></div>
-    <section class="start" id="startOverlay" hidden>
-      <button type="button" class="primary start-btn" id="startBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg><span id="startLabel">Start</span></button>
-    </section>
     <div class="toast" id="toast" role="status" hidden></div>
     <div class="done" id="done" hidden>
       <div class="big">⭐</div>
@@ -95,6 +94,10 @@
     <h2>Pictures in this puzzle</h2>
     <div class="clue-list" id="clueList"></div>
   </section>
+  <section class="start" id="startOverlay" hidden>
+    <button type="button" class="primary start-btn" id="startBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg><span id="startLabel">Start</span></button>
+  </section>
+  </div>
 
   <div class="actions"><button class="primary" id="newBtn" type="button">New puzzle</button></div>
   <button class="share-link" id="shareBtn" type="button">
