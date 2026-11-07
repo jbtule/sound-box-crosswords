@@ -314,7 +314,7 @@ function runEntrance(turn) {
   else if (turn && queue.length) { // the player's own order (the Director tab) comes first
     id = queue.shift(); store.set("entranceQueue", queue);
     store.set("entrances", Object.assign({}, saved, { last: id }));
-  } else if (turn || !id) { var pick = nextEntrance(saved); store.set("entrances", pick.state); id = pick.id; }
+  } else if (turn || !id) { var pick = nextEntrance(saved, store.get("seenEntrances", [])); store.set("entrances", pick.state); id = pick.id; }
   var run = playEntrance(id, geometry(P, board, order()), { audio: (test ? test.sound : settings.chime) ? audioOut() : null, rate: test ? test.rate : 1 });
   entrance = run;
   showBoardCard();
