@@ -31,24 +31,26 @@
 <body>
 <!-- Shown until app.js has drawn the first puzzle (it removes html.loading), instead of the
      half-built page; if that never happens, it offers a reload. -->
-<div class="loader" role="status" aria-label="Loading">
+<div class="loader" id="loader" role="status" aria-label="Loading">
   <div class="loader-boxes" aria-hidden="true"><i></i><i></i><i class="a"></i><i></i></div>
-  <p class="loader-stuck">Sound Box didn’t start. Check the connection, then <button type="button" class="primary" onclick="location.reload()">Reload</button></p>
+  <p class="loader-msg" id="loaderSlow" hidden>Taking longer than usual… <button type="button" class="primary" onclick="location.reload()">Reload</button></p>
+  <p class="loader-msg" id="loaderFail" hidden>Sound Box didn’t start. Check the connection, then <button type="button" class="primary" onclick="location.reload()">Reload</button></p>
 </div>
 <script>
-// Still loading after 12 s (offline on a new version), or an error while starting: offer a reload.
-// Not while the first-visit grade question is waiting for a tap.
+// Still loading after 12 s: keep waiting, but offer a reload (not while the first-visit grade
+// question waits for a tap). An error from the app's own scripts while loading: it didn't start.
+// The messages are hidden in the markup, not just by styles.css, so an old cached stylesheet
+// can't leave them showing.
 (function () {
   var h = document.documentElement;
-  function stuck() { if (h.classList.contains("loading")) h.classList.add("stuck"); }
+  function show(id) { if (!h.classList.contains("loading")) return; document.getElementById(id).hidden = false; if (id === "loaderFail") { h.classList.add("stuck"); document.getElementById("loaderSlow").hidden = true; } }
   function later() {
     if (!h.classList.contains("loading")) return;
     var ask = document.getElementById("gradeAsk");
-    if (ask && !ask.hidden) setTimeout(later, 12000); else stuck();
+    if (ask && !ask.hidden) setTimeout(later, 12000); else show("loaderSlow");
   }
   setTimeout(later, 12000);
-  window.addEventListener("error", stuck);
-  window.addEventListener("unhandledrejection", stuck);
+  window.addEventListener("error", function (e) { if (e.filename && e.filename.indexOf(location.origin) === 0) show("loaderFail"); });
 })();
 </script>
 <div class="wrap">

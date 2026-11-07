@@ -161,7 +161,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 
 - `index.html`: markup only (board, clue bar, letter pad, settings sheet). It starts as `html.loading`:
   only the title and a loader of four hopping boxes show until `app.js` has drawn the first puzzle and
-  removes the class (or hits the load error); after 12 s still loading, the loader offers Reload (`html.stuck`).
+  removes the class (`appReady`; also on the load error); after 12 s still loading it offers Reload while it
+  keeps waiting, and an error from the app's own scripts while loading says it didn't start (`html.stuck`).
 - The app icon: a crossing of sound boxes with the empty orange box and sound waves.
   `design/icon/` holds its source (not deployed): flat SVG layers made by `make.py`, and
   `full.icon`, the Icon Composer design (blue, with dark and tinted versions).

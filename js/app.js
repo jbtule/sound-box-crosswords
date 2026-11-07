@@ -156,7 +156,12 @@ function homeScreenEdition(e) {
 }
 
 // index.html starts as html.loading (a loader instead of the half-built page); this shows the app.
-function appReady() { var h = document.documentElement; if (h.classList.contains("loading")) h.classList.add("loaded"); h.classList.remove("loading", "stuck"); }
+function appReady() {
+  var h = document.documentElement, loader = document.getElementById("loader");
+  if (h.classList.contains("loading")) h.classList.add("loaded");
+  h.classList.remove("loading", "stuck");
+  if (loader) loader.hidden = true; // gone even if an old cached styles.css doesn't know .loader
+}
 var PACKS, DEFAULT_CUSTOM, EDITIONS, EDITION;
 try {
   // Imported here, not at the top: words.js pulls in the TOML parser from the CDN, and a

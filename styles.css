@@ -67,17 +67,17 @@ button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 /* Loading: until app.js draws the first puzzle, only the title shows, over four boxes hopping
-   in turn; after 12 s without that, a reload button instead (the script in index.html). */
+   in turn (index.html's loader; its messages and script are there too). */
 .loader { display: none; }
-html.loading .wrap > :not(.top) { visibility: hidden; }
+html.loading .wrap > :not(.top), html.loading .top-buttons { visibility: hidden; }
 html.loading .loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; position: fixed; inset: 0; z-index: 20; pointer-events: none; }
+html.loading body:has(#gradeAsk:not([hidden])) .loader { display: none; } /* not behind the first-visit grade question */
 .loader-boxes { display: flex; gap: 6px; }
 .loader-boxes i { width: 26px; height: 26px; border: 2px solid var(--cell-edge); background: var(--cell); border-radius: 7px; animation: loader-hop 1.1s ease-in-out infinite; }
 .loader-boxes i:nth-child(2) { animation-delay: 0.12s; } .loader-boxes i:nth-child(3) { animation-delay: 0.24s; } .loader-boxes i:nth-child(4) { animation-delay: 0.36s; }
 .loader-boxes i.a { border-color: var(--accent); background: var(--accent-soft); }
 @keyframes loader-hop { 0%, 55%, 100% { transform: translateY(0); } 25% { transform: translateY(-12px); } }
-.loader-stuck { display: none; margin: 0; color: var(--muted); text-align: center; pointer-events: auto; }
-html.stuck .loader-stuck { display: block; }
+.loader-msg { margin: 0; padding: 0 16px; color: var(--muted); text-align: center; pointer-events: auto; }
 html.stuck .loader-boxes { display: none; }
 html.loaded .wrap { animation: app-in 0.25s ease-out; } /* fades in once, when the loader clears (not on the listen check) */
 @keyframes app-in { from { opacity: 0.4; } to { opacity: 1; } }
@@ -395,7 +395,7 @@ textarea { width: 100%; min-height: 170px; border: 1.5px solid var(--key-edge); 
 #saveMsg { font-size: 0.88rem; color: var(--ok); }
 
 @media (prefers-reduced-motion: reduce) {
-  .cell.wiggle, .cell.pop, .cell.quip, .loader-boxes i, .wrap { animation: none; }
+  .cell.wiggle, .cell.pop, .cell.quip, .loader-boxes i, html.loaded .wrap { animation: none; }
   .cell.beat { transform: none; }
   .cell, .key, .progress .fill, .keyboard { transition: none; }
   .toast.show, .award-card.pop, .secret-pill.show, .keyboard.rise, .scan-got span, #receiveBox.arrive-in { animation: none; }
