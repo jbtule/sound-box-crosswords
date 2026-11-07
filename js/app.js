@@ -665,7 +665,13 @@ function complete(i, typed) {
   renderProgress();
   var both = W.cells.map(settleCrossings).some(Boolean); // its letters may have finished a crossing word
   if (both && typed) pz.twofer = true;
-  if (Object.keys(doneW).length === P.words.length) { setTimeout(finish, 700); return; }
+  if (Object.keys(doneW).length === P.words.length) {
+    // The celebration (card, chime, "You solved it!") waits for a quip on the last word, plus a beat.
+    var solved = P;
+    if (quip) quip.then(function () { setTimeout(function () { if (P === solved) finish(); }, QUIP_BEAT); });
+    else setTimeout(finish, 700);
+    return;
+  }
   if (i === cur) {
     var nx = nextUnfinished(), next = function () { if (!finished && doneW[cur]) select(nx, null, true); };
     // After a quip, the next clue waits for it to end and a beat more, so they don't run together.
