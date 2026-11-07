@@ -1917,14 +1917,20 @@ export function playEntrance(id, g, opts) {
 // row. `state` is what the last call returned ({ every, premium, n, last }, saved per edition);
 // entrances added or removed in an update are handled when the queues are read.
 export var PREMIUM_EVERY = 5;
-// `seen`: entrances seen to the end so far (Front Row Seat's list). When a queue is reshuffled,
-// the ones not seen yet go first, so new entrances (added in an update) come up before any repeat.
+// `seen`: entrances seen to the end so far (Front Row Seat's list). The ones not seen yet always
+// play next in their kind (and first after a reshuffle), so new entrances come up before any repeat.
 export function nextEntrance(state, seen) {
   var st = state || {}, s = { n: (st.n || 0) + 1, last: st.last || null };
   var premium = s.n % PREMIUM_EVERY === 0, kinds = { every: false, premium: true };
   Object.keys(kinds).forEach(function (kind) {
     var ids = ENTRANCES.filter(function (e) { return e.premium === kinds[kind]; }).map(function (e) { return e.id; });
     s[kind] = (st[kind] || []).filter(function (id) { return ids.indexOf(id) >= 0; }); // what's left to play
+    // Any not seen yet go to the front now, not only at the next reshuffle: a queue left over from
+    // before an update would otherwise play out its already-seen ones first (premium only every 5th).
+    if (seen && s[kind].length) {
+      var unseen = shuffle(ids.filter(function (id) { return seen.indexOf(id) < 0 && id !== s.last; }));
+      s[kind] = unseen.concat(s[kind].filter(function (id) { return unseen.indexOf(id) < 0; }));
+    }
     if (!s[kind].length && (kind === "premium") === premium) {
       var q;
       var fresh = ids.filter(function (id) { return !seen || seen.indexOf(id) < 0; }), old = ids.filter(function (id) { return fresh.indexOf(id) < 0; });
