@@ -64,7 +64,7 @@ var clips = {}, splits = {}, clipBase = "", player = null, finishClip = null;
 var queue = Promise.resolve(), epoch = 0;
 // The device-voice rate each kind's recording corresponds to. A slower requested rate
 // (Hear it) plays the clip slightly slower; never faster than recorded.
-var NORMAL = { w: 0.85, s: 0.7, t: 0.9, p: 0.95, f: 1 };
+var NORMAL = { w: 0.85, s: 0.7, t: 0.9, p: 0.95, f: 1, q: 1 };
 var clipsReady = [];
 
 (function loadClips() {

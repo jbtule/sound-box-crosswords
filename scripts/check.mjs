@@ -239,9 +239,9 @@ const ABBREV = new Set(["mit", "bih", "uhn", "uhb", "ca", "tle", "ril", "ple", "
   "jan", "feb", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec", "st", "dr", "mr", "mrs", "ms",
   "ft", "pt", "gal", "oz", "lb", "km", "cm", "mm", "sec", "hr", "est", "etc", "vs", "inc", "ltd", "corp", "dept", "ave",
   "blvd", "rd", "ref", "pg", "pp", "ch", "fig", "govt", "approx", "misc", "gen", "lt", "sgt", "capt", "col", "jr", "sr"]);
-// word, then optional emoji (none = listen-only), (sounds) hint, "context sentence", and
-// {its sounds} for Sound it out.
-const LINE = /^([a-z][a-z']*(?:-[a-z']+)*)(?: +([^\s("{]\S*))?(?: +\(([^)]*)\))?(?: +"([^"]+)")?(?: +\{([^}]*)\})?$/;
+// word, then optional emoji (none = listen-only), (sounds) hint, "context sentence",
+// {its sounds} for Sound it out, and ~"a quip".
+const LINE = /^([a-z][a-z']*(?:-[a-z']+)*)(?: +([^\s("{~]\S*))?(?: +\(([^)]*)\))?(?: +"([^"]+)")?(?: +\{([^}]*)\})?(?: +~"([^"]+)")?$/;
 const { parseSounds } = await import("../js/phonics.js");
 // Every entry of every word, to compare across lists below: { id, differs, fields }.
 const entries = {};
@@ -266,7 +266,9 @@ for (const { id, text, custom, sio } of lists) {
     if (!m) { errors.push(`${id}: "${line}" should look like "syl-la-bles 🙂"`); differs = null; continue; }
     const w = m[1].replace(/-/g, "");
     // Sounds only matter in editions with Sound it out; elsewhere they're never compared.
-    (entries[w] ??= []).push({ id, differs, fields: [m[1], m[2] ?? "", m[3] ?? "", m[4] ?? "", sio ? m[5] ?? "" : null] });
+    (entries[w] ??= []).push({ id, differs, fields: [m[1], m[2] ?? "", m[3] ?? "", m[4] ?? "", sio ? m[5] ?? "" : null, m[6] ?? ""] });
+    // A quip: a few words (5 at most), said after the word now and then.
+    if (m[6] != null && m[6].trim().split(/\s+/).length > 5) errors.push(`${id}: "${w}" quip is more than 5 words: "${m[6]}"`);
     differs = null;
     if (w.length < 2 || w.length > 12) errors.push(`${id}: "${w}" must be 2–12 letters`);
     if (seen.has(w)) errors.push(`${id}: "${w}" is listed twice`);
@@ -315,7 +317,7 @@ for (const { id, text, custom, sio } of lists) {
 // recording and one listen mark serve them all. When one should differ (a shorter sentence
 // for a younger grade, a sight word with no sounds, a sentence that would give away a word
 // in its own pack), put "# differs: <why>" on the line above it.
-const FIELDS = ["syllables", "picture", "hint", "sentence", "sounds"];
+const FIELDS = ["syllables", "picture", "hint", "sentence", "sounds", "quip"];
 const unlike = (a, b) => FIELDS.filter((_, i) => a.fields[i] !== null && b.fields[i] !== null && a.fields[i] !== b.fields[i]);
 for (const [w, list] of Object.entries(entries)) {
   const plain = list.filter((e) => !e.differs);

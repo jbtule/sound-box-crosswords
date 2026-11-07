@@ -15,7 +15,7 @@ import { parseList, clipsFor } from "../js/crossword.js";
 var $ = function (s) { return document.querySelector(s); };
 var REPO = "https://github.com/jbtule/sound-box-crosswords";
 var LIVE = "https://tools.tuley.name/sound-box-crosswords/";
-var KIND = { w: "Word", s: "Syllable", t: "Sentence", p: "Phrase", f: "Sound", sio: "Sound it out" };
+var KIND = { w: "Word", s: "Syllable", t: "Sentence", p: "Phrase", f: "Sound", sio: "Sound it out", q: "Quip" };
 var SIO_GAP = 300; // ms between sounds, as in the app's soundOut()
 var STORE = "sbx:listen";
 

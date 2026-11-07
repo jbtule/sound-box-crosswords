@@ -51,7 +51,7 @@ var store = storage(function () { return PREFIX; });
 var PROFILES = [], PROFILE = "default";
 // Everything a profile keeps in each grade, and of its own.
 var GRADE_KEYS = ["progress", "log", "counts", "days", "achievements", "slips", "stars", "guessing", "seenEntrances", "settings", "custom",
-  "puzzle", "pending", "entranceQueue", "entranceDue", "pack", "entrances", "syncBase"];
+  "puzzle", "pending", "entranceQueue", "entranceDue", "pack", "entrances", "syncBase", "quipAt"];
 var OWN_KEYS = ["edition", "linkKey", "syncedAt"];
 function loadProfiles() {
   PROFILES = device.get("profiles", null) || [];
@@ -637,6 +637,7 @@ function complete(i, typed) {
   var W = P.words[i];
   W.cells.forEach(function (c, j) { fill[c] = W.w[j]; locked[c] = true; setTimeout(function () { flash(c, "pop"); }, j * 60); });
   say("w", W.w, 0.9);
+  var quip = typed ? maybeQuip(W) : null; // now and then, a quip after the word
   var pp = packProgress(packId);
   pp.done[W.w] = true;
   if (typed) {
@@ -657,9 +658,26 @@ function complete(i, typed) {
   if (both && typed) pz.twofer = true;
   if (Object.keys(doneW).length === P.words.length) { setTimeout(finish, 700); return; }
   if (i === cur) {
-    var nx = nextUnfinished();
-    setTimeout(function () { if (!finished && doneW[cur]) select(nx, null, true); }, 900);
+    var nx = nextUnfinished(), next = function () { if (!finished && doneW[cur]) select(nx, null, true); };
+    // After a quip, the next clue waits for it to end and a beat more, so they don't run together.
+    if (quip) quip.then(function () { setTimeout(next, QUIP_BEAT); });
+    else setTimeout(next, 900);
   }
+}
+// Quips: a word list can give a word a short line (~"Bock bock!"), said in another voice
+// (Bella; build.mjs) after the word is spelled, while its boxes give a little hop. Rare on
+// purpose, so it stays a surprise: with auto-speak on, at most one a puzzle, only once a few
+// minutes and a finished puzzle have passed since the last, and then only on a roll of the dice.
+var QUIP_BEAT = 350, QUIP_GAP = 3 * 60 * 1000, QUIP_CHANCE = 0.6;
+function maybeQuip(W) {
+  if (!W.quip || !settings.speakSel || pz.quipped) return null;
+  var last = store.get("quipAt", null);
+  if (last && (Date.now() - last.t < QUIP_GAP || log.length === last.n)) return null;
+  if (Math.random() > QUIP_CHANCE) return null;
+  pz.quipped = true; store.set("quipAt", { t: Date.now(), n: log.length });
+  sayAfter(function () { return new Promise(function (r) { setTimeout(r, QUIP_BEAT); }); }); // a beat after the word
+  sayAfter(function () { W.cells.forEach(function (c, j) { setTimeout(function () { flash(c, "quip", 600); }, j * 40); }); });
+  return say("q", W.quip);
 }
 function finish() {
   if (finished) return;

@@ -30,7 +30,10 @@ export const VOICE = "af_heart";
 // Kokoro speed per kind of clip: w = word, s = Break it down syllable, t = context sentence,
 // p = fixed phrase, f = a single sound for Sound it out (its recipe sets its own speed).
 // js/speech.js uses the same kind letters.
-export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95, f: 0.8 };
+export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95, f: 0.8, q: 1.0 };
+// q = a quip after a word ("Bock bock!"): said in its own voice, so it's never taken for a clue.
+const VOICE_FOR = { q: "af_bella" };
+const voiceOf = (kind) => VOICE_FOR[kind] ?? VOICE;
 export const PHRASES = ["You solved it!", "Way to go!"];
 // Clips that sound wrong at their kind's speed, picked by ear. At 0.9 the cut "shore"
 // sounds like "sure".
@@ -38,7 +41,7 @@ const SPEED_FOR = { "w:shore": 0.8, "p:New achievement!": 1.0, "p:Secret achieve
 const ENCODING = "mp3-64k-mono-trim-v1"; // bump to regenerate every clip
 // How generate.py renders each kind: "cut" says the word inside a phrase and cuts it out
 // (single words and syllables mispronounce alone); "text" says the text as is.
-export const METHOD = { w: "cut", s: "cut", t: "text", p: "text", f: "sound" };
+export const METHOD = { w: "cut", s: "cut", t: "text", p: "text", f: "sound", q: "text" };
 const CUT = "cut-next-v1"; // bump when the cut method changes
 // Clips made another way, picked by ear: "lively" says the line in the voice style Kokoro
 // uses for long sentences, which sounds more excited ("New achievement!").
@@ -83,7 +86,7 @@ export function keyFor(kind, text) {
     return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "blend", STOPS.includes(b) ? BLEND_STOP_RECIPE : BLEND_RECIPE, recipeOf(a), recipeOf(b), text])).digest("hex").slice(0, 20);
   }
   if (kind === "f") return createHash("sha256").update(JSON.stringify([MODEL, VOICE, ENCODING, "sound", recipeOf(text), text])).digest("hex").slice(0, 20);
-  const parts = [MODEL, VOICE, speedOf(kind, text), ENCODING];
+  const parts = [MODEL, voiceOf(kind), speedOf(kind, text), ENCODING];
   const method = methodOf(kind, text);
   if (method === "cut") parts.push(CUT); // "text" clips keep their original keys
   if (method === "lively") parts.push(LIVELY);
@@ -104,7 +107,7 @@ export function planClips() {
   const clips = new Map();
   const add = (kind, text) => {
     const id = kind + ":" + text;
-    if (!clips.has(id)) clips.set(id, { id, key: keyFor(kind, text), kind, text, speed: speedOf(kind, text), voice: VOICE, method: methodOf(kind, text) });
+    if (!clips.has(id)) clips.set(id, { id, key: keyFor(kind, text), kind, text, speed: speedOf(kind, text), voice: voiceOf(kind), method: methodOf(kind, text) });
   };
   for (const list of lists) {
     for (const e of parseList(list)) {
