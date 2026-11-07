@@ -292,7 +292,7 @@ function newPuzzle(solved) {
   recent = P.words.map(function (p) { return p.w; }).concat(recent).slice(0, 8);
   renderBoard();
   renderClues();
-  select(order()[0], null, false);
+  settingUp = true; select(order()[0], null, false); settingUp = false;
   // Only finishing a puzzle moves on to the next entrance. Remembered (entranceDue) until it
   // plays, so an update's reload between the solve and the new puzzle doesn't lose the turn.
   var turn = solved === true || store.get("entranceDue", false) === true;
@@ -351,10 +351,14 @@ if ((function () {
 }
 function dismissStart() { if (!$("#startOverlay").hidden) { $("#startOverlay").hidden = true; started = true; } }
 // Brings the whole puzzle card into view for an entrance (its top, if it's taller than the screen).
+// One scroll to an exact spot, worked out here: the card's top 12px below the screen's top, or if it
+// fits and is cut off below, its bottom 12px above the screen's bottom.
+var settingUp = false;
 function showBoardCard() {
-  var card = board.parentElement, r = card.getBoundingClientRect();
-  if (r.top >= 0 && r.bottom <= window.innerHeight) return;
-  card.scrollIntoView({ block: r.height <= window.innerHeight - 24 ? "nearest" : "start", behavior: "smooth" });
+  var card = board.parentElement, r = card.getBoundingClientRect(), vh = window.innerHeight, gap = 12;
+  if (r.top >= 0 && r.bottom <= vh) return;
+  var dy = r.top < 0 || r.height > vh - 2 * gap ? r.top - gap : r.bottom - vh + gap;
+  window.scrollTo({ top: Math.max(0, window.scrollY + dy), behavior: reducedMotion() ? "auto" : "smooth" });
 }
 // Pins the letter pad again once neither reason to unpin it (resting, asleep) is left; if it wasn't
 // all on screen, it rises in from the bottom rather than popping up.
@@ -462,8 +466,10 @@ function update() {
     el.classList.toggle("cursor", idx === pos && !finished);
   });
   // Keep the box being typed into on screen (and out from behind the floating pad).
+  // (Not while a new puzzle is set up: its entrance scrolls the whole card instead, and two smooth
+  // scrolls at once could leave Safari part way.)
   var cursorEl = board.querySelector(".cell.cursor");
-  if (cursorEl) cursorEl.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
+  if (cursorEl && !settingUp) cursorEl.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" });
   setPic($("#pic"), W.pic);
   $("#clueLabel").textContent = W.num + (W.dir === "A" ? " Across" : " Down");
   var n = W.chunks.length;
