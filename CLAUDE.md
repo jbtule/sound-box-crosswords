@@ -197,7 +197,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   files are network first (4 s, then the saved copy); `?v=` files, the CDN parser, fonts
   and audio clips are saved copy first. Clips are answered by byte range (Safari's
   `<audio>` asks for ranges). Registered by `app.js`, but not on localhost, so local
-  edits always show.
+  edits always show. In the Home Screen app, `saveGradeAudio` (`app.js`) sends it the
+  whole grade's clips (every pack but Custom, the phrases, and the sounds and blends where Sound it
+  out is on; `clipUrls` in `speech.js`) 8 s after launch or after coming back online; it saves
+  them one at a time with a short pause (`saveGently`: one run at a time, up to 4 minutes),
+  skipping saved ones, so offline play keeps the recorded voice. About 2–3 MB a grade.
 - Updates in a home-screen app: it usually resumes rather than relaunching, so on each
   return to the screen `app.js` compares its `?v=` stamp with the live page's and
   reloads unless a sheet or popup is open (the puzzle in progress is saved and comes back),
