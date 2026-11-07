@@ -80,8 +80,6 @@ html.loading body:has(#gradeAsk:not([hidden])) .loader { display: none; } /* not
 .loader-msg { margin: 0; padding: 0 16px; color: var(--muted); text-align: center; pointer-events: auto; }
 html.stuck .loader-boxes { display: none; }
 html.loading.stuck .top-buttons { visibility: visible; } /* didn't start: More stays reachable (Start over) */
-html.loaded .wrap { animation: app-in 0.25s ease-out; } /* fades in once, when the loader clears (not on the listen check) */
-@keyframes app-in { from { opacity: 0.4; } to { opacity: 1; } }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 h1 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; line-height: 1.1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
 h1 span { color: var(--accent); }
@@ -396,7 +394,7 @@ textarea { width: 100%; min-height: 170px; border: 1.5px solid var(--key-edge); 
 #saveMsg { font-size: 0.88rem; color: var(--ok); }
 
 @media (prefers-reduced-motion: reduce) {
-  .cell.wiggle, .cell.pop, .cell.quip, .loader-boxes i, html.loaded .wrap { animation: none; }
+  .cell.wiggle, .cell.pop, .cell.quip, .loader-boxes i { animation: none; }
   .cell.beat { transform: none; }
   .cell, .key, .progress .fill, .keyboard { transition: none; }
   .toast.show, .award-card.pop, .secret-pill.show, .keyboard.rise, .scan-got span, #receiveBox.arrive-in { animation: none; }
