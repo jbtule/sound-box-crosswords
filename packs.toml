@@ -68,14 +68,14 @@ un-hurt (un-hurt) "He fell off his bike but was unhurt." ~"Phew!"
 ob-serve (ub-zurv) "We observe the ants with a magnifying glass."
 ex-it (eggs-it) "When the movie ended, we left through the exit." ~"Stage left!"
 stomp "The elephants stomp through the mud."
-chick-en 🐔 (chick-in)
+chick-en 🐔 (chick-in) ~"Jockey!"
 pub-lish (pub-lish) "Our class will publish a book of poems."
 pan-ic 😱 (pan-ikk) ~"Everybody stay calm!"
 these "These shoes are too small for me."
 don't "Please don't forget your lunch."
 on-ly (own-lee) "I could find only one sock."
 those "Those birds are flying south for the winter."
-done "I am done with my homework."
+done "I am done with my homework." ~"Keep going!"
 """
 
 [[pack]]
@@ -114,7 +114,7 @@ words = """
 frog 🐸
 flag 🚩
 drum 🥁
-crab 🦀
+crab 🦀 ~"Don't pinch me!"
 sled 🛷
 clock 🕰️
 swan 🦢
@@ -160,7 +160,7 @@ worm 🪱
 arm 💪
 jar 🫙
 tur-tle 🐢 (turr-tull) ~"Slow and steady."
-bur-ger 🍔 (burr-gur)
+bur-ger 🍔 (burr-gur) ~"No pickles, please."
 """
 
 [[pack]]
@@ -180,21 +180,21 @@ car-rot 🥕 (care-rut)
 kit-ten 🐈 (kit-ten)
 pop-corn 🍿 (pop-corn)
 pen-cil ✏️ (pen-sull)
-rock-et 🚀 (rock-it)
+rock-et 🚀 (rock-it) ~"Lift off!"
 cac-tus 🌵 (kack-tus) ~"No hugs."
 can-dle 🕯️ (kan-dull)
 win-dow 🪟 (win-doe)
 sand-wich 🥪 (sand-witch)
 drag-on 🐉 (drag-un) ~"Toasty."
-hel-met ⛑️ (hel-mitt)
+hel-met ⛑️ (hel-mitt) ~"Safety first!"
 but-ton 🔘 (but-tun)
 pan-da 🐼 (pan-duh)
 ze-bra 🦓 (zee-bruh)
 liz-ard 🦎 (liz-erd)
 spi-der 🕷️ (spy-durr) ~"Eight legs, no shoes."
 mon-key 🐒 (mun-key)
-chick-en 🐔 (chick-in)
-cup-cake 🧁 (cup-cake)
+chick-en 🐔 (chick-in) ~"Jockey!"
+cup-cake 🧁 (cup-cake) ~"Yum!"
 snow-man ⛄ (snow-man) ~"I want to build one."
 """
 
@@ -206,14 +206,14 @@ words = """
 oc-to-pus 🐙 (ock-tuh-puss)
 ba-nan-a 🍌 (buh-nan-uh)
 but-ter-fly 🦋 (but-ter-fly)
-di-no-saur 🦕 (die-nuh-sore)
+di-no-saur 🦕 (die-nuh-sore) ~"My favorite is velociraptor."
 kan-ga-roo 🦘 (kang-guh-roo)
 el-e-phant 🐘 (ell-uh-fant) ~"Never forgets."
 to-ma-to 🍅 (tuh-may-toe)
 com-put-er 💻 (kum-pewt-urr) ~"Beep. Rebooting."
 um-brel-la ☂️ (um-brell-luh)
 ham-bur-ger 🍔 (ham-burr-gur)
-broc-co-li 🥦 (brock-kuh-lee)
+broc-co-li 🥦 (brock-kuh-lee) ~"Make sure you eat it!"
 vol-ca-no 🌋 (vahl-kay-no)
 tel-e-scope 🔭 (tell-uh-scope)
 la-dy-bug 🐞 (lay-dee-bug)

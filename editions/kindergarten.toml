@@ -14,7 +14,7 @@ cat 🐈 {c a t} ~"Purrrr-fect."
 dog 🐕 {d o g}
 pig 🐖 {p i g}
 sun ☀️ {s u n}
-bus 🚌 {b u s}
+bus 🚌 {b u s} ~"Beep! Beep!"
 bed 🛏️ {b e d}
 map 🗺️ {m a p}
 fox 🦊 {f o x}
@@ -79,11 +79,11 @@ can "I can jump high."
 is "The sky is blue."
 she "She can see the dog."
 come "Come to my house." ~"Coming!"
-jump "Frogs can jump high."
+jump "Frogs can jump high." ~"How high?"
 look "Look at the moon!" ~"Over there!"
 me "Read a book to me."
 play "Let's play a game." ~"Tag, you're it!"
-want "I want a snack, please."
+want "I want a snack, please." ~"What's the magic word?"
 you "I love you." ~"Me?"
 """
 
@@ -99,7 +99,7 @@ fish 🐟 {f i sh}
 shell 🐚 {sh e ll}
 chick 🐤 {ch i ck}
 check ✔️ {ch e ck}
-chess ♟️ {ch e ss}
+chess ♟️ {ch e ss} ~"Checkmate!"
 bath 🛁 {b a th}
 duck 🦆 {d u ck}
 sock 🧦 {s o ck} ~"Where's the other one?"
@@ -115,7 +115,7 @@ name = "Blends"
 note = "Two sounds slide together at the start. Say every sound, and give each a box."
 words = """
 frog 🐸 {f r o g}
-crab 🦀 {c r a b}
+crab 🦀 {c r a b} ~"Don't pinch me!"
 flag 🚩 {f l a g}
 drum 🥁 {d r u m}
 swim 🏊 {s w i m}
@@ -156,12 +156,12 @@ name = "Compound Words"
 note = "Two small words make one big word. Keep every sound of both!"
 hard = true
 words = """
-cup-cake 🧁 (cup-cake)
+cup-cake 🧁 (cup-cake) ~"Yum!"
 pop-corn 🍿 (pop-corn)
 snow-man ⛄ (snow-man) ~"I want to build one."
 cow-boy 🤠 (cow-boy) ~"Yee haw!"
 sun-set 🌅 (sun-set)
-rain-bow 🌈 (rain-bow)
+rain-bow 🌈 (rain-bow) ~"Ooh, pretty!"
 foot-ball 🏈 (foot-ball)
 base-ball ⚾ (base-ball)
 sail-boat ⛵ (sail-boat)
