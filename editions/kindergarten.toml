@@ -83,7 +83,7 @@ jump "Frogs can jump high."
 look "Look at the moon!"
 me "Read a book to me."
 play "Let's play a game."
-want "I want a snack."
+want "I want a snack, please."
 you "I love you."
 """
 
