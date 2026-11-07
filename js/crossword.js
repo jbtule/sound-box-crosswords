@@ -31,6 +31,9 @@ export function parseList(text) {
       var ps = parseSounds(braces[1], w);
       if (ps.segs) sounds = ps.segs;
     }
+    // ~"Bock bock!": a quip, said now and then after the word is spelled (app.js).
+    var quip = "", q = rest.match(/~\s*"([^"]*)"/);
+    if (q) { quip = q[1].trim(); rest = rest.replace(q[0], " "); }
     var quote = rest.match(/"([^"]*)"/);
     if (quote) { sentence = quote[1].trim(); rest = rest.replace(quote[0], " "); }
     var hint = rest.match(/\(([^)]*)\)/);
@@ -39,19 +42,20 @@ export function parseList(text) {
       say = hint[1].split("-").map(function (s) { return s.trim(); });
       if (say.length !== syll.split("-").length || say.some(function (s) { return !s; })) say = null;
     }
-    out.push({ syll: syll, w: w, pic: rest.trim().split(/\s+/)[0] || "", say: say, sentence: sentence, sounds: sounds });
+    out.push({ syll: syll, w: w, pic: rest.trim().split(/\s+/)[0] || "", say: say, sentence: sentence, sounds: sounds, quip: quip });
   });
   return out;
 }
 
 // The recordings one word needs, in play order: the word, each Break it down syllable
-// (its how-it-sounds hint when there is one), and the context sentence. Used by
+// (its how-it-sounds hint when there is one), the context sentence, and its quip. Used by
 // scripts/audio/build.mjs to make them and by listen/ to check them.
 export function clipsFor(e) {
   var out = [{ kind: "w", text: e.w }];
   var syll = e.syll.split("-");
   if (syll.length > 1) (e.say || syll).forEach(function (s, i) { out.push({ kind: "s", text: s, part: syll[i] }); });
   if (e.sentence) out.push({ kind: "t", text: e.sentence });
+  if (e.quip) out.push({ kind: "q", text: e.quip });
   return out;
 }
 
@@ -93,7 +97,7 @@ function tryBuild(first, rest, target) {
       grid[kk] = e.w[k];
       dirUse[kk] = dirUse[kk] || {}; dirUse[kk][dir] = 1;
     }
-    placed.push({ w: e.w, syll: e.syll, pic: e.pic, say: e.say, sentence: e.sentence, sounds: e.sounds, r: r, c: c, dir: dir });
+    placed.push({ w: e.w, syll: e.syll, pic: e.pic, say: e.say, sentence: e.sentence, sounds: e.sounds, quip: e.quip, r: r, c: c, dir: dir });
   }
   var order = shuffle(first.slice()).concat(shuffle(rest.slice()));
   put(order[0], 0, 0, Math.random() < 0.5 ? "A" : "D");
@@ -187,7 +191,7 @@ export function restorePuzzle(pool, saved) {
   for (var i = 0; i < saved.length; i++) {
     var s = saved[i], e = s && byW[s.w];
     if (!e || (s.dir !== "A" && s.dir !== "D") || !(s.r >= 0) || !(s.c >= 0)) return null;
-    placed.push({ w: e.w, syll: e.syll, pic: e.pic, say: e.say, sentence: e.sentence, sounds: e.sounds, r: s.r, c: s.c, dir: s.dir });
+    placed.push({ w: e.w, syll: e.syll, pic: e.pic, say: e.say, sentence: e.sentence, sounds: e.sounds, quip: e.quip, r: s.r, c: s.c, dir: s.dir });
   }
   var P = assemble(placed);
   for (var kk in P.cells) {

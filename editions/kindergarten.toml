@@ -10,11 +10,11 @@ id = "k-short-vowels"
 name = "Short vowels"
 note = "Three letters with a short vowel sound in the middle. Say each sound."
 words = """
-cat 🐈 {c a t}
+cat 🐈 {c a t} ~"Purrrr-fect."
 dog 🐕 {d o g}
 pig 🐖 {p i g}
 sun ☀️ {s u n}
-bus 🚌 {b u s}
+bus 🚌 {b u s} ~"Beep! Beep!"
 bed 🛏️ {b e d}
 map 🗺️ {m a p}
 fox 🦊 {f o x}
@@ -25,7 +25,7 @@ bat 🦇 {b a t}
 box 📦 {b o x}
 ten 🔟 {t e n}
 can 🥫 {c a n}
-hat 🎩 {h a t}
+hat 🎩 {h a t} ~"Looking sharp."
 """
 
 # The class's high-frequency words, one pack per list as it comes home, newest first.
@@ -46,12 +46,12 @@ for "This gift is for you."
 has "She has a red ball."
 have "I have two cats."
 he "He can run fast."
-here "Come here, puppy!"
+here "Come here, puppy!" ~"Present!"
 lit-tle (lit-tul) "A mouse is little."
 of "I want a cup of milk."
 one "I have one nose."
 put "Put on your shoes."
-said "Mom said yes."
+said "Mom said yes." ~"Says who?"
 saw "I saw a rainbow."
 this "This is my bike."
 two "I have two hands."
@@ -78,13 +78,13 @@ and "Mom and I go to the store."
 can "I can jump high."
 is "The sky is blue."
 she "She can see the dog."
-come "Come to my house."
-jump "Frogs can jump high."
-look "Look at the moon!"
+come "Come to my house." ~"Coming!"
+jump "Frogs can jump high." ~"How high?"
+look "Look at the moon!" ~"Over there!"
 me "Read a book to me."
-play "Let's play a game."
-want "I want a snack, please."
-you "I love you."
+play "Let's play a game." ~"Tag, you're it!"
+want "I want a snack, please." ~"What's the magic word?"
+you "I love you." ~"Me?"
 """
 
 # Phonics packs, in teaching order: two letters for one sound, then blends at the start,
@@ -99,10 +99,10 @@ fish 🐟 {f i sh}
 shell 🐚 {sh e ll}
 chick 🐤 {ch i ck}
 check ✔️ {ch e ck}
-chess ♟️ {ch e ss}
+chess ♟️ {ch e ss} ~"Checkmate!"
 bath 🛁 {b a th}
 duck 🦆 {d u ck}
-sock 🧦 {s o ck}
+sock 🧦 {s o ck} ~"Where's the other one?"
 lock 🔒 {l o ck}
 rock 🪨 {r o ck}
 wing 🪽 {w i ng}
@@ -115,7 +115,7 @@ name = "Blends"
 note = "Two sounds slide together at the start. Say every sound, and give each a box."
 words = """
 frog 🐸 {f r o g}
-crab 🦀 {c r a b}
+crab 🦀 {c r a b} ~"Don't pinch me!"
 flag 🚩 {f l a g}
 drum 🥁 {d r u m}
 swim 🏊 {s w i m}
@@ -123,7 +123,7 @@ sled 🛷 {s l e d}
 clap 👏 {c l a p}
 stop 🛑 {s t o p}
 plug 🔌 {p l u g}
-trap 🪤 {t r a p}
+trap 🪤 {t r a p} ~"Watch out!"
 brick 🧱 {b r i ck}
 truck 🚚 {t r u ck}
 clock 🕰️ {c l o ck}
@@ -138,7 +138,7 @@ nest 🪺 {n e s t}
 hand ✋ {h a n d}
 tent ⛺ {t e n t}
 milk 🥛 {m i l k}
-gift 🎁 {g i f t}
+gift 🎁 {g i f t} ~"Is that for me?"
 fist ✊ {f i s t}
 camp 🏕️ {c a m p}
 vest 🦺 {v e s t}
@@ -156,12 +156,12 @@ name = "Compound Words"
 note = "Two small words make one big word. Keep every sound of both!"
 hard = true
 words = """
-cup-cake 🧁 (cup-cake)
+cup-cake 🧁 (cup-cake) ~"Yum!"
 pop-corn 🍿 (pop-corn)
-snow-man ⛄ (snow-man)
-cow-boy 🤠 (cow-boy)
+snow-man ⛄ (snow-man) ~"I want to build one."
+cow-boy 🤠 (cow-boy) ~"Yee haw!"
 sun-set 🌅 (sun-set)
-rain-bow 🌈 (rain-bow)
+rain-bow 🌈 (rain-bow) ~"Ooh, pretty!"
 foot-ball 🏈 (foot-ball)
 base-ball ⚾ (base-ball)
 sail-boat ⛵ (sail-boat)

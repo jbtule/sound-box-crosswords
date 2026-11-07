@@ -415,6 +415,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     listening in between (Hear it, Break it down, Sound it out or the picture clear the count,
     `listened`), says "Slow down and sound it out." and pauses the letter pad for a second
     (`.paused`), once per word. Counted in `sbx:guessing` for Stats. `GUESSES` / `PAD_PAUSE` tune it.
+  - Quips (`maybeQuip`): a word list can give a word a short line, `~"No hugs."` last on its line
+    (5 words at most; never shown). After the word is spelled (typed, not finished by a crossing),
+    it's said in another voice (Bella, `VOICE_FOR` in `build.mjs`, kind `q`) a beat later
+    (`QUIP_BEAT`) while the word's boxes hop (`.cell.quip`), and the next clue waits for it to end.
+    Rare on purpose: with auto-speak on, at most one a puzzle, only after `QUIP_GAP` and a finished
+    puzzle since the last (`quipAt`), then a roll (`QUIP_CHANCE`).
   - `input` / `checkWord` / `complete` / `settleCrossings`: whole-word checking only. Letters
     are accepted until the word is full; then wrong letters flash and clear. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck

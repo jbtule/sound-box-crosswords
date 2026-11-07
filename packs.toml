@@ -23,6 +23,9 @@
 #               Spoken for context (word, sentence, word), which also tells homophones
 #               apart: their "The kids hung their coats on the hooks."
 #               Also shown with the word as a blank, so don't use other words from the pack.
+#     ~"quip"   Optional, last on the line: a few words (5 at most) said in another voice
+#               after the word is spelled, now and then, for a chuckle: cactus ~"No hugs."
+#               Never shown, so it can say anything; keep it short and not babyish.
 #
 #   {sounds}  optional, last on the line: the word's sounds for Sound it out (editions with
 #               sound_it_out), letters grouped by sound: cat 🐈 {c a t}, ship 🚢 {sh i p},
@@ -59,20 +62,20 @@ more ➕
 ex-plore 🧭 (ex-plore)
 u-ni-form (you-nih-form) "She wears her uniform to soccer practice."
 third 🥉
-germs 🦠
+germs 🦠 ~"Wash your hands!"
 burn-ing 🔥 (burn-ing)
-un-hurt (un-hurt) "He fell off his bike but was unhurt."
+un-hurt (un-hurt) "He fell off his bike but was unhurt." ~"Phew!"
 ob-serve (ub-zurv) "We observe the ants with a magnifying glass."
-ex-it (eggs-it) "When the movie ended, we left through the exit."
+ex-it (eggs-it) "When the movie ended, we left through the exit." ~"Stage left!"
 stomp "The elephants stomp through the mud."
-chick-en 🐔 (chick-in)
+chick-en 🐔 (chick-in) ~"Jockey!"
 pub-lish (pub-lish) "Our class will publish a book of poems."
-pan-ic 😱 (pan-ikk)
+pan-ic 😱 (pan-ikk) ~"Everybody stay calm!"
 these "These shoes are too small for me."
 don't "Please don't forget your lunch."
 on-ly (own-lee) "I could find only one sock."
 those "Those birds are flying south for the winter."
-done "I am done with my homework."
+done "I am done with my homework." ~"Keep going!"
 """
 
 [[pack]]
@@ -88,10 +91,10 @@ mis-read (miss-reed) "Try not to misread the sign on the door."
 com-pete (kum-peet) "Our teams will compete in the big race."
 light 💡
 pies 🥧
-shy 🫣
-ex-cit-ed 🤩 (ex-site-edd)
+shy 🫣 ~"Um... hi."
+ex-cit-ed 🤩 (ex-site-edd) ~"Can't. Sit. Still."
 sun-shine ☀️ (sun-shine)
-cow-boy 🤠 (cow-boy)
+cow-boy 🤠 (cow-boy) ~"Yee haw!"
 in-side (in-side) "It is raining, so we will play inside."
 sea-food 🦐 (sea-food)
 su-per-mar-ket 🛒 (soo-purr-mahr-kit)
@@ -111,7 +114,7 @@ words = """
 frog 🐸
 flag 🚩
 drum 🥁
-crab 🦀
+crab 🦀 ~"Don't pinch me!"
 sled 🛷
 clock 🕰️
 swan 🦢
@@ -121,7 +124,7 @@ truck 🚚
 nest 🪺
 tent ⛺
 hand ✋
-gift 🎁
+gift 🎁 ~"Is that for me?"
 milk 🥛
 drop 💧
 stop 🛑
@@ -129,7 +132,7 @@ plug 🔌
 brick 🧱
 ant 🐜
 spoon 🥄
-tree 🌳
+tree 🌳 ~"Leaf me alone."
 smile 😃
 """
 
@@ -156,8 +159,8 @@ cart 🛒
 worm 🪱
 arm 💪
 jar 🫙
-tur-tle 🐢 (turr-tull)
-bur-ger 🍔 (burr-gur)
+tur-tle 🐢 (turr-tull) ~"Slow and steady."
+bur-ger 🍔 (burr-gur) ~"No pickles, please."
 """
 
 [[pack]]
@@ -177,22 +180,22 @@ car-rot 🥕 (care-rut)
 kit-ten 🐈 (kit-ten)
 pop-corn 🍿 (pop-corn)
 pen-cil ✏️ (pen-sull)
-rock-et 🚀 (rock-it)
-cac-tus 🌵 (kack-tus)
+rock-et 🚀 (rock-it) ~"Lift off!"
+cac-tus 🌵 (kack-tus) ~"No hugs."
 can-dle 🕯️ (kan-dull)
 win-dow 🪟 (win-doe)
 sand-wich 🥪 (sand-witch)
-drag-on 🐉 (drag-un)
-hel-met ⛑️ (hel-mitt)
+drag-on 🐉 (drag-un) ~"Toasty."
+hel-met ⛑️ (hel-mitt) ~"Safety first!"
 but-ton 🔘 (but-tun)
 pan-da 🐼 (pan-duh)
 ze-bra 🦓 (zee-bruh)
 liz-ard 🦎 (liz-erd)
-spi-der 🕷️ (spy-durr)
+spi-der 🕷️ (spy-durr) ~"Eight legs, no shoes."
 mon-key 🐒 (mun-key)
-chick-en 🐔 (chick-in)
-cup-cake 🧁 (cup-cake)
-snow-man ⛄ (snow-man)
+chick-en 🐔 (chick-in) ~"Jockey!"
+cup-cake 🧁 (cup-cake) ~"Yum!"
+snow-man ⛄ (snow-man) ~"I want to build one."
 """
 
 [[pack]]
@@ -203,20 +206,20 @@ words = """
 oc-to-pus 🐙 (ock-tuh-puss)
 ba-nan-a 🍌 (buh-nan-uh)
 but-ter-fly 🦋 (but-ter-fly)
-di-no-saur 🦕 (die-nuh-sore)
+di-no-saur 🦕 (die-nuh-sore) ~"My favorite is velociraptor."
 kan-ga-roo 🦘 (kang-guh-roo)
-el-e-phant 🐘 (ell-uh-fant)
+el-e-phant 🐘 (ell-uh-fant) ~"Never forgets."
 to-ma-to 🍅 (tuh-may-toe)
-com-put-er 💻 (kum-pewt-urr)
+com-put-er 💻 (kum-pewt-urr) ~"Beep. Rebooting."
 um-brel-la ☂️ (um-brell-luh)
 ham-bur-ger 🍔 (ham-burr-gur)
-broc-co-li 🥦 (brock-kuh-lee)
+broc-co-li 🥦 (brock-kuh-lee) ~"Make sure you eat it!"
 vol-ca-no 🌋 (vahl-kay-no)
 tel-e-scope 🔭 (tell-uh-scope)
 la-dy-bug 🐞 (lay-dee-bug)
 go-ril-la 🦍 (guh-rill-luh)
 pine-ap-ple 🍍 (pine-app-pull)
-straw-ber-ry 🍓 (straw-bear-ree)
+straw-ber-ry 🍓 (straw-bear-ree) ~"Berry nice!"
 croc-o-dile 🐊 (crock-uh-dial)
 fla-min-go 🦩 (fluh-ming-go)
 pi-an-o 🎹 (pea-ann-oh)
@@ -232,7 +235,7 @@ words = """
 ad-ven-ture 🧭 (add-ven-chur) "The hike was a real adventure."
 tem-per-a-ture 🌡️ (tem-per-uh-chur)
 fur-ni-ture 🛋️ (fur-nih-chur) "Mom moved the furniture to clean the floor."
-sig-na-ture (sig-nuh-chur) "Write your signature at the bottom of the page."
+sig-na-ture (sig-nuh-chur) "Write your signature at the bottom of the page." ~"Autograph, please."
 va-ca-tion 🏖️ (vay-kay-shun) "Our family went to the beach on vacation."
 cel-e-bra-tion 🎉 (sel-uh-bray-shun)
 ad-di-tion ➕ (add-dih-shun)
@@ -240,13 +243,13 @@ sub-trac-tion ➖ (sub-trak-shun)
 ex-plo-sion 💥 (ex-plo-zhun)
 in-for-ma-tion (in-for-may-shun) "The sign had information about the park."
 veg-e-ta-ble 🥕 (vedge-uh-tuh-bul) "A carrot is a vegetable."
-in-vis-i-ble (in-viz-uh-bul) "The ghost in the story was invisible."
+in-vis-i-ble (in-viz-uh-bul) "The ghost in the story was invisible." ~"Where'd it go?"
 in-cred-i-ble (in-kred-uh-bul) "The magic show was incredible."
-a-dor-a-ble (uh-door-uh-bul) "The sleepy puppy was so adorable."
-dan-ger-ous ⚠️ (dane-jer-us) "Crossing a busy street alone is dangerous."
-de-li-cious 😋 (dih-lih-shuss) "The warm pie smelled delicious."
-mys-ter-i-ous (miss-teer-ree-us) "A mysterious box was left on the porch."
-cal-en-dar 📅 (cal-un-durr)
+a-dor-a-ble (uh-door-uh-bul) "The sleepy puppy was so adorable." ~"Ohh, stop it."
+dan-ger-ous ⚠️ (dane-jer-us) "Crossing a busy street alone is dangerous." ~"Do not try this."
+de-li-cious 😋 (dih-lih-shuss) "The warm pie smelled delicious." ~"Seconds, please!"
+mys-ter-i-ous (miss-teer-ree-us) "A mysterious box was left on the porch." ~"Ooh, spooky."
+cal-en-dar 📅 (cal-un-durr) ~"Is it Friday yet?"
 mi-cro-scope 🔬 (mye-kro-scope)
 hel-i-cop-ter 🚁 (hel-uh-cop-ter)
 """
