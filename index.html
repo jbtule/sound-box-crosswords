@@ -33,9 +33,24 @@
      half-built page; if that never happens, it offers a reload. -->
 <div class="loader" role="status" aria-label="Loading">
   <div class="loader-boxes" aria-hidden="true"><i></i><i></i><i class="a"></i><i></i></div>
-  <p class="loader-stuck">Couldn’t load. Check the connection, then <button type="button" class="primary" onclick="location.reload()">Reload</button></p>
+  <p class="loader-stuck">Sound Box didn’t start. Check the connection, then <button type="button" class="primary" onclick="location.reload()">Reload</button></p>
 </div>
-<script>setTimeout(function () { var h = document.documentElement; if (h.classList.contains("loading")) h.classList.add("stuck"); }, 12000);</script>
+<script>
+// Still loading after 12 s (offline on a new version), or an error while starting: offer a reload.
+// Not while the first-visit grade question is waiting for a tap.
+(function () {
+  var h = document.documentElement;
+  function stuck() { if (h.classList.contains("loading")) h.classList.add("stuck"); }
+  function later() {
+    if (!h.classList.contains("loading")) return;
+    var ask = document.getElementById("gradeAsk");
+    if (ask && !ask.hidden) setTimeout(later, 12000); else stuck();
+  }
+  setTimeout(later, 12000);
+  window.addEventListener("error", stuck);
+  window.addEventListener("unhandledrejection", stuck);
+})();
+</script>
 <div class="wrap">
   <div class="top">
     <h1>Sound Box <span>Crosswords</span></h1>

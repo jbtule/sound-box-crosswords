@@ -79,8 +79,7 @@ html.loading .loader { display: flex; flex-direction: column; align-items: cente
 .loader-stuck { display: none; margin: 0; color: var(--muted); text-align: center; pointer-events: auto; }
 html.stuck .loader-stuck { display: block; }
 html.stuck .loader-boxes { display: none; }
-.wrap { animation: app-in 0.25s ease-out; }
-html.loading .wrap { animation: none; }
+html.loaded .wrap { animation: app-in 0.25s ease-out; } /* fades in once, when the loader clears (not on the listen check) */
 @keyframes app-in { from { opacity: 0.4; } to { opacity: 1; } }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 h1 { font-family: var(--display); font-weight: 700; font-size: 1.6rem; line-height: 1.1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }

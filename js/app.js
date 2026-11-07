@@ -155,6 +155,8 @@ function homeScreenEdition(e) {
   } catch (err) {}
 }
 
+// index.html starts as html.loading (a loader instead of the half-built page); this shows the app.
+function appReady() { var h = document.documentElement; if (h.classList.contains("loading")) h.classList.add("loaded"); h.classList.remove("loading", "stuck"); }
 var PACKS, DEFAULT_CUSTOM, EDITIONS, EDITION;
 try {
   // Imported here, not at the top: words.js pulls in the TOML parser from the CDN, and a
@@ -168,7 +170,7 @@ try {
   PREFIX = gradePrefix(PROFILE, EDITION);
   ({ packs: PACKS, starter: DEFAULT_CUSTOM } = await loadPacks(EDITION.file));
 } catch (e) {
-  document.documentElement.classList.remove("loading");
+  appReady();
   // A home-screen app has no reload button, so offer one.
   $("#board").innerHTML = '<p class="empty-msg">Couldn’t load the word packs. Check the connection, then try again.</p>' +
     '<button class="primary" id="retryBtn" type="button">Try again</button>';
@@ -2158,8 +2160,8 @@ renderKeyboard();
 var resumed = loadPuzzle();
 if (!resumed) newPuzzle();
 else if (!played() && !gradeTapped) board.classList.add("waiting"); // untouched: it's new, so Start plays its entrance
+appReady(); // the first puzzle is drawn: show the app (before Start, which takes focus, and focus needs it shown)
 if (!gradeTapped) showStart(resumed && played());
 renderWho();
 syncAll();
 welcomeLink();
-document.documentElement.classList.remove("loading", "stuck"); // the first puzzle is drawn: show the app (index.html's loader)
