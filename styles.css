@@ -79,6 +79,7 @@ html.loading body:has(#gradeAsk:not([hidden])) .loader { display: none; } /* not
 @keyframes loader-hop { 0%, 55%, 100% { transform: translateY(0); } 25% { transform: translateY(-12px); } }
 .loader-msg { margin: 0; padding: 0 16px; color: var(--muted); text-align: center; pointer-events: auto; }
 html.stuck .loader-boxes { display: none; }
+html.loading.stuck .top-buttons { visibility: visible; } /* didn't start: More stays reachable (Start over) */
 html.loaded .wrap { animation: app-in 0.25s ease-out; } /* fades in once, when the loader clears (not on the listen check) */
 @keyframes app-in { from { opacity: 0.4; } to { opacity: 1; } }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
