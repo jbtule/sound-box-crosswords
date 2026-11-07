@@ -132,28 +132,40 @@ self.addEventListener("message", (e) => {
   })());
 });
 
+// "saved", "had" (already saved or not ours) or "failed".
 async function saveOne(url) {
-  if (typeof url !== "string" || !wanted(url)) return false;
-  const key = keyFor(url);
-  if (await caches.match(key, LOOSE)) return false;
-  try { await save(key, await fetch(url)); } catch (err) { /* try again next visit */ }
-  return true;
+  if (typeof url !== "string" || !wanted(url)) return "had";
+  try {
+    const key = keyFor(url);
+    if (await caches.match(key, LOOSE)) return "had";
+    const res = await fetch(url);
+    await save(key, res);
+    return res.ok ? "saved" : "failed";
+  } catch (err) { return "failed"; } // try again next visit
 }
 
-// A grade's recordings saved ahead for offline (app.js saveGradeAudio): one loop at a time
-// (a list sent while one runs replaces what's left, e.g. after switching grades), a pause
-// after each clip fetched so it never crowds out what the player is doing, and a stop after
-// 4 minutes (browsers end a long-running worker task); the next launch finishes the rest.
+// A grade's recordings saved ahead for offline (app.js saveGradeAudio): one run at a time (a
+// list sent while one runs replaces what's left, e.g. after switching grades), a pause after
+// each clip fetched so it never crowds out what the player is doing, and a stop after 4 minutes
+// (browsers end a long-running worker task) or 3 failures in a row (offline again); the next
+// launch, or coming back online, finishes the rest.
 let gentleList = null;
 function saveGently(e) {
   const running = gentleList !== null;
   gentleList = e.data.warm.slice();
   if (running) return;
   e.waitUntil((async () => {
-    const end = Date.now() + 4 * 60 * 1000;
-    while (gentleList.length && Date.now() < end) {
-      if (await saveOne(gentleList.shift())) await new Promise((r) => setTimeout(r, 120));
+    try {
+      const end = Date.now() + 4 * 60 * 1000;
+      let failed = 0;
+      while (gentleList.length && Date.now() < end && failed < 3) {
+        const got = await saveOne(gentleList.shift());
+        if (got === "had") continue;
+        failed = got === "failed" ? failed + 1 : 0;
+        await new Promise((r) => setTimeout(r, 120));
+      }
+    } finally {
+      gentleList = null;
     }
-    gentleList = null;
   })());
 }
