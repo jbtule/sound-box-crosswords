@@ -955,11 +955,23 @@ function coverage(id) {
   var words = entries(id), done = packProgress(id).done;
   return { done: words.filter(function (e) { return done[e.w]; }).length, total: words.length };
 }
+// The bar under the packs, in three stages, so it always has something to fill: the first pass
+// (words done), then mastery (words spelled right on the first try, the Legend goal), then laps
+// (this round's words, each round once every word has come up again). Only ever goes up within a stage.
 function renderProgress() {
-  var c = coverage(packId), el = $("#packProg");
+  var c = coverage(packId), el = $("#packProg"), have = c.done, of = c.total, text;
   el.hidden = !c.total;
-  el.querySelector(".fill").style.width = (c.total ? Math.round(100 * c.done / c.total) : 0) + "%";
-  el.querySelector(".txt").textContent = c.done + " of " + c.total + " words done";
+  if (c.total && c.done >= c.total) {
+    var pp = packProgress(packId), words = entries(packId), stats = pp.stats;
+    var firsts = words.filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
+    if (firsts < c.total) { have = firsts; text = "Spelled first try: " + firsts + " of " + c.total; }
+    else {
+      var inRound = words.filter(function (e) { return pp.round.indexOf(e.w) >= 0; }).length;
+      have = inRound; text = "Round " + ((pp.rounds || 0) + 1) + " · " + inRound + " of " + c.total + " words";
+    }
+  } else text = c.done + " of " + c.total + " words done";
+  el.querySelector(".fill").style.width = (of ? Math.round(100 * have / of) : 0) + "%";
+  el.querySelector(".txt").textContent = text;
 }
 // Settings: per-pack coverage and the puzzle log.
 // Packs shown in Stats: the ones on offer, and Custom while off only once it was played.
