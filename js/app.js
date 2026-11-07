@@ -6,8 +6,8 @@ import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, EVERYDAY, unlockedCount, paletteCSS } from "./palettes.js";
 import { catalog, award, dayKey, daysThisWeek, spokenParts } from "./achievements.js";
-import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle } from "./crossword.js";
-import { speak, say, sayAfter, sayRecorded, hasClip, splitOf, onClips, stopSpeech, speechEpoch, hasSpeech } from "./speech.js";
+import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle, clipsFor } from "./crossword.js";
+import { clipUrls, speak, say, sayAfter, sayRecorded, hasClip, splitOf, onClips, stopSpeech, speechEpoch, hasSpeech } from "./speech.js";
 import { blendsIn, slipSpots, isClose } from "./phonics.js";
 import { newKey, isKey, keysFor, linkFor, keyFromLink } from "./seal.js";
 import { syncGrade, remoteGrades, canon } from "./sync.js";
@@ -102,6 +102,24 @@ if ("serviceWorker" in navigator && !/^(localhost|127\.0\.0\.1)$/.test(location.
     .catch(function () {});
 }
 
+// In the Home Screen app, the whole grade's recordings are saved for offline in the background
+// (clips are otherwise saved only once played, and offline a word never heard falls back to the
+// device voice): every pack's words, Break it down parts, sentences and quips, the phrases, and
+// the single sounds where the grade has Sound it out. A few seconds after the app shows, online
+// only; the worker fetches them one at a time with pauses and skips any already saved, so play
+// isn't slowed, and a launch cut short just carries on next time. About 2–3 MB a grade.
+function saveGradeAudio() {
+  if (!installed || !navigator.onLine || !("serviceWorker" in navigator)) return;
+  setTimeout(function () {
+    onClips(function () {
+      var keys = {};
+      Object.keys(PACKS).forEach(function (id) { if (id !== "mine") entries(id).forEach(function (e) { clipsFor(e).forEach(function (c) { keys[c.kind + ":" + c.text] = 1; }); }); });
+      var urls = clipUrls(keys, function (k) { return k.indexOf("p:") === 0 || (EDITION.soundItOut && k.indexOf("f:") === 0); });
+      if (!urls.length) return;
+      navigator.serviceWorker.ready.then(function (reg) { if (reg.active) reg.active.postMessage({ warm: urls, gentle: true }); }).catch(function () {});
+    });
+  }, 8000);
+}
 // Which grade's word lists (editions.toml). In order: a ?edition= link (then remembered),
 // the one picked before, a ?start= address (below), the original edition for anyone with
 // progress from before there were editions, the only one, or else ask once ("Which
@@ -2200,6 +2218,7 @@ var resumed = loadPuzzle();
 if (!resumed) newPuzzle();
 else if (!played() && !gradeTapped) board.classList.add("waiting"); // untouched: it's new, so Start plays its entrance
 appReady(); // the first puzzle is drawn: show the app (before Start, which takes focus, and focus needs it shown)
+saveGradeAudio();
 if (!gradeTapped) showStart(resumed && played());
 renderWho();
 syncAll();

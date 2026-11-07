@@ -146,6 +146,13 @@ export function say(kind, text, rate, cancel) {
 
 // Whether there's a recording (not just the device voice) for this item.
 export function hasClip(kind, text) { return !!clips[kind + ":" + text]; }
+// The recording's address for "kind:text" keys that have one, e.g. to save them ahead for offline;
+// `match(key)` picks keys by itself too (all of one kind).
+export function clipUrls(keys, match) {
+  var out = [];
+  Object.keys(clips).forEach(function (k) { if ((keys && keys[k]) || (match && match(k))) out.push(clipBase + clips[k] + ".mp3"); });
+  return out;
+}
 // Runs once audio.json has loaded (or failed), so recorded-only features can show then.
 export function onClips(f) { if (clipsReady) clipsReady.push(f); else f(); }
 // Plays a recording only, never the device voice, which can't say a single sound ("k");

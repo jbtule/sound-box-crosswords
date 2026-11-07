@@ -126,12 +126,16 @@ self.addEventListener("fetch", (e) => {
 // list of what it loaded and the worker saves a copy now.
 self.addEventListener("message", (e) => {
   if (!e.data || !Array.isArray(e.data.warm)) return;
+  // gentle: a grade's recordings saved ahead for offline (app.js saveGradeAudio): a pause after
+  // each one fetched, so it never crowds out what the player is doing.
+  const gentle = !!e.data.gentle;
   e.waitUntil((async () => {
     for (const url of e.data.warm) {
       if (typeof url !== "string" || !wanted(url)) continue;
       const key = keyFor(url);
       if (await caches.match(key, LOOSE)) continue;
       try { await save(key, await fetch(url)); } catch (err) { /* try again next visit */ }
+      if (gentle) await new Promise((r) => setTimeout(r, 120));
     }
   })());
 });
