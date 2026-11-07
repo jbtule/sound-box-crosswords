@@ -105,12 +105,15 @@ if ("serviceWorker" in navigator && !/^(localhost|127\.0\.0\.1)$/.test(location.
 // In the Home Screen app, the whole grade's recordings are saved for offline in the background
 // (clips are otherwise saved only once played, and offline a word never heard falls back to the
 // device voice): every pack's words, Break it down parts, sentences and quips, the phrases, and
-// the single sounds where the grade has Sound it out. A few seconds after the app shows, online
-// only; the worker fetches them one at a time with pauses and skips any already saved, so play
-// isn't slowed, and a launch cut short just carries on next time. About 2–3 MB a grade.
+// the single sounds and blends where the grade has Sound it out. A few seconds after the app
+// shows, online only (or once back online); the worker fetches them one at a time with pauses
+// and skips any already saved, so play isn't slowed, and a launch cut short just carries on next
+// time. About 2–3 MB a grade.
+var gradeAudioTimer = 0;
 function saveGradeAudio() {
-  if (!installed || !navigator.onLine || !("serviceWorker" in navigator)) return;
-  setTimeout(function () {
+  if (!installed || !navigator.onLine || !("serviceWorker" in navigator) || gradeAudioTimer) return;
+  gradeAudioTimer = setTimeout(function () {
+    gradeAudioTimer = 0;
     onClips(function () {
       var keys = {};
       Object.keys(PACKS).forEach(function (id) { if (id !== "mine") entries(id).forEach(function (e) { clipsFor(e).forEach(function (c) { keys[c.kind + ":" + c.text] = 1; }); }); });
@@ -1822,7 +1825,7 @@ function syncAll() {
 var syncTimer = 0;
 function syncSoon() { clearTimeout(syncTimer); syncTimer = setTimeout(syncAll, 1500); }
 document.addEventListener("visibilitychange", function () { syncAll(); });
-window.addEventListener("online", function () { syncAll(); });
+window.addEventListener("online", function () { syncAll(); saveGradeAudio(); });
 
 // Reload into another profile or grade. Drops ?edition= (it would pick the old one again);
 // a reload checks the server for the page, where going to the address could show an older copy.
