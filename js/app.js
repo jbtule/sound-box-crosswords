@@ -161,6 +161,9 @@ function appReady() {
   if (h.classList.contains("loading")) h.classList.add("loaded");
   h.classList.remove("loading", "stuck");
   if (loader) loader.hidden = true; // gone even if an old cached styles.css doesn't know .loader
+  // iOS (the Home Screen app especially) sometimes repaints only part of the screen after so much
+  // of the page turns visible at once, until a scroll; nudge one, a pixel down and back.
+  requestAnimationFrame(function () { window.scrollBy(0, 1); requestAnimationFrame(function () { window.scrollBy(0, -1); }); });
 }
 var PACKS, DEFAULT_CUSTOM, EDITIONS, EDITION;
 try {
