@@ -168,6 +168,7 @@ try {
   PREFIX = gradePrefix(PROFILE, EDITION);
   ({ packs: PACKS, starter: DEFAULT_CUSTOM } = await loadPacks(EDITION.file));
 } catch (e) {
+  document.documentElement.classList.remove("loading");
   // A home-screen app has no reload button, so offer one.
   $("#board").innerHTML = '<p class="empty-msg">Couldn’t load the word packs. Check the connection, then try again.</p>' +
     '<button class="primary" id="retryBtn" type="button">Try again</button>';
@@ -2161,3 +2162,4 @@ if (!gradeTapped) showStart(resumed && played());
 renderWho();
 syncAll();
 welcomeLink();
+document.documentElement.classList.remove("loading", "stuck"); // the first puzzle is drawn: show the app (index.html's loader)
