@@ -272,7 +272,8 @@ for (const { id, text, custom, sio } of lists) {
     differs = null;
     if (w.length < 2 || w.length > 12) errors.push(`${id}: "${w}" must be 2–12 letters`);
     if (seen.has(w)) errors.push(`${id}: "${w}" is listed twice`);
-    if (m[2] != null && !/\p{Extended_Pictographic}/u.test(m[2])) errors.push(`${id}: "${w}" picture "${m[2]}" isn't an emoji`);
+    // An emoji, or a keycap (6️⃣: a digit, # or * with the keycap mark), which isn't "pictographic" but shows as one.
+    if (m[2] != null && !/\p{Extended_Pictographic}|^[0-9#*]\uFE0F?\u20E3$/u.test(m[2])) errors.push(`${id}: "${w}" picture "${m[2]}" isn't an emoji`);
     // A word with no picture needs a spoken sentence for context (their vs there).
     if (m[2] == null && m[4] == null && !custom) errors.push(`${id}: "${w}" has no picture, so it needs a "sentence that uses it"`);
     if (m[4] != null && !new RegExp(`\\b${w}\\b`, "i").test(m[4])) errors.push(`${id}: "${w}" sentence doesn't use the word: "${m[4]}"`);
