@@ -299,6 +299,8 @@ html.standalone { touch-action: pan-x pan-y; }
 .tool { border: 1.5px solid var(--key-edge); background: var(--key); border-radius: 12px; padding: 7px 12px; font-weight: 600; font-size: 0.9rem; }
 .tool:active { transform: translateY(1px); }
 .tools .tool { display: inline-flex; align-items: center; gap: 6px; }
+.progress .txt { display: inline-flex; align-items: center; gap: 4px; }
+.progress .txt svg.ico { width: 1.15em; height: 1.15em; flex: none; }
 .tool svg.ico { width: 1.5em; height: 1.5em; margin: -3px 0; flex: none; } /* line icons in the text color (Hear it, Break it down, Sound it out) */
 .tools .tool { padding: 7px 8px; }
 /* Context sentence with the word as a blank. Room for two lines so it doesn't jump. */

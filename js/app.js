@@ -955,12 +955,31 @@ function coverage(id) {
   var words = entries(id), done = packProgress(id).done;
   return { done: words.filter(function (e) { return done[e.w]; }).length, total: words.length };
 }
+// The bar under the packs, in three stages, so it always has something to fill: the first pass
+// (words done), then mastery (words spelled right on the first try, the Legend goal), then laps
+// (this round's words, each round once every word has come up again). Only ever goes up within a stage.
 function renderProgress() {
-  var c = coverage(packId), el = $("#packProg");
+  var c = coverage(packId), el = $("#packProg"), have = c.done, of = c.total, text, icon = "";
   el.hidden = !c.total;
-  el.querySelector(".fill").style.width = (c.total ? Math.round(100 * c.done / c.total) : 0) + "%";
-  el.querySelector(".txt").textContent = c.done + " of " + c.total + " words done";
+  if (c.total && c.done >= c.total) {
+    var pp = packProgress(packId), words = entries(packId), stats = pp.stats;
+    var firsts = words.filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
+    if (firsts < c.total) { have = firsts; icon = PROG_ICONS.star; text = "Spelled first try: " + firsts + " of " + c.total; }
+    else {
+      var inRound = words.filter(function (e) { return pp.round.indexOf(e.w) >= 0; }).length;
+      have = inRound; icon = PROG_ICONS.loop; text = "Round " + ((pp.rounds || 0) + 1) + " · " + inRound + " of " + c.total + " words";
+    }
+  } else text = c.done + " of " + c.total + " words done";
+  el.querySelector(".fill").style.width = (of ? Math.round(100 * have / of) : 0) + "%";
+  var txt = el.querySelector(".txt");
+  txt.textContent = text;
+  if (icon) txt.insertAdjacentHTML("afterbegin", icon);
 }
+// Line icons in the text color (like the clue tools'): a star for mastery (the Legend goal), a loop of arrows for rounds.
+var PROG_ICONS = {
+  star: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
+  loop: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a7 7 0 0 1 12-4.5L18 8"/><path d="M18 3.5V8h-4.5"/><path d="M20 13a7 7 0 0 1-12 4.5L6 16"/><path d="M6 20.5V16h4.5"/></svg>'
+};
 // Settings: per-pack coverage and the puzzle log.
 // Packs shown in Stats: the ones on offer, and Custom while off only once it was played.
 function statsPacks() {
