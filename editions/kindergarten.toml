@@ -97,17 +97,17 @@ note = "Some sounds need two letters. Listen for each sound, and give it its box
 words = """
 ship 🚢 {sh i p}
 fish 🐟 {f i sh}
-shell 🐚 {sh e ll}
+shell 🐚 {sh e ll} ~"I hear the ocean!"
 chick 🐤 {ch i ck}
 check ✔️ {ch e ck}
 chess ♟️ {ch e ss} ~"Checkmate!"
 bath 🛁 {b a th}
-duck 🦆 {d u ck}
+duck 🦆 {d u ck} ~"Quacktasstic spelling!"
 sock 🧦 {s o ck} ~"Where's the other one?"
 lock 🔒 {l o ck}
 rock 🪨 {r o ck}
 wing 🪽 {w i ng}
-ring 💍 {r i ng}
+ring 💍 {r i ng} ~"Ring ring! More words calling!"
 """
 
 [[pack]]
@@ -126,8 +126,8 @@ stop 🛑 {s t o p}
 plug 🔌 {p l u g}
 trap 🪤 {t r a p} ~"Watch out!"
 brick 🧱 {b r i ck}
-truck 🚚 {t r u ck}
-clock 🕰️ {c l o ck}
+truck 🚚 {t r u ck} ~"Delivering more words!"
+clock 🕰️ {c l o ck} ~"Tick tock, spelling o'clock!"
 """
 
 [[pack]]
@@ -136,16 +136,16 @@ name = "Ending blends"
 note = "Two sounds slide together at the end. Hold on to the last sound!"
 words = """
 nest 🪺 {n e s t}
-hand ✋ {h a n d}
+hand ✋ {h a n d} ~"High five!"
 tent ⛺ {t e n t}
 milk 🥛 {m i l k}
 gift 🎁 {g i f t} ~"Is that for me?"
 fist ✊ {f i s t}
 camp 🏕️ {c a m p}
 vest 🦺 {v e s t}
-elf 🧝 {e l f}
+elf 🧝 {e l f} ~"Tiny, but I spell big!"
 wink 😉 {w i n=ng k}
-plant 🪴 {p l a n t}
+plant 🪴 {p l a n t} ~"Water me with words!"
 skunk 🦨 {s k u n=ng k}
 """
 
