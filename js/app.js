@@ -190,7 +190,7 @@ var PACKS, DEFAULT_CUSTOM, EDITIONS, EDITION;
 try {
   // Imported here, not at the top: words.js pulls in the TOML parser from the CDN, and a
   // failed static import would stop this whole module before it could show Try again.
-  var { loadPacks, loadEditions, storagePrefix } = await import("./words.js");
+  var { loadPacks, loadEditions, storagePrefix, PACK_KINDS } = await import("./words.js");
   EDITIONS = await loadEditions();
   moveChime();
   upgradeStorage(EDITIONS);
@@ -1018,8 +1018,13 @@ function renderPacks() {
 function switchPack(id) {
   packId = id; store.set("pack", id); recent = [];
   // Its name, said (with auto-speak on) for players still learning to read the chips; the
-  // achievement cards already record every pack name. The first word follows it.
-  if (settings.speakSel) say("p", PACKS[id].name, 0.95, true);
+  // achievement cards already record every pack name. Then what its chip's 🏫 or 🥋 means
+  // ("School list.", "Hard mode."). The first word follows.
+  if (settings.speakSel) {
+    say("p", PACKS[id].name, 0.95, true);
+    if (PACKS[id].school) say("p", PACK_KINDS.school, 0.95);
+    if (PACKS[id].hard) say("p", PACK_KINDS.hard, 0.95);
+  }
   renderPacks(); startNewPuzzle();
 }
 // Switching packs mid-puzzle clears that puzzle (words already finished still count): a

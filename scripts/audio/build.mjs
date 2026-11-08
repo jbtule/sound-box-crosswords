@@ -20,7 +20,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { readPacks, readEditions } from "../../js/words.js";
+import { readPacks, readEditions, PACK_KINDS } from "../../js/words.js";
 import { spokenLines } from "../../js/achievements.js";
 import { parseList, clipsFor } from "../../js/crossword.js";
 import { blendsIn, STOPS } from "../../js/phonics.js";
@@ -34,7 +34,7 @@ export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95, f: 0.8, q: 1.0 };
 // q = a quip after a word ("Bock bock!"): said in its own voice, so it's never taken for a clue.
 const VOICE_FOR = { q: "af_bella" };
 const voiceOf = (kind) => VOICE_FOR[kind] ?? VOICE;
-export const PHRASES = ["You solved it!", "Way to go!"];
+export const PHRASES = ["You solved it!", "Way to go!", ...Object.values(PACK_KINDS)];
 // Clips that sound wrong at their kind's speed, picked by ear. At 0.9 the cut "shore"
 // sounds like "sure".
 const SPEED_FOR = { "w:shore": 0.8, "p:New achievement!": 1.0, "p:Secret achievement!": 1.0, "p:Achievement!": 1.0 };

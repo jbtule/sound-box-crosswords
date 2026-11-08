@@ -231,7 +231,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - `packs.toml`: the word packs, in display order (the 3rd grade edition; other editions'
   files use the same format). Each `[[pack]]` has `id` (saved progress
   is keyed by it; don't rename), `name`, `note` (shown under the chips), `words`, and optionally `school = true` (the school's own list, not
-  one of the app's phonics packs: its chip shows 🏫; `renderPacks`) or `hard = true` (a hard mode
+  one of the app's phonics packs: its chip shows 🏫; `renderPacks`; picking it says its name, then
+  "School list.", and a hard pack's "Hard mode.": `PACK_KINDS` in `words.js`) or `hard = true` (a hard mode
   pack, any number per edition: its chip shows 🥋 and sits last, locked (dashed, 🔒, a toast on
   tap) until the edition's first Champion of another pack, Custom aside (`hardOpen`); named for its theme, never "Hard mode");
   `[custom] words` is the starter "Custom" list. **Word list format** (packs and the custom list share it): one entry per
