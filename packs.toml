@@ -57,24 +57,24 @@ note = "3rd grade 2026 school words. A sound wave means listen, then spell."
 school = true
 words = """
 yard 🏡
-storm ⛈️
-more ➕
-ex-plore 🧭 (ex-plore)
+storm ⛈️ ~"Grab an umbrella!"
+more ➕ ~"Yes, please!"
+ex-plore 🧭 (ex-plore) ~"Onward!"
 u-ni-form (you-nih-form) "She wears her uniform to soccer practice."
 third 🥉
 germs 🦠 ~"Wash your hands!"
-burn-ing 🔥 (burn-ing)
+burn-ing 🔥 (burn-ing) ~"It's volcano day!"
 un-hurt (un-hurt) "He fell off his bike but was unhurt." ~"Phew!"
 ob-serve (ub-zurv) "We observe the ants with a magnifying glass."
 ex-it (eggs-it) "When the movie ended, we left through the exit." ~"Stage left!"
 stomp "The elephants stomp through the mud."
 chick-en 🐔 (chick-in) ~"Jockey!"
-pub-lish (pub-lish) "Our class will publish a book of poems."
+pub-lish (pub-lish) "Our class will publish a book of poems." ~"Extra! Extra!"
 pan-ic 😱 (pan-ikk) ~"Everybody stay calm!"
-these "These shoes are too small for me."
-don't "Please don't forget your lunch."
+these "These shoes are too small for me." ~"Which ones?"
+don't "Please don't forget your lunch." ~"Okay, I won't."
 on-ly (own-lee) "I could find only one sock."
-those "Those birds are flying south for the winter."
+those "Those birds are flying south for the winter." ~"Which ones?"
 done "I am done with my homework." ~"Keep going!"
 """
 
@@ -152,7 +152,7 @@ shirt 👕
 bird 🐦
 girl 👧
 purse 👛
-storm ⛈️
+storm ⛈️ ~"Grab an umbrella!"
 horse 🐴
 dart 🎯
 cart 🛒
@@ -257,9 +257,9 @@ hel-i-cop-ter 🚁 (hel-uh-cop-ter)
 # Starter list for the "Custom" pack (edited in Settings) until they save their own.
 [custom]
 words = """
-ex-plore 🧭 (ex-plore)
+ex-plore 🧭 (ex-plore) ~"Onward!"
 store 🏪
-more ➕
+more ➕ ~"Yes, please!"
 snore 😴
 be-fore ⏮️ (bee-fore)
 shore 🏖️
