@@ -444,6 +444,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     the last (`quipAt`), then a roll (`QUIP_CHANCE`, 0.6: about 6 puzzles in 10). Decided when the
     puzzle starts (`pickQuip`, saved as `pz.quipFor`): which word, at random among the puzzle's
     words with a quip; if a crossing word finishes it, the quip moves to another (`moveQuip`).
+    What makes a good one (the `write-quips` skill has the full list and the steps): cheer the
+    player on or be silly, never aimed at the player (no scolding or pushing away; a grumpy joke
+    about the thing itself is fine: cactus "No hugs."), never encourage risky behavior, not
+    babyish; the app's spelling-obsessed inner thoughts are a favorite ("Yay! More spelling
+    words!"), mixed with jokes about the word; not every word needs one. Picked by ear: record
+    takes with `scripts/audio/quips.sh` and listen to the word, then the quip.
   - `input` / `checkWord` / `complete` / `settleCrossings`: whole-word checking only. Letters
     are accepted until the word is full; then wrong letters flash and clear; a key
     during the flash clears them at once and types into the first emptied box (`clearWrong`), so no key seems to do nothing. Every miss shows a toast:
@@ -501,6 +507,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
 - Issue forms (`.github/ISSUE_TEMPLATE/`): "Add a word pack" and "Add an edition" walk
   someone through writing the TOML in the issue, from `<...>` placeholders. The edition is
   typed, not picked, so the forms need no upkeep when editions change.
+- To brainstorm, audition and add quips, use the `write-quips` skill
+  (`.claude/skills/write-quips/SKILL.md`).
 - To add a school unit's spelling list as a pack, use the `add-unit-pack` skill
   (`.claude/skills/add-unit-pack/SKILL.md`): the steps, the word rules, and a PR review table.
 - When adding words, check that the emoji clearly shows that word, and that the spelling
