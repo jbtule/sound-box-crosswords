@@ -2,7 +2,7 @@
 // Run by `npm run check`, or alone: node --test scripts/sync.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { handle, MAX_BYTES, networkOf, looksRandom } from "../sync/src/api.js";
+import { handle, MAX_BYTES, networkOf, looksRandom, NET_PER_MINUTE } from "../sync/src/api.js";
 import { Profile, memoryStore, MAX_GRADES, Limiter, memoryLimiterStore, NEW_PER_NETWORK, NEW_PER_DAY, Space, memorySpaceStore, BLOCK, SPACE_BYTES, KEEP_DAYS } from "../sync/src/profile.js";
 import { newKey, keysFor, seal, unseal } from "../js/seal.js";
 import { toRecord, merge, fromRecord } from "../js/merge.js";
@@ -755,4 +755,76 @@ test("a Limiter that can't be reached is \"unavailable\" (503), not a limit; a r
   const down = (url, init = {}) => (init.method === "PUT" ? Promise.resolve(new Response("{}", { status: 503 })) : client(c2)(url, init));
   const dev = deviceFor("d"); dev.data.counts.clean = 1;
   await assert.rejects(syncGrade(dev.opts(down, await keysFor(newKey()))), (e) => !e.limited && !e.full && !e.big);
+});
+
+// The per-network request limit (NET_LIMIT binding, wrangler.jsonc): a fake that counts per key.
+function limited(limit = NET_PER_MINUTE, behave) {
+  const counts = new Map(), gets = { n: 0 };
+  const env = {
+    PROFILE: { idFromName: (n) => n, get: (id) => { gets.n++; return { fetch: async () => new Response(JSON.stringify({ grades: {} }), { status: 200 }) }; } },
+    NET_LIMIT: { limit: async ({ key }) => {
+      if (behave) return behave(key);
+      const n = (counts.get(key) || 0) + 1; counts.set(key, n);
+      return { success: n <= limit };
+    } }
+  };
+  const call = (path, init = {}) =>
+    handle(new Request("https://sound-box-sync.asset-data.stream" + path, { ...init, headers: { origin: SITE, "x-write-token": TOKEN, ...init.headers } }), env);
+  return { call, counts, gets };
+}
+const LOOKUP = "L".repeat(43);
+
+test("a network over its requests for the minute gets 503 busy, before any profile is touched", async () => {
+  const { call, gets } = limited(3);
+  const ip = { "cf-connecting-ip": "203.0.113.5" };
+  for (let i = 0; i < 3; i++) assert.equal((await call(`/v1/p/${LOOKUP}`, { headers: ip })).status, 200);
+  const res = await call(`/v1/p/${LOOKUP}`, { headers: ip });
+  assert.equal(res.status, 503);
+  assert.deepEqual(await res.json(), { error: "busy" });
+  assert.equal(res.headers.get("retry-after"), "60");
+  assert.equal(res.headers.get("access-control-allow-origin"), SITE);
+  assert.equal(res.headers.get("cache-control"), "no-store");
+  assert.equal(gets.n, 3); // the 4th never reached a profile
+  // A save is turned away too, before its body is read.
+  const p = await call(`/v1/p/${LOOKUP}/g3`, { method: "PUT", headers: { ...ip, "x-base-version": "0" }, body: new Uint8Array(2048) });
+  assert.equal(p.status, 503);
+  // Another network has its own count; an IPv6 /64 is one network.
+  assert.equal((await call(`/v1/p/${LOOKUP}`, { headers: { "cf-connecting-ip": "198.51.100.7" } })).status, 200);
+  const six = (a) => call(`/v1/p/${LOOKUP}`, { headers: { "cf-connecting-ip": a } });
+  for (const a of ["2001:db8:1:2::1", "2001:db8:1:2::2", "2001:db8:1:2:aaaa::3"]) assert.equal((await six(a)).status, 200);
+  assert.equal((await six("2001:db8:1:2::4")).status, 503);
+  assert.equal((await six("2001:db8:1:3::1")).status, 200);
+});
+
+test("preflights and requests the cheap checks refuse aren't counted", async () => {
+  const { call, counts } = limited(1);
+  const ip = { "cf-connecting-ip": "203.0.113.9" };
+  await call(`/v1/p/${LOOKUP}`, { method: "OPTIONS", headers: ip });
+  await handle(new Request(`https://sound-box-sync.asset-data.stream/v1/p/${LOOKUP}`, { headers: { origin: "https://evil.example", "x-write-token": TOKEN, ...ip } }), {});
+  await call("/v1/p/short", { headers: ip });
+  await call(`/v1/p/${LOOKUP}`, { headers: { ...ip, "x-write-token": "nope" } });
+  assert.equal(counts.size, 0);
+  assert.equal((await call(`/v1/p/${LOOKUP}`, { headers: ip })).status, 200);
+});
+
+test("the limit never stops a request when it can't answer clearly", async () => {
+  for (const behave of [() => { throw new Error("down"); }, () => ({}), () => undefined, () => ({ success: undefined })]) {
+    const { call } = limited(0, behave);
+    assert.equal((await call(`/v1/p/${LOOKUP}`)).status, 200);
+  }
+});
+
+test("the client reports a busy service as busy (not limited, not a lost connection)", async () => {
+  const busy = () => Promise.resolve(new Response(JSON.stringify({ error: "busy" }), { status: 503 }));
+  const keys = await keysFor(newKey());
+  await assert.rejects(remoteGrades({ fetch: busy, url: "https://x", keys }), (e) => e.busy && !e.limited);
+  const dev = deviceFor("d");
+  await assert.rejects(syncGrade(dev.opts(busy, keys)), (e) => e.busy && !e.limited);
+  const { call } = service();
+  const busyPut = (url, init = {}) => (init.method === "PUT" ? busy() : client(call)(url, init));
+  dev.data.counts.clean = 1;
+  await assert.rejects(syncGrade(dev.opts(busyPut, keys)), (e) => e.busy && !e.limited);
+  // A Limiter that can't be reached (503 "unavailable") stays an ordinary failure.
+  const down = () => Promise.resolve(new Response(JSON.stringify({ error: "unavailable" }), { status: 503 }));
+  await assert.rejects(remoteGrades({ fetch: down, url: "https://x", keys }), (e) => !e.busy);
 });

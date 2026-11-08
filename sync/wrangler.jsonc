@@ -14,6 +14,9 @@
     { "name": "LIMITER", "class_name": "Limiter" },
     { "name": "SPACE", "class_name": "Space" }
   ] },
+  // Requests per network a minute (api.js NET_LIMIT): a nuisance guard against scripts, not a
+  // security boundary. Approximate and counted per Cloudflare location.
+  "ratelimits": [{ "name": "NET_LIMIT", "namespace_id": "1001", "simple": { "limit": 300, "period": 60 } }],
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["Profile"] },
     { "tag": "v2", "new_sqlite_classes": ["Limiter"] },

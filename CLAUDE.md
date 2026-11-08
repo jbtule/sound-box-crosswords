@@ -319,7 +319,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   the new-profile limits, a new profile is counted once (saves arriving together share one
   count; a Limiter that can't be reached is 503, not a limit), a save whose room reply is out
   of date (expired meanwhile: `gen`) gets 409, and an alarm that finds a save newer than 90 days
-  (a retried expiry) waits for that save's 90 days instead. It's built so it can't serve as storage for anything else; denial of
+  (a retried expiry) waits for that save's 90 days instead. Every request that would reach a
+  profile is also counted per network (`NET_LIMIT`, a Workers rate-limit binding in
+  `wrangler.jsonc`: 300 a minute, `NET_PER_MINUTE`; over it, 503 "busy" with Retry-After, which
+  the app shows as busy, not as a lost connection), so scripts get little out of it; it lets
+  requests through if it can't answer. It's built so it can't serve as storage for anything else; denial of
   service is accepted. `src/index.js` only exports them (the runtime refuses other exports there). Tests:
   `scripts/sync.test.mjs` (in memory). To try it in the real runtime: `npx wrangler dev`
   in `sync/`. It can't read what it stores and holds no names or accounts.

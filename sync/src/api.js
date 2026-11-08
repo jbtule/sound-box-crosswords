@@ -14,6 +14,9 @@
 //                                device saved since: fetch, merge, and try again; 403 for
 //                                the wrong token; 429 if the network has made too many new
 //                                profiles today; 507 if the service is full (SPACE_BYTES)
+//   Any of them: 503 { error: "busy" } (Retry-After: 60) when the network has sent more than
+//   NET_PER_MINUTE requests this minute (the NET_LIMIT binding, wrangler.jsonc), so a script
+//   poking at the service gets little out of it. Real devices send a few a sync.
 //
 // It refuses anything that isn't a sealed record of a sensible size, and a profile no device
 // has saved in 90 days is deleted (profile.js): devices keep their own copies and send them again.
@@ -25,6 +28,21 @@ const ORIGINS = [/^https:\/\/tools\.tuley\.name$/, /^http:\/\/(localhost|127\.0\
 const LOOKUP = /^[A-Za-z0-9_-]{43}$/;
 const GRADE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
+// The NET_LIMIT binding's limit (set in wrangler.jsonc; here for the docs and tests).
+export const NET_PER_MINUTE = 300;
+
+// Over this network's requests for the minute? Approximate (counted per Cloudflare location). It
+// only makes the service less useful to scripts, so anything going wrong here lets the request
+// through: no binding (tests, local), an error, or an answer that isn't a clear "no".
+async function overLimit(env, request) {
+  if (!env || !env.NET_LIMIT) return false;
+  try {
+    const r = await env.NET_LIMIT.limit({ key: networkOf(request.headers.get("cf-connecting-ip")) });
+    return !!r && r.success === false;
+  } catch (e) {
+    return false;
+  }
+}
 
 // Encrypted bytes look random: each of the 256 byte values about equally often. A chi-square
 // test on the sealed part, with a bar random data fails about once in 10^17 tries, refuses
@@ -82,6 +100,13 @@ export async function handle(request, env) {
   // Every request proves it has the profile's key, reads too: what's stored can only be
   // fetched by its own devices, so it can't be handed out as a link.
   if (!TOKEN.test(request.headers.get("x-write-token") || "")) return reply(400, { error: "x-write-token" }, allowed);
+  // Counted here: after the cheap checks (junk they refuse isn't counted), before a body is read
+  // or any profile is touched.
+  if (await overLimit(env, request)) {
+    const busy = reply(503, { error: "busy" }, allowed);
+    busy.headers.set("retry-after", "60");
+    return busy;
+  }
 
   let body = null;
   if (request.method === "PUT") {

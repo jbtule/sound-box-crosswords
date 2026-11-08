@@ -23,10 +23,21 @@ export function canon(v) {
   return JSON.stringify(v);
 }
 
+// A failed reply as an error; { busy: true } when the service is turning this network away for
+// a minute (503 "busy": too many requests from it), which a try a minute later gets past.
+async function failure(res) {
+  if (res.status === 503) {
+    let body = null;
+    try { body = await res.clone().json(); } catch (e) { /* not JSON */ }
+    if (body && body.error === "busy") return Object.assign(new Error("sync: the sync service is busy"), { busy: true });
+  }
+  return new Error("sync: " + res.status);
+}
+
 // The grades the server has for this profile.
 export async function remoteGrades({ fetch, url = SYNC_URL, keys }) {
   const res = await fetch(`${url}/v1/p/${keys.lookup}`, { cache: "no-store", headers: { "x-write-token": keys.writeToken } });
-  if (!res.ok) throw new Error("sync: " + res.status);
+  if (!res.ok) throw await failure(res);
   return Object.keys((await res.json()).grades || {});
 }
 
@@ -39,7 +50,7 @@ export async function syncGrade({ fetch, url = SYNC_URL, keys, grade, me, read, 
   for (let i = 0; i < TRIES; i++) {
     const mine = toRecord(read(), base, me);
     const res = await fetch(at, { cache: "no-store", headers: { "x-write-token": keys.writeToken } });
-    if (res.status !== 200 && res.status !== 404) throw new Error("sync: " + res.status);
+    if (res.status !== 200 && res.status !== 404) throw await failure(res);
     const version = res.status === 404 ? 0 : Number(res.headers.get("x-version"));
     const server = version ? await unseal(keys, grade, new Uint8Array(await res.arrayBuffer())) : null;
     if (server && server.v > RECORD_VERSION) throw new NewerRecord(server.v);
@@ -54,7 +65,7 @@ export async function syncGrade({ fetch, url = SYNC_URL, keys, grade, me, read, 
       if (put.status === 429) throw Object.assign(new Error("sync: too many new players from this network today"), { limited: true });
       if (put.status === 507) throw Object.assign(new Error("sync: the sync service is full"), { full: true });
       if (put.status === 413) throw Object.assign(new Error("sync: this grade's progress is too big to sync"), { big: true });
-      if (!put.ok) throw new Error("sync: " + put.status);
+      if (!put.ok) throw await failure(put);
     }
     // Anything played meanwhile is added on top, so nothing is lost by keeping the result.
     const now = read();
