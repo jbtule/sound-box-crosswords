@@ -238,7 +238,10 @@ function indexList(all) {
     a.appendChild(pills(counts(page)));
     li.appendChild(a);
     // Nested index: every word in the pack with its status, each jumping to its card.
-    var more = el("details", "words-index"), sum = el("summary", null, page.words.length + (page.words.length === 1 ? " word" : " words"));
+    // How many of its words have a quip, so packs that could use more stand out.
+    var quips = page.words.filter(function (w) { return w.clips.some(function (c) { return c.kind === "q"; }); }).length;
+    var more = el("details", "words-index"), sum = el("summary", null, page.words.length + (page.words.length === 1 ? " word" : " words") +
+      (quips ? " · " + quips + (quips === 1 ? " quip" : " quips") : ""));
     var wl = el("ul", "word-list");
     page.words.forEach(function (w) {
       var s = wordState(w), item = el("li"), link = el("a", "word-link is-" + s);
