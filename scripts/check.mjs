@@ -6,10 +6,12 @@
 // 4. Every color scheme keeps the syllable colors clearly apart and readable.
 // 5. The tests (scripts/*.test.mjs) pass: combining two devices' progress, sealing it, and
 //    the sync service.
+// 6. The app starts in a headless browser for each edition and types a key (scripts/smoke.mjs).
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+import { smoke } from "./smoke.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const errors = [];
@@ -457,6 +459,11 @@ try {
   errors.push("scripts/*.test.mjs failed:\n" + e.stdout.toString() + e.stderr.toString());
 }
 
+// The app itself, started in a headless browser for each edition (scripts/smoke.mjs): a script
+// that parses but throws while starting only shows up there.
+const started = await smoke();
+errors.push(...started.errors);
+
 if (errors.length) {
   console.error([...new Set(errors)].map((e) => "✗ " + e).join("\n"));
   process.exit(1);
@@ -465,3 +472,4 @@ console.log(`✓ scripts parse; ${lists.length} word lists OK; ${RUNS} puzzles b
 console.log(`✓ puzzles to cover each pack: ${coverage.join(", ")}`);
 console.log(`✓ ${PALETTES.length} color schemes keep syllables apart in light and dark`);
 console.log(`✓ ${tests.length} test files pass (merging, sealing, the sync service)`);
+console.log(started.skipped ? `- startup check skipped: ${started.skipped}` : `✓ the app starts and types in ${started.ran.length} editions (headless browser)`);

@@ -482,7 +482,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   http://localhost:8000. Opening `index.html` as a file won't work (modules need http).
 - After editing, run `npm run check` (needs `npm install` once): runs `scripts/*.test.mjs`, syntax-checks `js/` and `sync/src/`,
   checks local links in `index.html`, validates `packs.toml` and every word list, checks
-  the import map matches `package.json`, and builds 50 puzzles per pack. CI runs it too.
+  the import map matches `package.json`, builds 50 puzzles per pack, and starts the app in a
+  headless browser for each edition and types a key (`scripts/smoke.mjs`; Playwright's Chromium,
+  else Google Chrome, which CI's runner has; skipped locally with neither). CI runs it too.
 - GitHub Actions workflows must pass `zizmor .`: SHA-pinned actions, minimal `permissions`,
   `persist-credentials: false`.
 - Test in a narrow viewport (~380px) and in dark mode. Make sure long words (9+ letters)
