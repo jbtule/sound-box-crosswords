@@ -1828,6 +1828,134 @@ export var ENTRANCES = [
       for (var et = TE + 0.2; et < DUR - 0.2; et += 0.105) (function (at, i) { sfx(at, function (when, S) { S.pat(when, i); }); })(et, Math.round(et * 10));
       return a;
     } },
+  { id: "unicorn", name: "Unicorn", icon: "🦄", premium: false,
+    // A unicorn made of blocks (a horse's body and long head, a horn, a mane and tail in the
+    // board's colors) gallops in an arch across the puzzle card, low on the left, up over the
+    // top and down to the right, laying a rainbow behind it: three stripes of full-size blocks
+    // in the board's own colors (the accent, then the two syllable colors, from the color
+    // scheme in use). As each stretch of the rainbow fades, the puzzle's boxes float down out of
+    // it into their places, the first word's last. Hoof clip-clops, a twinkling run that rises and falls with the arch, a
+    // sparkle as each box settles.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2, F = 1 / 30;
+      var root = getComputedStyle(document.documentElement), edge = g.plain.edge;
+      // The board's own block colors, as { fill, edge }: the accent, then the two syllable bands.
+      var ACC = { fill: root.getPropertyValue("--accent-soft").trim(), edge: g.accent };
+      var RB = [ACC, g.band.a, g.band.b];
+      // It may use the whole puzzle card's width (like the Block cat).
+      var card = g.board.parentElement, padL = card ? Math.max(0, g.board.offsetLeft - 8) : 0;
+      var room = card ? Math.max(W, card.clientWidth - 16) : W, padR = Math.max(0, room - W - padL);
+      var u = Math.max(10, Math.min(g.size * 0.75, room / 11)), b = g.size, bstep = g.size + g.gap; // unicorn unit (its blocks near the puzzle's size); a rainbow block: a puzzle box
+      // The arch: hooves start off the card on the left, peak near the top, end off it on the right.
+      var X0 = -padL - u * 4, X1 = W + padR + u * 4, BASE = H - u * 0.3, PEAK = Math.min(u * 6.4, H * 0.62), TT = 3.0;
+      function path(p) {
+        var x = X0 + (X1 - X0) * p, y = BASE - (BASE - PEAK) * Math.sin(Math.PI * Math.max(0, Math.min(1, p)));
+        var dy = -(BASE - PEAK) * Math.PI * Math.cos(Math.PI * Math.max(0, Math.min(1, p))), th = Math.atan2(dy, X1 - X0);
+        return { x: x, y: y, th: th };
+      }
+      function at(pt, lx, ly) { var c = Math.cos(pt.th), s = Math.sin(pt.th); return { x: pt.x + lx * c - ly * s, y: pt.y + lx * s + ly * c }; }
+      // The rainbow: every few pixels along the path, six blocks across the band below the
+      // hooves, red outermost. Each pops in as the unicorn passes, then fades.
+      var HOLD = 1.0, pieces = [], cols = Math.ceil((X1 - X0) * 1.25 / bstep);
+      for (var ci = 0; ci <= cols; ci++) {
+        var pc = ci / cols, pt = path(pc), tIn = pc * TT;
+        for (var si = 0; si < 3; si++) { var q = at(pt, -u * 2.4, (si + 0.5) * bstep); pieces.push({ x: q.x, y: q.y, th: pt.th, color: RB[si], tIn: tIn, tOut: tIn + HOLD + si * 0.05 }); }
+      }
+      // The puzzle's boxes: each comes out of the middle of the band above (or below) it, as
+      // that stretch fades, and floats into its place. The first word's boxes settle last.
+      var DUR = 0, wordK = firstWord(g), lastFade = TT + HOLD;
+      g.order.forEach(function (k, idx) {
+        var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, p = (fx + u * 2.4 - X0) / (X1 - X0), pt = path(p);
+        var from = at(pt, -u * 2.4, 1.5 * bstep), first = wordK.indexOf(k);
+        var start = first >= 0 ? lastFade + 0.25 + first * 0.12 : p * TT + HOLD * 0.75 + Math.random() * 0.25, fl = 0.75 + Math.random() * 0.2, land = start + fl;
+        var sway = (Math.random() - 0.5) * u * 1.2;
+        var T = function (x, y, rot, sc) { return "translate(" + (x - fx) + "px," + (y - fy) + "px) rotate(" + rot + "deg) scale(" + sc + ")"; };
+        a[k] = { kf: [
+          { transform: T(from.x, from.y, 0, 0.3), opacity: 0, offset: 0 },
+          { transform: T(from.x, from.y, 0, 0.55), opacity: 1, offset: 0.18 },
+          { transform: T((from.x + fx) / 2 + sway, (from.y + fy) / 2, (Math.random() - 0.5) * 30, 0.85), opacity: 1, offset: 0.6, easing: "ease-out" },
+          { transform: "translate(0,0) rotate(0deg) scale(1)", opacity: 1, offset: 1 }],
+          delay: start, dur: fl, ease: "cubic-bezier(.3,.6,.4,1)" };
+        DUR = Math.max(DUR, land);
+        sfx(land, function (when, S) { S.bead(when, idx); });
+      });
+      DUR = Math.max(DUR, lastFade + 0.6);
+      // The unicorn, in its own frame: x forward, y up negative from the hooves. Parts in units.
+      var parts = [];
+      function part(x, y, w, h, extra) { parts.push(Object.assign({ x: x, y: y, w: w, h: h, z: 1, rot: 0 }, extra || {})); }
+      [[-1.95, 0], [-1.35, 1], [0.25, 1], [0.85, 0]].forEach(function (l) { part(l[0], -0.75, 0.6, 1.5, { leg: l[1] }); });
+      [-1.6, -0.6, 0.4].forEach(function (x) { part(x, -2.0, 1, 1); part(x, -2.95, 1, 1); });
+      part(1.1, -3.55, 0.9, 0.9, { rot: -40 }); part(1.55, -4.2, 0.85, 0.85, { rot: -40 });                         // neck
+      part(2.05, -4.8, 1.2, 0.85, { rot: 18, z: 2 }); part(2.85, -4.5, 0.8, 0.65, { rot: 18, z: 2 });               // head and muzzle
+      part(2.1, -5.0, 0.2, 0.2, { ink: true, z: 3 });                                                                 // eye
+      part(1.75, -5.35, 0.5, 0.5, { ear: true, rot: -12, z: 0 });                                                      // ear
+      part(2.4, -5.55, 0.55, 0.55, { horn: true, color: ACC, rot: 28, z: 3 });                                        // horn
+      [[0.7, -3.4], [1.05, -4.0], [1.35, -4.55], [1.6, -5.05]].forEach(function (m, i) { part(m[0], m[1], 0.6, 0.6, { mane: true, color: RB[i % 3], z: 2 }); }); // mane
+      for (var ti = 0; ti < 6; ti++) part(0, 0, 0.6, 0.6, { tail: ti, color: RB[Math.floor(ti / 2) % 3], z: 0 });     // tail
+      function pose(t, p) {
+        var pp = t / TT, pt = path(pp), bob = -Math.abs(Math.sin(t * 9)) * u * 0.3, lx = p.x * u, ly = p.y * u + bob, rot = p.rot;
+        if (p.leg != null) { // gallop: swing about the hip
+          var sw = Math.sin(t * 18 + (p.leg ? Math.PI : 0) + (p.x > 0 ? 0.8 : 0)) * 32, r = sw * Math.PI / 180, top = -1.5 * u;
+          lx = p.x * u - Math.sin(r) * 0.75 * u; ly = top + Math.cos(r) * 0.75 * u + bob; rot = sw;
+        }
+        if (p.tail != null) { // a rainbow tail streaming back, rippling
+          var ang = Math.PI * 0.92, tx = -2.15 * u, ty = -3.0 * u + bob;
+          for (var s = 0; s <= p.tail; s++) { ang += 0.12 + Math.sin(t * 10 - s * 0.9) * 0.22; if (s > 0) { tx += Math.cos(ang) * u * 0.45; ty += Math.sin(ang) * u * 0.45; } }
+          lx = tx; ly = ty; rot = ang * 180 / Math.PI;
+        }
+        if (p.mane) lx += Math.sin(t * 12 + p.y) * u * 0.06; // the mane flutters
+        var w = at(pt, lx, ly);
+        return { x: w.x, y: w.y, rot: rot + pt.th * 180 / Math.PI };
+      }
+      var frames = []; for (var t = 0; t < TT + 0.4; t += F) frames.push(t); frames.push(TT + 0.4);
+      g.at(0, function () {
+        var anims = parts.map(function (p) {
+          var d = document.createElement("div"), pw = p.w * u, ph = p.h * u;
+          d.className = "entrance-decoy"; d.style.width = pw + "px"; d.style.height = ph + "px"; d.style.left = d.style.top = "0px";
+          d.style.zIndex = 4 + p.z;
+          if (p.ink) { d.style.background = edge; d.style.borderColor = edge; d.style.borderWidth = "0"; d.style.borderRadius = "2px"; }
+          else if (p.color) { d.style.background = p.color.fill; d.style.borderColor = p.color.edge; d.style.borderRadius = p.horn ? "2px" : Math.round(pw * 0.18) + "px"; } // a small block's corners, scaled to its size
+          else if (p.ear) d.style.borderRadius = "2px";
+          else if (p.w < 1 || p.h < 1) d.style.borderRadius = "5px";
+          var shape = p.horn ? " scale(0.45,1.9) rotate(45deg)" : p.ear ? " scale(0.62,1.35) rotate(45deg)" : "";
+          var kf = frames.map(function (t) {
+            var q = pose(t, p);
+            return { transform: "translate(" + (q.x - pw / 2) + "px," + (q.y - ph / 2) + "px) rotate(" + q.rot + "deg)" + shape, offset: t / (TT + 0.4) };
+          });
+          var an = d.animate(kf, { duration: (TT + 0.4) * 1000, easing: "linear", fill: "forwards" });
+          g.board.appendChild(d);
+          an.onfinish = an.oncancel = function () { d.remove(); };
+          return an;
+        });
+        return anims;
+      });
+      // The rainbow's blocks, each on its own: in as the unicorn passes, out as it fades.
+      g.at(0, function () {
+        return pieces.map(function (r) {
+          var d = document.createElement("div");
+          d.className = "entrance-decoy"; d.style.width = d.style.height = b + "px"; d.style.left = d.style.top = "0px";
+          d.style.background = r.color.fill; d.style.borderColor = r.color.edge; d.style.zIndex = 2;
+          var M = "translate(" + (r.x - b / 2) + "px," + (r.y - b / 2) + "px) rotate(" + (r.th * 180 / Math.PI) + "deg) ";
+          var end = r.tOut + 0.45;
+          var an = d.animate([
+            { transform: M + "scale(0)", opacity: 0, offset: 0 },
+            { transform: M + "scale(0)", opacity: 0, offset: r.tIn / end },
+            { transform: M + "scale(1.15)", opacity: 1, offset: Math.min(1, (r.tIn + 0.12) / end) },
+            { transform: M + "scale(1)", opacity: 0.95, offset: Math.min(1, r.tOut / end) },
+            { transform: M + "scale(0.4)", opacity: 0, offset: 1 }], { duration: end * 1000, easing: "linear", fill: "forwards" });
+          g.board.appendChild(d);
+          an.onfinish = an.oncancel = function () { d.remove(); };
+          return an;
+        });
+      });
+      for (var hc = 0, ht = 0.05; ht < TT; ht += 0.21, hc++) (function (when, i) { sfx(when, function (w, S) { S.clack(w, i); S.clack(w + 0.07, i + 2); }); })(ht, hc);
+      for (var rs = 0; rs <= 14; rs++) (function (i) { // a twinkling run, rising up the arch and falling down it
+        var p = i / 14, step = Math.round(Math.sin(Math.PI * p) * 10) + 1;
+        sfx(p * TT, function (w, S) { S.run(w, step); });
+      })(rs);
+      sfx(lastFade + 0.25, function (w, S) { S.chord(w, [523.25, 659.25, 783.99, 1046.5], 0.1); });
+      return a;
+    } },
   { id: "saucer", name: "Flying saucer", icon: "🛸", premium: true,
     // The boxes assemble into a block flying saucer that swoops in and hovers. A little cannon
     // at the bottom fires: miss, miss, hit! The saucer bursts and its pieces drift slowly into
