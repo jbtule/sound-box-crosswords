@@ -441,7 +441,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     a red ⊘ and the spelling that was typed, so a player sees the word was wrong rather than
     thinking the pad typed the wrong letters. Toasts about a word (this one, the guessing
     nudge, "You got it this time!") never cover its boxes, and every toast stays
-    below the status bar / Dynamic Island and above the floating pad (`placeToast`). Finishing one
+    below the status bar / Dynamic Island and above the floating pad (`placeToast`). A key on a solved box isn't typed but moves the cursor on: on a solved
+    word to the next unfinished word (its clue shows), on a solved box in an unfinished word that
+    the player tapped onto (`tapped`) to the word's next empty box. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
     player guess letters until one stuck.)
   - Switching packs mid-puzzle (letters typed, `played`) asks first in a popover under the chip

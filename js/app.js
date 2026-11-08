@@ -538,7 +538,9 @@ function loadPuzzle() {
   renderBoard();
   renderClues();
   var i = s.cur >= 0 && s.cur < P.words.length ? s.cur : order()[0];
-  select(i, s.pos >= 0 && s.pos < P.words[i].w.length ? s.pos : null, false);
+  // Saved on a finished word (closed in the moment before moving on): start on the next one.
+  if (doneW[i]) { cur = i; var nx = nextUnfinished(); if (nx >= 0) i = nx; }
+  select(i, !doneW[i] && s.pos >= 0 && s.pos < P.words[i].w.length && i === s.cur ? s.pos : null, false);
   return true;
 }
 function renderClues() {
@@ -551,7 +553,7 @@ function renderClues() {
     l.className = "l"; l.textContent = W.num + (W.dir === "A" ? " across" : " down");
     b.append(e, l);
     b.setAttribute("aria-label", W.num + (W.dir === "A" ? " across" : " down") + ", hear the word");
-    b.addEventListener("click", function () { select(i, null, true, true); });
+    b.addEventListener("click", function () { select(i, null, true, true); tapped = true; });
     list.appendChild(b);
   });
 }
@@ -572,8 +574,14 @@ function sayWord(W, rate, after) {
 }
 // Select word i with the cursor at letter p (or its first empty box). `say` speaks the
 // word if it changed and auto-speak is on; `force` speaks it regardless.
+// tapped: the cursor is where the player tapped it (a box or a clue), not where the app put it.
+// A key with the cursor tapped onto a solved box in an unfinished word (finished by a crossing
+// word) moves the cursor to the word's next empty box without typing there (input): the letter
+// was meant for the solved box, so it mustn't land in another.
+var tapped = false;
 function select(i, p, say, force) {
   if (!P || finished) return;
+  tapped = false;
   var changed = i !== cur;
   cur = i;
   var fe = firstEmpty(i);
@@ -603,8 +611,23 @@ function input(ch) {
   if (!P || finished || Date.now() < padPausedUntil) return;
   clearWrong(); // a key while a wrong try still shows: clear it now and type into the first red box
   var W = P.words[cur];
-  if (doneW[cur]) { var nx = nextUnfinished(); if (nx < 0) return; select(nx, null, true); W = P.words[cur]; }
-  if (locked[W.cells[pos]]) { var fe = firstEmpty(cur, pos); if (fe < 0) return; pos = fe; }
+  // A key on a solved box isn't typed (it was meant for that box), but it moves the cursor on.
+  // On a solved word (tapped onto, or just finished): to the next unfinished word, which shows
+  // and says its clue. On a solved box in an unfinished word: to the word's next empty box if
+  // the player tapped onto it; where the app left the cursor, the key types there.
+  // The new clue is said after whatever is playing (the finished word, a quip), not over it.
+  if (doneW[cur]) {
+    var nx = nextUnfinished(); if (nx < 0) return;
+    select(nx, null, false);
+    if (settings.speakSel) sayWord(P.words[nx], 0.85, true);
+    return;
+  }
+  if (locked[W.cells[pos]]) {
+    var fe = firstEmpty(cur, pos); if (fe < 0) return;
+    pos = fe;
+    if (tapped) { tapped = false; update(); return; }
+  }
+  tapped = false;
   fill[W.cells[pos]] = ch;
   if (W.cells.every(function (c) { return fill[c]; })) { checkWord(cur); return; }
   var nxt = firstEmpty(cur, pos + 1);
@@ -800,6 +823,7 @@ function finish() {
 function back() {
   if (!P || finished) return;
   clearWrong();
+  tapped = false;
   var W = P.words[cur], kk = W.cells[pos];
   if (fill[kk] && !locked[kk]) { delete fill[kk]; update(); return; }
   for (var j = pos - 1; j >= 0; j--) {
@@ -941,6 +965,7 @@ board.addEventListener("click", function (e) {
     if (pick == null) pick = ws[0];
     select(pick, P.words[pick].cells.indexOf(kk), true);
   }
+  tapped = true;
 });
 
 /* ---------- packs + settings ---------- */
