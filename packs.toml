@@ -84,12 +84,12 @@ name = "Unit 2"
 note = "3rd grade 2026 school words. A sound wave means listen, then spell."
 school = true
 words = """
-wheel 🛞
-beach 🏖️
-sweep 🧹
+wheel 🛞 ~"Wheelie good spelling!"
+beach 🏖️ ~"Sunscreen, then spelling!"
+sweep 🧹 ~"Dust bunnies, beware!"
 mis-read (miss-reed) "Try not to misread the sign on the door."
-com-pete (kum-peet) "Our teams will compete in the big race."
-light 💡
+com-pete (kum-peet) "Our teams will compete in the big race." ~"Game on!"
+light 💡 ~"You lit it up!"
 pies 🥧
 shy 🫣 ~"Um... hi."
 ex-cit-ed 🤩 (ex-site-edd) ~"Can't. Sit. Still."
@@ -97,7 +97,7 @@ sun-shine ☀️ (sun-shine)
 cow-boy 🤠 (cow-boy) ~"Yee haw!"
 in-side (in-side) "It is raining, so we will play inside."
 sea-food 🦐 (sea-food)
-su-per-mar-ket 🛒 (soo-purr-mahr-kit)
+su-per-mar-ket 🛒 (soo-purr-mahr-kit) ~"Aisle five: more words!"
 some-bod-y (sum-bod-eee) "Somebody left a jacket on the bus."
 their "The kids hung their coats on the hooks."
 a-round (uh-round) "We walked all the way around the lake."
@@ -141,8 +141,8 @@ id = "bossy"
 name = "Bossy R"
 note = "The R changes the vowel: ar, or, er, ir, ur."
 words = """
-car 🚗
-star ⭐
+car 🚗 ~"Road trip! Bring spelling words!"
+star ⭐ ~"Twinkle twinkle, spelling star!"
 horn 📯
 corn 🌽
 fork 🍴
@@ -154,11 +154,11 @@ girl 👧
 purse 👛
 storm ⛈️ ~"I'm not scared. Okay, maybe."
 horse 🐴
-dart 🎯
-cart 🛒
-worm 🪱
-arm 💪
-jar 🫙
+dart 🎯 ~"Bullseye!"
+cart 🛒 ~"Fill it with words!"
+worm 🪱 ~"Bookworm, reporting for duty!"
+arm 💪 ~"Flex!"
+jar 🫙 ~"Is it cookies?"
 tur-tle 🐢 (turr-tull) ~"Slow and steady."
 bur-ger 🍔 (burr-gur) ~"No pickles, please."
 """

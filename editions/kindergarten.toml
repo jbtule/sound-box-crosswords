@@ -163,21 +163,21 @@ snow-man ⛄ (snow-man) ~"I want to build one."
 cow-boy 🤠 (cow-boy) ~"Yee haw!"
 sun-set 🌅 (sun-set)
 rain-bow 🌈 (rain-bow) ~"Ooh, pretty!"
-foot-ball 🏈 (foot-ball)
-base-ball ⚾ (base-ball)
+foot-ball 🏈 (foot-ball) ~"Touchdown!"
+base-ball ⚾ (base-ball) ~"Home run!"
 sail-boat ⛵ (sail-boat)
-mail-box 📬 (mail-box)
+mail-box 📬 (mail-box) ~"You've got words!"
 tooth-brush 🪥 (tooth-brush)
 pan-cake 🥞 (pan-cake)
 bath-tub 🛁 (bath-tub)
 air-plane ✈️ (air-plane)
-back-pack 🎒 (back-pack)
+back-pack 🎒 (back-pack) ~"Packed with words!"
 snow-flake ❄️ (snow-flake)
 lip-stick 💄 (lip-stick)
 sea-shell 🐚 (sea-shell)
 pea-nut 🥜 (pea-nut)
 hand-bag 👜 (hand-bag)
-skate-board 🛹 (skate-board)
+skate-board 🛹 (skate-board) ~"Kickflip!"
 fire-works 🎆 (fire-works)
 """
 
