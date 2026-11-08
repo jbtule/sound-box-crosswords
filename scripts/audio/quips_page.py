@@ -24,9 +24,13 @@ for i, t in enumerate(takes):
     n += 1
     key = clips.get("w:" + t["word"])
     src = base + key + ".mp3" if key else ""
-    line = html.escape(f"{t['word']} | {t['quip']}", quote=True)
+    at = "" if t.get("usual", True) else f" | {t['speed']}"
+    line = html.escape(f"{t['word']} | {t['quip']}{at}", quote=True)
+    slow = "" if t.get("usual", True) else f' <small>(speed {t["speed"]})</small>'
     rows.append(f'<li><button type="button" data-w="{src}" data-q="{html.escape(t["file"])}" aria-label="Play">▶</button>'
-                f'<label><input type="checkbox" value="{line}"> {n}. “{html.escape(t["quip"])}”</label></li>')
+                f'<label title="Works"><input type="checkbox" class="ok" value="{line}"> ✓</label>'
+                f'<label title="Close: good line, not quite right yet"><input type="checkbox" class="close" value="{line}"> ~</label>'
+                f'<span>{n}. “{html.escape(t["quip"])}”{slow}</span></li>')
 page = """<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>Quip takes</title>
 <style>
@@ -39,7 +43,7 @@ input[type=checkbox]{width:22px;height:22px}
 .picks .row{display:flex;gap:10px;align-items:center}
 @media (prefers-color-scheme: dark){body{background:#111;color:#eee}.picks{background:#1b1b1b;border-color:#333}.picks textarea{background:#000;color:#eee}}
 </style>
-<h1>Quip takes</h1><p>▶ plays the word, a beat, then the quip. Tick the ones that work; they gather below to copy.</p>
+<h1>Quip takes</h1><p>▶ plays the word, a beat, then the quip. Tick ✓ for the ones that work, ~ for good lines that don't sound right yet; they gather below to copy.</p>
 <ul>""" + "\n".join(rows) + """</ul>
 <div class="picks"><div class="row"><b>Picks</b> <span id="n">0</span>
 <button type="button" id="copy">Copy</button> <span id="msg"></span></div>
@@ -50,9 +54,16 @@ const play = (s) => new Promise((r) => { if (!s) return r(); a.src = s; a.onende
 document.querySelectorAll("button[data-q]").forEach((b) => b.onclick = async () => { await play(b.dataset.w); await new Promise((r) => setTimeout(r, 350)); await play(b.dataset.q); });
 const out = document.getElementById("out"), n = document.getElementById("n"), msg = document.getElementById("msg");
 function gather() {
-  const picked = [...document.querySelectorAll("input[type=checkbox]:checked")].map((c) => c.value);
-  out.value = picked.join("\\n"); n.textContent = picked.length;
+  const ok = [...document.querySelectorAll("input.ok:checked")].map((c) => c.value);
+  const close = [...document.querySelectorAll("input.close:checked")].map((c) => c.value);
+  out.value = (ok.length ? "Picks:\\n" + ok.join("\\n") : "") + (ok.length && close.length ? "\\n\\n" : "") + (close.length ? "Close, try again:\\n" + close.join("\\n") : "");
+  n.textContent = ok.length + " ✓ · " + close.length + " ~";
 }
+// One mark per take: ticking ✓ clears ~ and the other way round.
+document.querySelectorAll("li").forEach((li) => li.querySelectorAll("input[type=checkbox]").forEach((c) => c.addEventListener("change", () => {
+  if (c.checked) li.querySelectorAll("input[type=checkbox]").forEach((o) => { if (o !== c) o.checked = false; });
+  gather();
+})));
 document.querySelectorAll("input[type=checkbox]").forEach((c) => c.addEventListener("change", gather));
 document.getElementById("copy").onclick = async () => {
   try { await navigator.clipboard.writeText(out.value); msg.textContent = "Copied"; }

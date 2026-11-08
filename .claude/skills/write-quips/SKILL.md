@@ -60,8 +60,10 @@ easy way to hear them.
    `sh scripts/audio/quips.sh <model-dir> <out-dir> < takes.txt`
    It records each take the way the audio build will (`VOICE_FOR.q`, `SPEED.q` in
    `scripts/audio/build.mjs`) and writes `<out-dir>/index.html`, which plays the word's live
-   recording, a beat, then the take, with a checkbox per take: the picks gather in a box as
-   `word | quip` lines to copy and paste back. Serve `<out-dir>` (`python3 -m http.server`; for an iPad,
+   recording, a beat, then the take, with a ✓ (works) and a ~ (good line, not right yet) per take: they gather in a box as
+   `word | quip` lines to copy and paste back. For a ~, retake with other wording or
+   punctuation, or a take at its own speed (`word | Quip! | 0.9`; it ships via `SPEED_FOR` in
+   `build.mjs`). Serve `<out-dir>` (`python3 -m http.server`; for an iPad,
    a server on the Mac's Tailscale address) and share the link. Number the takes, and include
    the current quip as 1 when reworking one.
 3. **Apply the picks.** Edit the `~"..."` on the word's line in every list it's in (grep the

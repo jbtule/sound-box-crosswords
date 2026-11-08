@@ -12,17 +12,17 @@ model_dir, out, voice, speed = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.
 core.load(model_dir)
 takes = []
 for line in open(os.path.join(out, "takes.txt"), encoding="utf-8"):
-    if "|" in line:
-        word, quip = (s.strip() for s in line.split("|", 1))
-        if word and quip:
-            takes.append((word, quip))
+    # "word | Quip!", or "word | Quip! | 0.9" for a take at its own speed (build.mjs SPEED_FOR).
+    parts = [s.strip() for s in line.split("|")]
+    if len(parts) >= 2 and parts[0] and parts[1]:
+        takes.append((parts[0], parts[1], float(parts[2]) if len(parts) > 2 and parts[2] else speed))
 made = []
-for i, (word, quip) in enumerate(takes):
-    a, sr = core.kokoro.create(quip, voice=voice, speed=speed, lang="en-us")
+for i, (word, quip, at) in enumerate(takes):
+    a, sr = core.kokoro.create(quip, voice=voice, speed=at, lang="en-us")
     name = f"take{i}.mp3"
     with open(os.path.join(out, name), "wb") as f:
         f.write(core.mp3(core.trim(a, sr), sr))
-    made.append({"word": word, "quip": quip, "file": name})
+    made.append({"word": word, "quip": quip, "file": name, "speed": at, "usual": at == speed})
     print(f"recorded {i + 1}/{len(takes)}", flush=True)
 with open(os.path.join(out, "takes.json"), "w", encoding="utf-8") as f:
     json.dump(made, f, ensure_ascii=False)
