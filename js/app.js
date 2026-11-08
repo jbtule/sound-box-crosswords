@@ -1924,7 +1924,7 @@ function syncAll() {
   syncing = (async function () {
     for (var p of PROFILES) {
       try { await syncProfile(p.id); delete syncErr[p.id]; } catch (e) {
-        syncErr[p.id] = e && e.newer ? "newer" : e && e.limited ? "limited" : e && e.full ? "full" : e && e.big ? "big" : true;
+        syncErr[p.id] = e && e.newer ? "newer" : e && e.limited ? "limited" : e && e.full ? "full" : e && e.big ? "big" : e && e.busy ? "busy" : true;
         syncedGrades[p.id] = (e && e.synced) || 0;
       }
     }
@@ -1979,6 +1979,7 @@ function renderLinkStatus() {
     : syncErr[PROFILE] === "newer" ? "Linked · another device has a newer version; this one syncs once it updates"
     : syncErr[PROFILE] === "limited" ? "Linked · the sync service is busy today, will try again"
     : syncErr[PROFILE] === "full" ? "Linked · the sync service is full for now, will try again"
+    : syncErr[PROFILE] === "busy" ? "Linked · the sync service is busy, will try again"
     : syncErr[PROFILE] === "big" ? "Linked · this player’s progress is too big to sync; it’s still saved on this device"
     : syncErr[PROFILE] ? "Linked · couldn’t sync just now, will try again"
     : syncing ? "Linked · syncing…"
@@ -2045,6 +2046,7 @@ $("#goRecv").addEventListener("click", function () { linkView("Recv"); showScan(
 var SEND_TROUBLE = {
   limited: "Too many players were linked from this network today. Try again tomorrow.",
   full: "The sync service is full for now. Try again in a few days.",
+  busy: "The sync service is busy. Try again in a minute.",
   big: "This player’s progress is too big to sync. It’s still saved on this device.",
   newer: "Another device has a newer version of Sound Box. Close Sound Box and open it again to update, then try again.",
   other: "Couldn’t reach the sync service. Check the connection, then try again."
@@ -2170,7 +2172,7 @@ $("#recvGo").addEventListener("click", async function () {
     grades = await remoteGrades({ fetch: function (u, o) { return fetch(u, o); }, url: SYNC_AT, keys: await keysFor(key) });
   } catch (e) {
     $("#recvGo").disabled = false;
-    $("#recvMsg").textContent = "Couldn’t reach the sync service. Check the connection, then try again.";
+    $("#recvMsg").textContent = e && e.busy ? SEND_TROUBLE.busy : "Couldn’t reach the sync service. Check the connection, then try again.";
     return;
   }
   // Nothing saved for it (an old code whose copy has expired; a code just shown always has at
