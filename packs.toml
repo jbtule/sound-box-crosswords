@@ -57,8 +57,8 @@ note = "3rd grade 2026 school words. A sound wave means listen, then spell."
 school = true
 words = """
 yard 🏡
-storm ⛈️ ~"Grab an umbrella!"
-more ➕ ~"Yes, please!"
+storm ⛈️ ~"I'm not scared. Okay, maybe."
+more ➕ ~"Yay! More spelling words!"
 ex-plore 🧭 (ex-plore) ~"Onward!"
 u-ni-form (you-nih-form) "She wears her uniform to soccer practice."
 third 🥉
@@ -152,7 +152,7 @@ shirt 👕
 bird 🐦
 girl 👧
 purse 👛
-storm ⛈️ ~"Grab an umbrella!"
+storm ⛈️ ~"I'm not scared. Okay, maybe."
 horse 🐴
 dart 🎯
 cart 🛒
@@ -259,7 +259,7 @@ hel-i-cop-ter 🚁 (hel-uh-cop-ter)
 words = """
 ex-plore 🧭 (ex-plore) ~"Onward!"
 store 🏪
-more ➕ ~"Yes, please!"
+more ➕ ~"Yay! More spelling words!"
 snore 😴
 be-fore ⏮️ (bee-fore)
 shore 🏖️
