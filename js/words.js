@@ -3,6 +3,10 @@
 // resolves through the import map in the browser, and from node_modules in Node.
 import { parse } from "smol-toml";
 
+// Said after a pack's name when it's picked (app.js switchPack), for the 🏫 and 🥋 on its chip.
+// Recorded phrases (scripts/audio/build.mjs PHRASES includes them).
+export const PACK_KINDS = { school: "School list.", hard: "Hard mode." };
+
 // Always last: the custom list, saved in localStorage.
 const MINE = { name: "Custom", note: "Your own word list. Change it in Settings.", list: "" };
 
