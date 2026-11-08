@@ -131,8 +131,6 @@ h1 span { color: var(--accent); }
 .cell.beat { transform: scale(1.12); box-shadow: 0 0 0 3px var(--ink); z-index: 2; }
 .cell.wiggle, .cell.sel.wiggle { animation: wiggle 0.4s; border-color: var(--bad); }
 .cell.wrong, .cell.sel.wrong { background: color-mix(in srgb, var(--bad) 22%, var(--cell)); border-color: var(--bad); }
-/* A box emptied after a wrong try keeps a red edge until a letter goes back in (app.js redo). */
-.cell.redo, .cell.sel.redo { border-color: var(--bad); }
 .cell.pop { animation: pop 0.45s; }
 .cell.quip { animation: quip-hop 0.55s ease-out; } /* the word's boxes hop while its quip is said */
 @keyframes quip-hop { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(-22%) rotate(-4deg); } 60% { transform: translateY(0) rotate(3deg); } 80% { transform: translateY(-8%); } }

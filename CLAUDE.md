@@ -436,9 +436,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     puzzle since the last (`quipAt`), then a roll (`QUIP_CHANCE`). Decided when the puzzle starts
     (`pickQuip`, saved as `pz.quipFor`): which word, at random among the puzzle's words with a quip.
   - `input` / `checkWord` / `complete` / `settleCrossings`: whole-word checking only. Letters
-    are accepted until the word is full; then wrong letters flash and clear, and their
-    boxes keep a red edge until refilled (`redo`); a key during the flash clears it at once and
-    types into the first red box (`clearWrong`), so no key seems to do nothing. Every miss shows a toast:
+    are accepted until the word is full; then wrong letters flash and clear; a key
+    during the flash clears them at once and types into the first emptied box (`clearWrong`), so no key seems to do nothing. Every miss shows a toast:
     a red ⊘ and the spelling that was typed, so a player sees the word was wrong rather than
     thinking the pad typed the wrong letters. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
