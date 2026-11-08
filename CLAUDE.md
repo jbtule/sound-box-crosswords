@@ -86,7 +86,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   plus dev-only `playwright` (renders `social-card.png`). Fonts from Google Fonts (Fredoka for display, Lexend for body).
 - **Keep the custom letter pad; don't use the system keyboard** (no focused text input for
   play). The iPad keyboard's predictive text, autocorrect and dictation would hand over the
-  spelling (goal 3), and it covers half the screen. Physical keyboards are handled directly.
+  spelling (goal 3), and it covers half the screen. Physical keyboards are handled directly; typing on one docks the
+  letter pad in its place below the puzzle instead of floating over it, until the pad is tapped
+  (`dockPad` in `app.js`).
 - **Target: iPad Safari**, also phones and desktop. Touch first; physical keyboards work too.
   Must fit ~380px wide; the grid sizes cells to fit (`sizeBoard`, 24–50px).
 - **Recorded audio** for pack words, Break it down syllables, sentences, "You solved it!" and "Way to go!",
