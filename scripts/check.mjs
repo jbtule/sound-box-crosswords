@@ -53,6 +53,16 @@ const listenHtml = readFileSync(join(root, "listen", "index.html"), "utf8");
 for (const [, ref] of listenHtml.matchAll(/(?:src|href)="(?!https?:|data:|\?|\.\/")([^"]+)"/g)) {
   if (!existsSync(join(root, "listen", ref))) errors.push(`listen/index.html links to missing file ${ref}`);
 }
+// No text box gets the keyboard's help (suggestions, autocorrect): it would spell pack words.
+for (const tag of html.match(/<(input|textarea)\b[^>]*>/g) || []) {
+  if (/type="(checkbox|radio|range|button|submit|hidden)"/.test(tag)) continue;
+  for (const attr of ['autocomplete="off"', 'autocorrect="off"', 'spellcheck="false"']) if (!tag.includes(attr)) errors.push(`index.html: ${tag.slice(0, 40)}… needs ${attr} (the keyboard's suggestions would spell words)`);
+}
+{
+  const app = readFileSync(join(root, "js", "app.js"), "utf8");
+  const made = app.match(/createElement\("(input|textarea)"\)/g) || [], wrapped = app.match(/noSpellHelp\(document\.createElement\("(input|textarea)"\)\)/g) || [];
+  if (made.length !== wrapped.length) errors.push("js/app.js: a text box made in code must be noSpellHelp(document.createElement(...)) (the keyboard's suggestions would spell words)");
+}
 if (!listenHtml.includes('<meta name="robots" content="noindex, nofollow">')) errors.push("listen/index.html must keep its noindex robots tag");
 if (/href="[^"]*listen/.test(html)) errors.push("index.html must not link to the listen check");
 

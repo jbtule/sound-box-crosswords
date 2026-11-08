@@ -1986,12 +1986,19 @@ function renderLinkStatus() {
     : "Linked · synced " + (t ? ago(t) : "soon");
   $("#resetLinked").hidden = !linked;
 }
+// Any text box is a spelling oracle (the keyboard's suggestions and autocorrect spell words for
+// you), so none gets that help: boxes made here go through this (the check enforces it), and
+// the page's own have the same attributes.
+function noSpellHelp(el) {
+  el.setAttribute("autocomplete", "off"); el.setAttribute("autocorrect", "off"); el.spellcheck = false;
+  return el;
+}
 function renderProfiles() {
   var list = $("#profileList"); list.innerHTML = "";
   $("#profilesSec").hidden = PROFILES.length < 2;
   PROFILES.forEach(function (p) {
     var li = document.createElement("li"); li.className = "profile-row";
-    var input = document.createElement("input");
+    var input = noSpellHelp(document.createElement("input"));
     input.type = "text"; input.value = p.name; input.placeholder = "Name"; input.maxLength = 24;
     input.setAttribute("aria-label", "Player’s name");
     input.addEventListener("change", function () { p.name = input.value.trim(); saveProfiles(); renderWho(); });
