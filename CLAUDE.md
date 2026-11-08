@@ -441,7 +441,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     a red ⊘ and the spelling that was typed, so a player sees the word was wrong rather than
     thinking the pad typed the wrong letters. Toasts about a word (this one, the guessing
     nudge, "You got it this time!") never cover its boxes, and every toast stays
-    below the status bar / Dynamic Island and above the floating pad (`placeToast`). Finishing one
+    below the status bar / Dynamic Island and above the floating pad (`placeToast`). Keys on a solved word the player tapped onto are ignored (`tapped`);
+    right after a word is finished, before the app moves on, they go to the next word. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
     player guess letters until one stuck.)
   - Switching packs mid-puzzle (letters typed, `played`) asks first in a popover under the chip

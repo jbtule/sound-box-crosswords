@@ -551,7 +551,7 @@ function renderClues() {
     l.className = "l"; l.textContent = W.num + (W.dir === "A" ? " across" : " down");
     b.append(e, l);
     b.setAttribute("aria-label", W.num + (W.dir === "A" ? " across" : " down") + ", hear the word");
-    b.addEventListener("click", function () { select(i, null, true, true); });
+    b.addEventListener("click", function () { select(i, null, true, true); tapped = true; });
     list.appendChild(b);
   });
 }
@@ -572,8 +572,12 @@ function sayWord(W, rate, after) {
 }
 // Select word i with the cursor at letter p (or its first empty box). `say` speaks the
 // word if it changed and auto-speak is on; `force` speaks it regardless.
+// tapped: the player picked the current word by tapping (a box or a clue), not the app moving on
+// by itself. Keys on a solved word picked that way are ignored (input).
+var tapped = false;
 function select(i, p, say, force) {
   if (!P || finished) return;
+  tapped = false;
   var changed = i !== cur;
   cur = i;
   var fe = firstEmpty(i);
@@ -603,7 +607,9 @@ function input(ch) {
   if (!P || finished || Date.now() < padPausedUntil) return;
   clearWrong(); // a key while a wrong try still shows: clear it now and type into the first red box
   var W = P.words[cur];
-  if (doneW[cur]) { var nx = nextUnfinished(); if (nx < 0) return; select(nx, null, true); W = P.words[cur]; }
+  // On a solved word: a key is ignored if the player tapped onto it, but goes on to the next word
+  // if the app left the cursor there (the moment between finishing a word and moving on).
+  if (doneW[cur]) { if (tapped) return; var nx = nextUnfinished(); if (nx < 0) return; select(nx, null, true); W = P.words[cur]; }
   if (locked[W.cells[pos]]) { var fe = firstEmpty(cur, pos); if (fe < 0) return; pos = fe; }
   fill[W.cells[pos]] = ch;
   if (W.cells.every(function (c) { return fill[c]; })) { checkWord(cur); return; }
@@ -690,6 +696,7 @@ function wordStats(w) {
 function complete(i, typed) {
   if (doneW[i]) return;
   doneW[i] = true;
+  if (i === cur) tapped = false; // finished here, not tapped onto: keys go on to the next word
   var W = P.words[i];
   W.cells.forEach(function (c, j) { fill[c] = W.w[j]; locked[c] = true; setTimeout(function () { flash(c, "pop"); }, j * 60); });
   say("w", W.w, 0.9);
@@ -941,6 +948,7 @@ board.addEventListener("click", function (e) {
     if (pick == null) pick = ws[0];
     select(pick, P.words[pick].cells.indexOf(kk), true);
   }
+  tapped = true;
 });
 
 /* ---------- packs + settings ---------- */
