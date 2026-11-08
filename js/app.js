@@ -538,7 +538,9 @@ function loadPuzzle() {
   renderBoard();
   renderClues();
   var i = s.cur >= 0 && s.cur < P.words.length ? s.cur : order()[0];
-  select(i, s.pos >= 0 && s.pos < P.words[i].w.length ? s.pos : null, false);
+  // Saved on a finished word (closed in the moment before moving on): start on the next one.
+  if (doneW[i]) { cur = i; var nx = nextUnfinished(); if (nx >= 0) i = nx; }
+  select(i, !doneW[i] && s.pos >= 0 && s.pos < P.words[i].w.length && i === s.cur ? s.pos : null, false);
   return true;
 }
 function renderClues() {
@@ -572,8 +574,9 @@ function sayWord(W, rate, after) {
 }
 // Select word i with the cursor at letter p (or its first empty box). `say` speaks the
 // word if it changed and auto-speak is on; `force` speaks it regardless.
-// tapped: the player picked the current word by tapping (a box or a clue), not the app moving on
-// by itself. Keys on a solved word picked that way are ignored (input).
+// tapped: the cursor is where the player tapped it (a box or a clue), not where the app put it.
+// A key with the cursor tapped onto a solved box in an unfinished word (finished by a crossing
+// word) is ignored (input) rather than typed into the next empty box.
 var tapped = false;
 function select(i, p, say, force) {
   if (!P || finished) return;
@@ -607,10 +610,13 @@ function input(ch) {
   if (!P || finished || Date.now() < padPausedUntil) return;
   clearWrong(); // a key while a wrong try still shows: clear it now and type into the first red box
   var W = P.words[cur];
-  // On a solved word: a key is ignored if the player tapped onto it, but goes on to the next word
-  // if the app left the cursor there (the moment between finishing a word and moving on).
-  if (doneW[cur]) { if (tapped) return; var nx = nextUnfinished(); if (nx < 0) return; select(nx, null, true); W = P.words[cur]; }
-  if (locked[W.cells[pos]]) { var fe = firstEmpty(cur, pos); if (fe < 0) return; pos = fe; }
+  // On a solved word a key does nothing: its clue is still showing, so typing somewhere else
+  // would make no sense (the app moves on by itself a moment after a word is finished). On a
+  // solved box in an unfinished word, a key does nothing if the player tapped onto it, and goes
+  // to the word's next empty box if the app left the cursor there.
+  if (doneW[cur]) return;
+  if (locked[W.cells[pos]]) { if (tapped) return; var fe = firstEmpty(cur, pos); if (fe < 0) return; pos = fe; }
+  tapped = false;
   fill[W.cells[pos]] = ch;
   if (W.cells.every(function (c) { return fill[c]; })) { checkWord(cur); return; }
   var nxt = firstEmpty(cur, pos + 1);
@@ -696,7 +702,6 @@ function wordStats(w) {
 function complete(i, typed) {
   if (doneW[i]) return;
   doneW[i] = true;
-  if (i === cur) tapped = false; // finished here, not tapped onto: keys go on to the next word
   var W = P.words[i];
   W.cells.forEach(function (c, j) { fill[c] = W.w[j]; locked[c] = true; setTimeout(function () { flash(c, "pop"); }, j * 60); });
   say("w", W.w, 0.9);
@@ -807,6 +812,7 @@ function finish() {
 function back() {
   if (!P || finished) return;
   clearWrong();
+  tapped = false;
   var W = P.words[cur], kk = W.cells[pos];
   if (fill[kk] && !locked[kk]) { delete fill[kk]; update(); return; }
   for (var j = pos - 1; j >= 0; j--) {
