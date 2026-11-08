@@ -232,9 +232,13 @@ if (settings.custom === undefined) {
   var oldProg = store.get("progress", {}).mine;
   settings.custom = store.get("custom", null) !== null || packId === "mine" || !!(oldProg && oldProg.done && Object.keys(oldProg.done).length);
 }
+// Custom is switched off for everyone for now: a player typed guesses into its list box to let
+// the iPad keyboard's suggestions spell pack words (goal 3). Lists already saved are kept, and
+// setting this back to true brings the pack and its Settings section back as they were.
+var CUSTOM_ALLOWED = false;
 // Packs to offer: every pack, and Custom when it's on; hard mode packs (🥋) last.
 function packIds() {
-  var ids = Object.keys(PACKS).filter(function (id) { return id !== "mine" || settings.custom; });
+  var ids = Object.keys(PACKS).filter(function (id) { return id !== "mine" || (CUSTOM_ALLOWED && settings.custom); });
   return ids.filter(function (id) { return !PACKS[id].hard; }).concat(ids.filter(function (id) { return PACKS[id].hard; }));
 }
 if (!PACKS[packId] || packIds().indexOf(packId) < 0) packId = packIds()[0];
@@ -1229,6 +1233,7 @@ function openSheet(tab) {
   $("#customText").value = customText;
   $("#optCustom").checked = settings.custom;
   $("#customBox").hidden = !settings.custom;
+  $("#customSec").hidden = !CUSTOM_ALLOWED;
   renderProgressSheet();
   $("#saveMsg").textContent = "";
   $("#sheet").hidden = false;
