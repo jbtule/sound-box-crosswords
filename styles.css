@@ -128,8 +128,8 @@ h1 span { color: var(--accent); }
 .board.entering .cell { will-change: transform, opacity; } /* each box on its own layer while it moves, for smooth 3D turns on the iPad */
 .cell.locked { color: var(--ok); }
 .cell.beat { transform: scale(1.12); box-shadow: 0 0 0 3px var(--ink); z-index: 2; }
-.cell.wiggle { animation: wiggle 0.4s; border-color: var(--bad); }
-.cell.wrong { background: color-mix(in srgb, var(--bad) 22%, var(--cell)); border-color: var(--bad); }
+.cell.wiggle, .cell.sel.wiggle { animation: wiggle 0.4s; border-color: var(--bad); }
+.cell.wrong, .cell.sel.wrong { background: color-mix(in srgb, var(--bad) 22%, var(--cell)); border-color: var(--bad); }
 /* A box emptied after a wrong try keeps a red edge until a letter goes back in (app.js redo). */
 .cell.redo, .cell.sel.redo { border-color: var(--bad); }
 .cell.pop { animation: pop 0.45s; }
@@ -157,6 +157,7 @@ html.standalone { touch-action: pan-x pan-y; }
 .quiet-btn:hover, .quiet-btn:focus-visible { color: var(--ink); background: var(--key); }
 .toast { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 4; background: var(--ink); color: var(--card); border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: 0.92rem; pointer-events: none; white-space: nowrap; }
 .toast.show { animation: toast 1.8s ease both; }
+.toast svg.ico { width: 1.25em; height: 1.25em; vertical-align: -0.28em; margin-right: 6px; }
 @keyframes toast { 0% { opacity: 0; transform: translate(-50%, -6px); } 12%, 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
 /* New-achievement card: one big card per achievement, over a scrim. */
 /* Start / Continue: one big button over the board at launch (iOS plays sound only after a tap). */
