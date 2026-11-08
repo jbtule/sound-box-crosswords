@@ -611,11 +611,17 @@ function input(ch) {
   if (!P || finished || Date.now() < padPausedUntil) return;
   clearWrong(); // a key while a wrong try still shows: clear it now and type into the first red box
   var W = P.words[cur];
-  // On a solved word a key does nothing: its clue is still showing, so typing somewhere else
-  // would make no sense (the app moves on by itself a moment after a word is finished). On a
-  // solved box in an unfinished word, a key the player tapped onto it just moves the cursor to
-  // the word's next empty box; where the app left the cursor, it types there.
-  if (doneW[cur]) return;
+  // A key on a solved box isn't typed (it was meant for that box), but it moves the cursor on.
+  // On a solved word (tapped onto, or just finished): to the next unfinished word, which shows
+  // and says its clue. On a solved box in an unfinished word: to the word's next empty box if
+  // the player tapped onto it; where the app left the cursor, the key types there.
+  // The new clue is said after whatever is playing (the finished word, a quip), not over it.
+  if (doneW[cur]) {
+    var nx = nextUnfinished(); if (nx < 0) return;
+    select(nx, null, false);
+    if (settings.speakSel) sayWord(P.words[nx], 0.85, true);
+    return;
+  }
   if (locked[W.cells[pos]]) {
     var fe = firstEmpty(cur, pos); if (fe < 0) return;
     pos = fe;
