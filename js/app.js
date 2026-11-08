@@ -2111,6 +2111,27 @@ $("#soundBtn").addEventListener("click", function () { listened(); soundOut(); }
 $("#newBtn").addEventListener("click", function () { startNewPuzzle(); });
 $("#nextBtn").addEventListener("click", function () { startNewPuzzle(true); });
 window.addEventListener("resize", sizeBoard);
+// Turning the iPad: Safari can leave the stuck-to-the-bottom pad where the old screen's bottom
+// was (a gap under it, the puzzle covered) and report the old height for a moment. Once the
+// turn settles, size the board again and re-seat the pad: unstick it for a moment, then nudge a
+// scroll, which makes Safari place it again.
+var lastW = window.innerWidth;
+function reseatPad() {
+  sizeBoard();
+  kbEl.style.position = "relative";
+  void kbEl.offsetHeight;
+  kbEl.style.position = "";
+  window.scrollBy(0, 1);
+  requestAnimationFrame(function () { window.scrollBy(0, -1); });
+}
+function turned() {
+  if (window.innerWidth === lastW) return;
+  lastW = window.innerWidth;
+  [150, 500].forEach(function (ms) { setTimeout(reseatPad, ms); });
+}
+window.addEventListener("resize", turned);
+if (window.visualViewport) window.visualViewport.addEventListener("resize", turned);
+window.addEventListener("orientationchange", function () { lastW = -1; turned(); });
 function reducedMotion() { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
 // Floating pad: --kb-h for the cells' scroll margin, and .floating while it's stuck to the
 // bottom (its end marker is below the screen).
