@@ -443,6 +443,7 @@ function renderEmpty() {
   $("#clueSent").hidden = true;
 }
 function renderBoard() {
+  if (wrongTry) { clearTimeout(wrongTry.timer); wrongTry = null; }
   board.innerHTML = "";
   board.style.gridTemplateColumns = "repeat(" + P.cols + ", var(--cell-size))";
   for (var r = 0; r < P.rows; r++) for (var c = 0; c < P.cols; c++) {
@@ -600,6 +601,7 @@ function flash(kk, cls, ms) {
 // has to recall the whole spelling instead of guessing letter by letter.
 function input(ch) {
   if (!P || finished || Date.now() < padPausedUntil) return;
+  clearWrong(); // a key while a wrong try still shows: clear it now and type into the first red box
   var W = P.words[cur];
   if (doneW[cur]) { var nx = nextUnfinished(); if (nx < 0) return; select(nx, null, true); W = P.words[cur]; }
   if (locked[W.cells[pos]]) { var fe = firstEmpty(cur, pos); if (fe < 0) return; pos = fe; }
@@ -609,7 +611,19 @@ function input(ch) {
   if (nxt >= 0) pos = nxt;
   update();
 }
-// Complete the word if right; otherwise flash wrong boxes, then clear them.
+// Complete the word if right; otherwise flash wrong boxes, then clear them. Typing during the
+// flash clears them at once (clearWrong) and types into the first emptied box, rather than
+// typing over the full word, which checked it again and made keys seem to do nothing.
+var wrongTry = null;
+function clearWrong() {
+  if (!wrongTry) return;
+  var t = wrongTry; wrongTry = null;
+  clearTimeout(t.timer);
+  var W = P.words[t.i];
+  W.cells.forEach(function (c, j) { if (fill[c] !== W.w[j] && !locked[c]) delete fill[c]; });
+  if (cur === t.i) pos = t.firstWrong < 0 ? 0 : t.firstWrong;
+  update();
+}
 function checkWord(i) {
   var W = P.words[i];
   if (W.cells.every(function (c, j) { return fill[c] === W.w[j]; })) { complete(i, true); update(); return; }
@@ -629,12 +643,11 @@ function checkWord(i) {
   slipSpots(W.w, W.sounds, wrong).forEach(function (s) { slips.place[s.place]++; slips.kind[s.kind]++; });
   store.set("slips", slips);
   noteGuesses(i, wrong);
+  // Every wrong try: a red ⊘ with the spelling typed, so it's clear the word was wrong (not
+  // that the pad put in the wrong letters or lost them). The guessing nudge's toast goes first.
+  if (Date.now() >= padPausedUntil) toast("", NOT_ICON, W.cells.map(function (c) { return fill[c]; }).join(""), i);
   update();
-  setTimeout(function () {
-    W.cells.forEach(function (c, j) { if (fill[c] !== W.w[j] && !locked[c]) delete fill[c]; });
-    pos = firstWrong < 0 ? 0 : firstWrong;
-    update();
-  }, 700);
+  wrongTry = { i: i, firstWrong: firstWrong, timer: setTimeout(clearWrong, 700) };
 }
 // The guessing nudge: a 4th letter that isn't close (phonics.js isClose) in the same box of a
 // word, counted across its tries, with no listening in between (listened() clears the count),
@@ -654,7 +667,7 @@ function noteGuesses(i, wrong) {
   });
   if (!hit || pz.nudged[i]) return;
   pz.nudged[i] = true;
-  toast("Slow down and sound it out.");
+  toast("Slow down and sound it out.", null, null, i);
   padPausedUntil = Date.now() + PAD_PAUSE;
   kbEl.classList.add("paused");
   setTimeout(function () { kbEl.classList.remove("paused"); }, PAD_PAUSE);
@@ -688,7 +701,7 @@ function complete(i, typed) {
     // Comeback: right on the first try now (no miss this puzzle), after a miss before.
     if (!missedW[i] && st.miss > 0 && !st.cb) {
       st.cb = true; counts.comeback++; store.set("counts", counts);
-      toast("🏀 You got it this time!");
+      toast("🏀 You got it this time!", null, null, i);
     }
     st.n++;
     if (!missedW[i]) { if (!st.ok) newPics++; st.ok++; } // first first-try: its picture is collected
@@ -786,6 +799,7 @@ function finish() {
 }
 function back() {
   if (!P || finished) return;
+  clearWrong();
   var W = P.words[cur], kk = W.cells[pos];
   if (fill[kk] && !locked[kk]) { delete fill[kk]; update(); return; }
   for (var j = pos - 1; j >= 0; j--) {
@@ -1308,9 +1322,45 @@ function checkAchievements() {
 }
 // A short note over the board that doesn't interrupt play.
 var toastTimer = null;
-function toast(text) {
+// `icon`: an optional line icon (SVG markup) before the text; `word`: letters to show in the
+// game's letter font after it (a wrong try's spelling); `avoid`: a word (index) whose boxes the
+// toast mustn't cover (placeToast).
+var NOT_ICON = '<svg class="ico not" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M5.6 5.6l12.8 12.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
+// A toast about a word stays off that word's boxes: its usual spot (top of the puzzle) if
+// that's clear, else just above the word, just below it, or beside it (a tall Down word).
+function placeToast(el, avoid) {
+  el.style.top = el.style.left = "";
+  if (avoid == null || !P || !P.words[avoid]) return;
+  var card = el.parentElement.getBoundingClientRect(), tw = el.offsetWidth, th = el.offsetHeight, gap = 8, edge = 4;
+  var b = null;
+  P.words[avoid].cells.forEach(function (kk) {
+    var c = cellEl(kk); if (!c) return;
+    var r = c.getBoundingClientRect();
+    b = b ? { l: Math.min(b.l, r.left), t: Math.min(b.t, r.top), r: Math.max(b.r, r.right), b: Math.max(b.b, r.bottom) } : { l: r.left, t: r.top, r: r.right, b: r.bottom };
+  });
+  if (!b) return;
+  b = { l: b.l - card.left, t: b.t - card.top, r: b.r - card.left, b: b.b - card.top };
+  var cx = function (x) { return Math.max(tw / 2 + edge, Math.min(card.width - tw / 2 - edge, x)); };
+  var clear = function (x, y) { return x + tw / 2 + gap <= b.l || x - tw / 2 - gap >= b.r || y + th + gap <= b.t || y - gap >= b.b; };
+  var mid = (b.l + b.r) / 2, spots = [
+    [cx(card.width / 2), parseFloat(getComputedStyle(el).top) || 10],
+    [cx(mid), b.t - gap - th],
+    [cx(mid), b.b + gap],
+    [b.r + gap + tw / 2, (b.t + b.b - th) / 2],
+    [b.l - gap - tw / 2, (b.t + b.b - th) / 2],
+  ];
+  for (var i = 0; i < spots.length; i++) {
+    var x = spots[i][0], y = Math.max(edge, Math.min(card.height - th - edge, spots[i][1]));
+    if (x - tw / 2 < edge || x + tw / 2 > card.width - edge) continue;
+    if (clear(x, y)) { el.style.left = x + "px"; el.style.top = y + "px"; return; }
+  }
+}
+function toast(text, icon, word, avoid) {
   var el = $("#toast");
   el.textContent = text; el.hidden = false;
+  if (icon) el.insertAdjacentHTML("afterbegin", icon);
+  if (word) { var w = document.createElement("span"); w.className = "tried"; w.textContent = word; el.appendChild(w); }
+  placeToast(el, avoid);
   el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function () { el.hidden = true; }, 1800);
