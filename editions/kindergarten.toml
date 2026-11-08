@@ -116,7 +116,7 @@ name = "Blends"
 note = "Two sounds slide together at the start. Say every sound, and give each a box."
 words = """
 frog 🐸 {f r o g}
-crab 🦀 {c r a b} ~"Don't pinch me!"
+crab 🦀 {c r a b} ~"I only walk sideways."
 flag 🚩 {f l a g}
 drum 🥁 {d r u m}
 swim 🏊 {s w i m}
