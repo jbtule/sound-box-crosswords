@@ -14,7 +14,7 @@ cat 🐈 {c a t} ~"Purrrr-fect."
 dog 🐕 {d o g}
 pig 🐖 {p i g}
 sun ☀️ {s u n}
-bus 🚌 {b u s} ~"Beep! Beep!"
+bus 🚌 {b u s} ~"Next stop: more words!"
 bed 🛏️ {b e d}
 map 🗺️ {m a p}
 fox 🦊 {f o x}
@@ -157,7 +157,7 @@ name = "Compound Words"
 note = "Two small words make one big word. Keep every sound of both!"
 hard = true
 words = """
-cup-cake 🧁 (cup-cake) ~"Yum!"
+cup-cake 🧁 (cup-cake) ~"Sprinkles fuel my spelling."
 pop-corn 🍿 (pop-corn)
 snow-man ⛄ (snow-man) ~"I want to build one."
 cow-boy 🤠 (cow-boy) ~"Yee haw!"
