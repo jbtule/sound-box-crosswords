@@ -434,9 +434,10 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     (5 words at most; never shown). After the word is spelled (typed, not finished by a crossing),
     it's said in another voice (Bella, `VOICE_FOR` in `build.mjs`, kind `q`) a beat later
     (`QUIP_BEAT`) while the word's boxes hop (`.cell.quip`), and the next clue waits for it to end.
-    Rare on purpose: with auto-speak on, at most one a puzzle, only after `QUIP_GAP` and a finished
-    puzzle since the last (`quipAt`), then a roll (`QUIP_CHANCE`). Decided when the puzzle starts
-    (`pickQuip`, saved as `pz.quipFor`): which word, at random among the puzzle's words with a quip.
+    Not every time: with auto-speak on, at most one a puzzle, once a puzzle has been finished since
+    the last (`quipAt`), then a roll (`QUIP_CHANCE`, 0.6: about 6 puzzles in 10). Decided when the
+    puzzle starts (`pickQuip`, saved as `pz.quipFor`): which word, at random among the puzzle's
+    words with a quip; if a crossing word finishes it, the quip moves to another (`moveQuip`).
   - `input` / `checkWord` / `complete` / `settleCrossings`: whole-word checking only. Letters
     are accepted until the word is full; then wrong letters flash and clear; a key
     during the flash clears them at once and types into the first emptied box (`clearWrong`), so no key seems to do nothing. Every miss shows a toast:
