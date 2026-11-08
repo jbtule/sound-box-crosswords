@@ -443,6 +443,8 @@ function renderEmpty() {
   $("#clueSent").hidden = true;
 }
 function renderBoard() {
+  redo = {};
+  if (wrongTry) { clearTimeout(wrongTry.timer); wrongTry = null; }
   board.innerHTML = "";
   board.style.gridTemplateColumns = "repeat(" + P.cols + ", var(--cell-size))";
   for (var r = 0; r < P.rows; r++) for (var c = 0; c < P.cols; c++) {
@@ -492,6 +494,7 @@ function update() {
     el.classList.toggle("syl-a", idx >= 0 && settings.syl && W.sylOf[idx] % 2 === 0);
     el.classList.toggle("syl-b", idx >= 0 && settings.syl && W.sylOf[idx] % 2 === 1);
     el.classList.toggle("cursor", idx === pos && !finished);
+    el.classList.toggle("redo", !!redo[kk] && !fill[kk] && !finished);
   });
   // Keep the box being typed into on screen (and out from behind the floating pad).
   // (Not while a new puzzle is set up: its entrance scrolls the whole card instead, and two smooth
@@ -600,16 +603,31 @@ function flash(kk, cls, ms) {
 // has to recall the whole spelling instead of guessing letter by letter.
 function input(ch) {
   if (!P || finished || Date.now() < padPausedUntil) return;
+  clearWrong(); // a key while a wrong try still shows: clear it now and type into the first red box
   var W = P.words[cur];
   if (doneW[cur]) { var nx = nextUnfinished(); if (nx < 0) return; select(nx, null, true); W = P.words[cur]; }
   if (locked[W.cells[pos]]) { var fe = firstEmpty(cur, pos); if (fe < 0) return; pos = fe; }
   fill[W.cells[pos]] = ch;
+  delete redo[W.cells[pos]];
   if (W.cells.every(function (c) { return fill[c]; })) { checkWord(cur); return; }
   var nxt = firstEmpty(cur, pos + 1);
   if (nxt >= 0) pos = nxt;
   update();
 }
-// Complete the word if right; otherwise flash wrong boxes, then clear them.
+// Complete the word if right; otherwise flash wrong boxes, then clear them. A cleared box keeps a
+// red edge (`redo`) until a letter goes back in, so it's clear the letters were taken out for
+// being wrong, not lost. Typing during the flash clears them at once (clearWrong) rather than
+// typing over the full word, which checked it again and made keys seem to do nothing.
+var redo = {}, wrongTry = null;
+function clearWrong() {
+  if (!wrongTry) return;
+  var t = wrongTry; wrongTry = null;
+  clearTimeout(t.timer);
+  var W = P.words[t.i];
+  W.cells.forEach(function (c, j) { if (fill[c] !== W.w[j] && !locked[c]) { delete fill[c]; redo[c] = true; } });
+  if (cur === t.i) pos = t.firstWrong < 0 ? 0 : t.firstWrong;
+  update();
+}
 function checkWord(i) {
   var W = P.words[i];
   if (W.cells.every(function (c, j) { return fill[c] === W.w[j]; })) { complete(i, true); update(); return; }
@@ -629,12 +647,9 @@ function checkWord(i) {
   slipSpots(W.w, W.sounds, wrong).forEach(function (s) { slips.place[s.place]++; slips.kind[s.kind]++; });
   store.set("slips", slips);
   noteGuesses(i, wrong);
+  if (!pz.redoTold && Date.now() >= padPausedUntil) { pz.redoTold = true; toast("Not quite. Try the red boxes again."); }
   update();
-  setTimeout(function () {
-    W.cells.forEach(function (c, j) { if (fill[c] !== W.w[j] && !locked[c]) delete fill[c]; });
-    pos = firstWrong < 0 ? 0 : firstWrong;
-    update();
-  }, 700);
+  wrongTry = { i: i, firstWrong: firstWrong, timer: setTimeout(clearWrong, 700) };
 }
 // The guessing nudge: a 4th letter that isn't close (phonics.js isClose) in the same box of a
 // word, counted across its tries, with no listening in between (listened() clears the count),
@@ -786,6 +801,7 @@ function finish() {
 }
 function back() {
   if (!P || finished) return;
+  clearWrong();
   var W = P.words[cur], kk = W.cells[pos];
   if (fill[kk] && !locked[kk]) { delete fill[kk]; update(); return; }
   for (var j = pos - 1; j >= 0; j--) {

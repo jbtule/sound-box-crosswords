@@ -436,7 +436,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     puzzle since the last (`quipAt`), then a roll (`QUIP_CHANCE`). Decided when the puzzle starts
     (`pickQuip`, saved as `pz.quipFor`): which word, at random among the puzzle's words with a quip.
   - `input` / `checkWord` / `complete` / `settleCrossings`: whole-word checking only. Letters
-    are accepted until the word is full; then wrong letters flash and clear. Finishing one
+    are accepted until the word is full; then wrong letters flash and clear, and their
+    boxes keep a red edge until refilled (`redo`); a key during the flash clears it at once and
+    types into the first red box (`clearWrong`), so no key seems to do nothing. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
     player guess letters until one stuck.)
   - Switching packs mid-puzzle (letters typed, `played`) asks first in a popover under the chip
