@@ -49,7 +49,7 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    pause can't sound blended: the held sounds alone run ~650 ms).
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
-7. **A grown-up can tune it** without code, in Settings (the More button's first tab): syllable colors on/off, auto-speak ("Say each word out loud when it comes up"), sound effects, quips,
+7. **A grown-up can tune it** without code, in Settings (the More button's first tab): syllable colors on/off, auto-speak, sound effects, quips (now and then),
    QWERTY (default) vs A–Z pad, a Custom pack with their own word list (off by default:
    `settings.custom`, `packIds()` in `app.js`; on where Custom was used before the switch).
    **Custom is switched off for everyone for now** (`CUSTOM_ALLOWED` in `app.js` hides the pack
