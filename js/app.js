@@ -1326,34 +1326,48 @@ var toastTimer = null;
 // game's letter font after it (a wrong try's spelling); `avoid`: a word (index) whose boxes the
 // toast mustn't cover (placeToast).
 var NOT_ICON = '<svg class="ico not" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M5.6 5.6l12.8 12.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
-// A toast about a word stays off that word's boxes: its usual spot (top of the puzzle) if
-// that's clear, else just above the word, just below it, or beside it (a tall Down word).
+// Toasts stay where they can be seen: below the iPhone's status bar and Dynamic Island (the
+// Home Screen app draws under them; html's top padding is that safe area) and above the
+// floating letter pad, even when the puzzle card is scrolled part way off the screen. A toast
+// about a word also stays off that word's boxes: its usual spot (top of the puzzle) if that's
+// clear, else just above the word, just below it, or beside it (a tall Down word).
 function placeToast(el, avoid) {
   el.style.top = el.style.left = "";
-  if (avoid == null || !P || !P.words[avoid]) return;
   var card = el.parentElement.getBoundingClientRect(), tw = el.offsetWidth, th = el.offsetHeight, gap = 8, edge = 4;
+  var safeTop = parseFloat(getComputedStyle(document.documentElement).paddingTop) || 0;
+  var screenBottom = Math.min(window.innerHeight, kbEl.getBoundingClientRect().top);
+  var lo = Math.max(edge, safeTop + gap - card.top), hi = Math.min(card.height - edge, screenBottom - gap - card.top) - th;
+  if (hi < lo) { lo = edge; hi = card.height - edge - th; } // the card is barely on screen: just keep inside it
+  var fit = function (y) { return Math.max(lo, Math.min(hi, y)); };
+  var usual = parseFloat(getComputedStyle(el).top) || 10;
+  var x0 = card.width / 2, y0 = fit(usual);
+  var put = function (x, y) {
+    if (x !== card.width / 2) el.style.left = x + "px";
+    if (y !== usual) el.style.top = y + "px";
+  };
   var b = null;
-  P.words[avoid].cells.forEach(function (kk) {
+  if (avoid != null && P && P.words[avoid]) P.words[avoid].cells.forEach(function (kk) {
     var c = cellEl(kk); if (!c) return;
     var r = c.getBoundingClientRect();
     b = b ? { l: Math.min(b.l, r.left), t: Math.min(b.t, r.top), r: Math.max(b.r, r.right), b: Math.max(b.b, r.bottom) } : { l: r.left, t: r.top, r: r.right, b: r.bottom };
   });
-  if (!b) return;
+  if (!b) return put(x0, y0);
   b = { l: b.l - card.left, t: b.t - card.top, r: b.r - card.left, b: b.b - card.top };
   var cx = function (x) { return Math.max(tw / 2 + edge, Math.min(card.width - tw / 2 - edge, x)); };
   var clear = function (x, y) { return x + tw / 2 + gap <= b.l || x - tw / 2 - gap >= b.r || y + th + gap <= b.t || y - gap >= b.b; };
   var mid = (b.l + b.r) / 2, spots = [
-    [cx(card.width / 2), parseFloat(getComputedStyle(el).top) || 10],
+    [x0, usual],
     [cx(mid), b.t - gap - th],
     [cx(mid), b.b + gap],
     [b.r + gap + tw / 2, (b.t + b.b - th) / 2],
     [b.l - gap - tw / 2, (b.t + b.b - th) / 2],
   ];
   for (var i = 0; i < spots.length; i++) {
-    var x = spots[i][0], y = Math.max(edge, Math.min(card.height - th - edge, spots[i][1]));
+    var x = spots[i][0], y = fit(spots[i][1]);
     if (x - tw / 2 < edge || x + tw / 2 > card.width - edge) continue;
-    if (clear(x, y)) { el.style.left = x + "px"; el.style.top = y + "px"; return; }
+    if (clear(x, y)) return put(x, y);
   }
+  put(x0, y0);
 }
 function toast(text, icon, word, avoid) {
   var el = $("#toast");
