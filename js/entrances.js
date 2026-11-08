@@ -1165,6 +1165,32 @@ export var ENTRANCES = [
       sfx(T2 + ZD + 0.05, function (w, S) { S.clickin(w); });
       return a;
     } },
+  { id: "discs", name: "Spinning discs", icon: "💿", premium: false,
+    // Every box shows up in its place already spinning fast, blurred into a disc a little bigger
+    // than itself, so neighbors overlap like a field of spinning plates; they wind down,
+    // sharpening back into blocks and shrinking to size, and stop one after another across the
+    // board, the first word last. A whirr winding down, a soft tick as each stops.
+    plan: function (g, sfx) {
+      var a = {}, wordK = firstWord(g), order = readingOrder(g).filter(function (k) { return wordK.indexOf(k) < 0; }).concat(wordK);
+      var n = order.length, IN = 0.25, BASE = 1.5, SPREAD = 0.7;
+      order.forEach(function (k, i) {
+        var stop = IN + BASE + (n > 1 ? i / (n - 1) : 0) * SPREAD + (wordK.indexOf(k) >= 0 ? 0.15 : 0), dur = stop;
+        var turns = 9 + Math.floor(Math.random() * 3), dir = Math.random() < 0.5 ? -1 : 1, kf = [];
+        for (var s = 0; s <= 24; s++) {
+          var t = s / 24 * dur, v = Math.max(0, (t - IN) / (dur - IN)), spin = 1 - v; // how fast it's turning: full, falling to 0
+          var ang = dir * turns * 360 * (1 - Math.pow(1 - v, 2.2)), fast = Math.pow(spin, 1.6);
+          kf.push({
+            transform: "rotate(" + ang.toFixed(1) + "deg) scale(" + (t < IN ? 0.4 + 0.85 * (t / IN) : 1 + 0.25 * fast).toFixed(3) + ")",
+            borderRadius: (7 + fast * 43) + "%", filter: "blur(" + (fast * 1.6).toFixed(2) + "px)",
+            opacity: t < IN ? t / IN : 1, offset: s / 24 });
+        }
+        kf[kf.length - 1] = { transform: "rotate(" + (dir * turns * 360) + "deg) scale(1)", borderRadius: "7px", filter: "blur(0px)", opacity: 1, offset: 1 };
+        a[k] = { kf: kf, delay: 0, dur: dur, ease: "linear" };
+        sfx(stop, function (when, S) { S.softclick(when, i); });
+      });
+      sfx(0.05, function (when, S) { S.spindown(when, IN + BASE + SPREAD + 0.2); });
+      return a;
+    } },
   { id: "coaster", name: "Roller coaster", icon: "🎢", premium: true,
     // The boxes ride in as one long train: a slow climb up the left, a drop, a loop-the-loop,
     // then each car peels off to its spot. Clack-clack up the lift, a whoosh down, a wheee
