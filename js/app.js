@@ -388,12 +388,12 @@ function showBoardCard() {
   var dy = r.top < 0 || r.height > vh - 2 * gap ? r.top - gap : r.bottom - vh + gap;
   window.scrollTo({ top: Math.max(0, window.scrollY + dy), behavior: reducedMotion() ? "auto" : "smooth" });
 }
-// Pins the letter pad again once neither reason to unpin it (resting, asleep) is left; if it wasn't
-// all on screen, it rises in from the bottom rather than popping up.
+// Pins the letter pad again once no reason to unpin it (resting, asleep, docked) is left; if it
+// wasn't all on screen, it rises in from the bottom rather than popping up.
 function pinPad(why) {
   var off = kbEl.getBoundingClientRect().bottom > window.innerHeight + 1; // not all on screen
   kbEl.classList.remove(why);
-  if (!off || kbEl.classList.contains("resting") || kbEl.classList.contains("asleep")) return;
+  if (!off || kbEl.classList.contains("resting") || kbEl.classList.contains("asleep") || kbEl.classList.contains("docked")) return;
   kbEl.classList.remove("rise"); void kbEl.offsetWidth; kbEl.classList.add("rise");
 }
 function skipEntrance() { if (entrance) entrance.skip(); }
@@ -946,10 +946,18 @@ document.addEventListener("keydown", function (e) {
   if (!$("#achSheet").hidden) { if (e.key === "Escape") closeAchievements(); return; }
   if (!$("#shareSheet").hidden) { if (e.key === "Escape") closeShare(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  if (/^[a-z]$/i.test(e.key)) { if (P && !finished) pz.keys = true; input(e.key.toLowerCase()); e.preventDefault(); }
-  else if (e.key === "'" || e.key === "\u2019") { input("'"); e.preventDefault(); } // iPad keyboards type ’
-  else if (e.key === "Backspace") { back(); e.preventDefault(); }
+  if (/^[a-z]$/i.test(e.key)) { if (P && !finished) pz.keys = true; dockPad(); input(e.key.toLowerCase()); e.preventDefault(); }
+  else if (e.key === "'" || e.key === "\u2019") { dockPad(); input("'"); e.preventDefault(); } // iPad keyboards type ’
+  else if (e.key === "Backspace") { dockPad(); back(); e.preventDefault(); }
 });
+// Typing on a real keyboard docks the letter pad: it stops floating over the puzzle and sits in
+// its place below it (unpinned, like while boxes arrive). A tap or click on the pad floats it
+// again, after typing that key. Not saved: each launch starts with it floating.
+function dockPad() {
+  if (kbEl.classList.contains("docked")) return;
+  kbEl.classList.add("docked");
+  document.documentElement.classList.add("pad-docked");
+}
 
 // Tapping a box moves the cursor; tapping the cursor box again switches to the crossing word.
 board.addEventListener("click", function (e) {
@@ -2286,6 +2294,12 @@ document.addEventListener("keydown", function (e) {
 // The letter pad is unpinned (sitting in its place, under the cover) while Start or Continue
 // waits, so the button is the one thing to tap.
 kbEl.addEventListener("animationend", function () { kbEl.classList.remove("rise"); });
+// A tap or click on a docked letter pad (dockPad) floats it again.
+kbEl.addEventListener("click", function () {
+  if (!kbEl.classList.contains("docked")) return;
+  document.documentElement.classList.remove("pad-docked");
+  pinPad("docked");
+});
 new MutationObserver(function () { if ($("#startOverlay").hidden) pinPad("asleep"); else kbEl.classList.add("asleep"); })
   .observe($("#startOverlay"), { attributes: true, attributeFilter: ["hidden"] });
 kbEl.classList.toggle("asleep", !$("#startOverlay").hidden);

@@ -324,7 +324,9 @@ html.standalone { touch-action: pan-x pan-y; }
 .keyboard.floating { box-shadow: var(--float-shadow); }
 /* Unpinned (in its place below the puzzle, often off a phone's screen) while a new puzzle's boxes
    arrive (runEntrance) or Start / Continue waits; pinned again after, rising in from below. */
-.keyboard.resting, .keyboard.asleep { position: relative; }
+.keyboard.resting, .keyboard.asleep, .keyboard.docked { position: relative; }
+.keyboard.docked { box-shadow: none; } /* typing on a real keyboard (app.js dockPad) */
+html.pad-docked .cell { scroll-margin-bottom: 12px; } /* nothing floats over the boxes then */
 .keyboard.rise { animation: pad-rise 0.3s ease-out; }
 .keyboard.paused { opacity: 0.4; pointer-events: none; transition: opacity 0.15s; } /* the guessing nudge's one-second pause */
 @keyframes pad-rise { from { transform: translateY(100%); } }
