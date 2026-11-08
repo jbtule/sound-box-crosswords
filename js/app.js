@@ -647,7 +647,9 @@ function checkWord(i) {
   slipSpots(W.w, W.sounds, wrong).forEach(function (s) { slips.place[s.place]++; slips.kind[s.kind]++; });
   store.set("slips", slips);
   noteGuesses(i, wrong);
-  if (!pz.redoTold && Date.now() >= padPausedUntil) { pz.redoTold = true; toast("Try the red boxes again.", NOT_ICON); }
+  // Every wrong try: a red ⊘ with the spelling typed, so it's clear the word was wrong (not
+  // that the pad put in the wrong letters or lost them). The guessing nudge's toast goes first.
+  if (Date.now() >= padPausedUntil) toast("", NOT_ICON, W.cells.map(function (c) { return fill[c]; }).join(""));
   update();
   wrongTry = { i: i, firstWrong: firstWrong, timer: setTimeout(clearWrong, 700) };
 }
@@ -1324,12 +1326,14 @@ function checkAchievements() {
 }
 // A short note over the board that doesn't interrupt play.
 var toastTimer = null;
-// `icon`: an optional line icon (SVG markup) before the text.
+// `icon`: an optional line icon (SVG markup) before the text; `word`: letters to show in the
+// game's letter font after it (a wrong try's spelling).
 var NOT_ICON = '<svg class="ico not" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M5.6 5.6l12.8 12.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
-function toast(text, icon) {
+function toast(text, icon, word) {
   var el = $("#toast");
   el.textContent = text; el.hidden = false;
   if (icon) el.insertAdjacentHTML("afterbegin", icon);
+  if (word) { var w = document.createElement("span"); w.className = "tried"; w.textContent = word; el.appendChild(w); }
   el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function () { el.hidden = true; }, 1800);

@@ -438,8 +438,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   - `input` / `checkWord` / `complete` / `settleCrossings`: whole-word checking only. Letters
     are accepted until the word is full; then wrong letters flash and clear, and their
     boxes keep a red edge until refilled (`redo`); a key during the flash clears it at once and
-    types into the first red box (`clearWrong`), so no key seems to do nothing. The first miss in a
-    puzzle shows a toast: ⊘ "Try the red boxes again." Finishing one
+    types into the first red box (`clearWrong`), so no key seems to do nothing. Every miss shows a toast:
+    a red ⊘ and the spelling that was typed, so a player sees the word was wrong rather than
+    thinking the pad typed the wrong letters. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
     player guess letters until one stuck.)
   - Switching packs mid-puzzle (letters typed, `played`) asks first in a popover under the chip
