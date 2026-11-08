@@ -1,7 +1,7 @@
 #!/bin/sh
 # Records quip takes the way the audio build will (the quip voice and speed, "text" method) and
-# writes a listening page that plays each word's live recording, a beat, then the take, as the
-# app does. For picking quips by ear (the write-quips skill):
+# writes a listening page (quips_page.py) that plays each word's live recording, a beat, then the
+# take, as the app does, with a checkbox per take to gather the picks. For picking quips by ear (the write-quips skill):
 #   sh scripts/audio/quips.sh <model-dir> <out-dir> < takes.txt
 # takes.txt: one take per line, "word | Quip text!" (the word as spelled, no dashes). Then serve
 # <out-dir> (python3 -m http.server, or over Tailscale for an iPad) and open it. Runs in a Linux
@@ -23,4 +23,4 @@ container run --rm --memory 4G \
     cd /w && { [ -x venv/bin/python ] || python3 -m venv venv; } &&
     venv/bin/pip install --quiet --disable-pip-version-check --require-hashes -r /a/requirements.txt &&
     venv/bin/python -I /a/quips.py /w /o $voice $speed" 2>&1 | grep -v '^\['
-echo "Listening page: $out/index.html"
+python3 -I "$root/scripts/audio/quips_page.py" "$out"
