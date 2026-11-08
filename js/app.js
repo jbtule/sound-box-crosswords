@@ -576,7 +576,8 @@ function sayWord(W, rate, after) {
 // word if it changed and auto-speak is on; `force` speaks it regardless.
 // tapped: the cursor is where the player tapped it (a box or a clue), not where the app put it.
 // A key with the cursor tapped onto a solved box in an unfinished word (finished by a crossing
-// word) is ignored (input) rather than typed into the next empty box.
+// word) moves the cursor to the word's next empty box without typing there (input): the letter
+// was meant for the solved box, so it mustn't land in another.
 var tapped = false;
 function select(i, p, say, force) {
   if (!P || finished) return;
@@ -612,10 +613,14 @@ function input(ch) {
   var W = P.words[cur];
   // On a solved word a key does nothing: its clue is still showing, so typing somewhere else
   // would make no sense (the app moves on by itself a moment after a word is finished). On a
-  // solved box in an unfinished word, a key does nothing if the player tapped onto it, and goes
-  // to the word's next empty box if the app left the cursor there.
+  // solved box in an unfinished word, a key the player tapped onto it just moves the cursor to
+  // the word's next empty box; where the app left the cursor, it types there.
   if (doneW[cur]) return;
-  if (locked[W.cells[pos]]) { if (tapped) return; var fe = firstEmpty(cur, pos); if (fe < 0) return; pos = fe; }
+  if (locked[W.cells[pos]]) {
+    var fe = firstEmpty(cur, pos); if (fe < 0) return;
+    pos = fe;
+    if (tapped) { tapped = false; update(); return; }
+  }
   tapped = false;
   fill[W.cells[pos]] = ch;
   if (W.cells.every(function (c) { return fill[c]; })) { checkWord(cur); return; }

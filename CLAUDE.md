@@ -442,8 +442,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     thinking the pad typed the wrong letters. Toasts about a word (this one, the guessing
     nudge, "You got it this time!") never cover its boxes, and every toast stays
     below the status bar / Dynamic Island and above the floating pad (`placeToast`). A key on a solved word does nothing (its clue is still showing; the app
-    moves on a moment after a word is finished), nor on a solved box in an unfinished word that
-    the player tapped onto (`tapped`). Finishing one
+    moves on a moment after a word is finished), and on a solved box in an unfinished word that
+    the player tapped onto (`tapped`) it only moves the cursor to the word's next empty box. Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
     player guess letters until one stuck.)
   - Switching packs mid-puzzle (letters typed, `played`) asks first in a popover under the chip
