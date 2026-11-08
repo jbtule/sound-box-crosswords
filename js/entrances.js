@@ -1681,6 +1681,153 @@ export var ENTRANCES = [
       sfx(T3 + 0.02, function (when, S) { S.stomp(when, 0); });
       return a;
     } },
+  { id: "cat", name: "Block cat", icon: "🐈", premium: true,
+    // A cat made of blocks near the size of the puzzle's (a wide 3×2 face with big pointed ears
+    // at its corners, amber eyes with dark pupils and a diamond nose, a short body, legs, and a
+    // tail held up with a curl at the tip) trots in along the bottom of the board to a heap of
+    // the puzzle's boxes, shrunk small. It wiggles its rear end with a "mrrp", sits up, and
+    // bats them off the top of the heap with a paw, one swipe at a time, each spinning up in an arc into its place; the first word's
+    // boxes go last, in one big swat. Then it sits, purrs, and trots off. Paw pats, flicks, a
+    // tap as each box lands.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2;
+      // The cat may use the whole puzzle card's width, not just the board's (it's usually wider),
+      // so its blocks stay close to the puzzle's size.
+      var card = g.board.parentElement, padL = card ? Math.max(0, g.board.offsetLeft - 8) : 0;
+      var room = card ? Math.max(W, card.clientWidth - 16) : W, padR = Math.max(0, room - W - padL);
+      var n = g.order.length, cw = Math.max(3, Math.ceil(Math.sqrt(n * 1.6))); // the heap's bottom row
+      var u = Math.max(10, Math.min(g.size * 0.8, room / (4.6 + 2.9 + cw * 0.75 + 0.3))), floor = H, F = 1 / 30;
+      // The heap: the puzzle's boxes small, stacked in a pyramid; the first to be batted on top.
+      var hs = Math.max(10, Math.min(g.size * 0.6, u * 0.75)), sc = hs / g.size;
+      var batOrder = others(g).concat(firstWord(g));
+      var CX = Math.max(u * 4.6 - padL, Math.min(W + padR - cw * hs - u * 3.0, W * 0.3)); // where the cat's front paw stands (its tail on the card)
+      var HX = CX + u * 2.9;                                                  // the heap's left edge
+      var slots = [], row = 0, left = n;
+      while (left > 0) { var count = Math.min(left, Math.max(1, cw - row)); for (var j = 0; j < count; j++) slots.push({ x: HX + (row * 0.5 + j + 0.5) * hs, y: floor - (row + 0.5) * hs * 0.98 }); left -= count; row++; }
+      var heapAt = {}; batOrder.slice().reverse().forEach(function (k, i) { heapAt[k] = slots[i]; }); // last batted at the bottom
+      // Timing: trot in, wiggle, swat, sit and purr, trot off.
+      var TW = 1.1, TG = TW + 0.55, SW = 0.26, FLY = 0.55;
+      var rest = batOrder.length - firstWord(g).length, per = Math.max(1, Math.ceil(rest / 11)), swats = [];
+      for (var b = 0; b < rest; b += per) swats.push(batOrder.slice(b, Math.min(rest, b + per)));
+      swats.push(firstWord(g));
+      var TB = TG + 0.1, TS = TB + swats.length * SW + FLY + 0.15, TE = TS + 1.0, DUR = TE + 0.95;
+      var swatAt = function (i) { return TB + i * SW + (i === swats.length - 1 ? 0.15 : 0); }; // a beat before the big one
+      // The cat's pose at time t: where its front-floor point is, which way it faces, and how
+      // each part sits. Parts in cat units (u), x forward, y up negative from the floor.
+      var parts = [];
+      // w, h: a part's size in units (s for a square); z: drawn above (2) or behind (0) the rest.
+      function part(x, y, s, kind, extra) { parts.push(Object.assign({ x: x, y: y, w: s, h: s, kind: kind, z: 1 }, extra || {})); }
+      [-3.2, -2.5].forEach(function (x) { part(x, -0.45, 0.85, "back"); });
+      part(-1.15, -0.45, 0.85, "leg"); part(-0.5, -0.45, 0.85, "paw", { z: 2 });
+      [-3, -2, -1].forEach(function (x, i) { part(x, -1.35, 1, i < 1 ? "rear" : "body"); part(x, -2.35, 1, i < 1 ? "rear" : "body"); });
+      part(-0.4, -1.85, 0.9, "body");                                                                        // chest
+      [-0.2, 0.8, 1.8].forEach(function (x) { part(x, -2.75, 1, "head", { z: 2 }); part(x, -3.75, 1, "head", { z: 2 }); }); // a wide face
+      part(0.05, -4.2, 1, "head", { rot: -10, ear: true, z: 0 }); part(1.55, -4.2, 1, "head", { rot: 10, ear: true, z: 0 }); // ears: tall sharp points, half behind the head
+      part(-0.95, -2.85, 0.6, "head", { z: 1 }); part(2.55, -2.85, 0.6, "head", { z: 1 });                     // puffed cheeks
+      [0.3, 1.3].forEach(function (x) {                                                                          // amber eyes, low, with upright pupils
+        part(x, -3.3, 0.55, "head", { eyeColor: true, z: 3 });
+        part(x, -3.3, 0, "head", { w: 0.16, h: 0.38, ink: true, z: 4 });
+      });
+      part(0.8, -2.85, 0.24, "head", { ink: true, z: 3, rot: 45 });                                              // a small nose, just below
+      [-0.1, 0.1].forEach(function (dy, wi) {                                                                    // whiskers: dotted lines of tiny blocks
+        for (var dj = 0; dj < 3; dj++) {
+          part(1.65 + dj * 0.28, -2.75 + dy * (1 + dj * 0.6), 0.11, "head", { ink: true, z: 4 });
+          part(-0.05 - dj * 0.28, -2.75 + dy * (1 + dj * 0.6), 0.11, "head", { ink: true, z: 4 });
+        }
+      });
+      for (var ti = 0; ti < 7; ti++) part(0, 0, 0.6, "tail", { seg: ti });
+      var swipe = function (t) { // 0..1..0 over a swat, else 0
+        for (var i = 0; i < swats.length; i++) { var d = (t - swatAt(i) + 0.1) / 0.2; if (d > 0 && d < 1) return Math.sin(Math.PI * d) * (i === swats.length - 1 ? 1.25 : 1); }
+        return 0;
+      };
+      // Sits up to bat: everything but the back legs tips up around its haunch.
+      var TSIT = TG + 0.05, SIT = -24, sitAt = function (t) {
+        var sm = function (v) { v = Math.max(0, Math.min(1, v)); return v * v * (3 - 2 * v); };
+        return SIT * Math.min(sm((t - TSIT) / 0.25), 1 - sm((t - TE + 0.05) / 0.22));
+      };
+      function turnAbout(x, y, deg) {
+        var r = deg * Math.PI / 180, px0 = -3.2 * u, py0 = -0.6 * u, dx = x - px0, dy = y - py0;
+        return { x: px0 + dx * Math.cos(r) - dy * Math.sin(r), y: py0 + dx * Math.sin(r) + dy * Math.cos(r) };
+      }
+      function pose(t, p) {
+        var ease = function (v) { v = Math.max(0, Math.min(1, v)); return 1 - Math.pow(1 - v, 2); };
+        var startX = -padL - u * 1.5, x0 = t < TW ? startX + (CX - startX) * ease(t / TW) : CX, dir = 1;
+        if (t > TE) { dir = -1; x0 = CX - u * 4.5 + (t > TE + 0.15 ? -(t - TE - 0.15) * (W * 0.9 + u * 8) : 0); } // turns, then trots off left
+        var trot = t < TW || t > TE + 0.15, bob = trot ? -Math.abs(Math.sin(t * 15)) * u * 0.15 : 0;
+        var lx = p.x * u, ly = p.y * u, rot = p.rot || 0, sw = swipe(t);
+        if (p.kind === "rear" || p.kind === "back") { if (t > TW && t < TG) lx += Math.sin((t - TW) * 34) * u * 0.18; }
+        if (p.kind === "back" || p.kind === "leg") { if (trot) lx += Math.sin(t * 15 + (p.x > -2 ? 0 : Math.PI)) * u * 0.25; }
+        if (p.kind === "paw") { if (trot) lx += Math.sin(t * 15 + Math.PI / 2) * u * 0.25; lx += sw * u * 1.7; ly -= sw * u * 1.1; rot -= sw * 50; }
+        if (p.kind === "head") { lx += sw * u * 0.25; ly += sw * u * 0.15; if (t > TS && t < TE) ly += u * 0.15; }
+        if (p.kind === "body" || p.kind === "rear") { if (t > TS && t < TE && p.kind === "rear") ly += u * 0.35; }
+        if (p.kind === "tail") { // held up from the rump, the tip curling forward like a question mark; it sways (more while it purrs)
+          var sway = t > TS && t < TE ? 0.16 : 0.09, ang = -1.75, base = turnAbout(-3.6 * u, -2.6 * u, sitAt(t) * 0.5), tx = base.x, ty = base.y;
+          if (t > TW && t < TG) tx += Math.sin((t - TW) * 34) * u * 0.18;
+          for (var s = 0; s <= p.seg; s++) {
+            ang += (s >= 4 ? 0.55 : -0.04) + Math.sin(t * 2.6 - s * 0.5) * sway;
+            if (s > 0) { tx += Math.cos(ang) * u * 0.52; ty += Math.sin(ang) * u * 0.52; }
+          }
+          lx = tx; ly = ty; rot = ang * 180 / Math.PI;
+        }
+        var sa = p.kind === "back" || p.kind === "tail" ? 0 : sitAt(t);
+        if (sa) { // turn about the haunch; the head moves with the neck but stays level, all in one piece
+          if (p.kind === "head") { var hc = turnAbout(0.8 * u, -3.25 * u, sa); lx += hc.x - 0.8 * u; ly += hc.y + 3.25 * u; }
+          else { var q2 = turnAbout(lx, ly, sa); lx = q2.x; ly = q2.y; rot += sa; }
+        }
+        return { x: x0 + dir * lx, y: floor + ly + bob, rot: dir * rot, flip: dir };
+      }
+      var frames = []; for (var t = 0; t < DUR; t += F) frames.push(t); frames.push(DUR);
+      var edge = g.plain.edge;
+      g.at(0, function () {
+        return parts.map(function (p) {
+          var d = document.createElement("div"), pw = p.w * u, ph = p.h * u;
+          d.className = "entrance-decoy"; d.style.width = pw + "px"; d.style.height = ph + "px"; d.style.left = d.style.top = "0px";
+          d.style.zIndex = 3 + p.z;
+          if (p.eyeColor) { d.style.background = g.accent; d.style.borderColor = edge; d.style.borderRadius = "4px"; }
+          if (p.ink) { d.style.background = edge; d.style.borderColor = edge; d.style.borderWidth = "0"; d.style.borderRadius = "2px"; }
+          else if (p.ear) d.style.borderRadius = "2px";
+          else if (p.w < 1) d.style.borderRadius = "5px";
+          var kf = frames.map(function (t) {
+            var q = pose(t, p), op = Math.min(1, t / 0.2, (DUR - t) / 0.25);
+            if (t > TE + 0.15) op = Math.min(op, Math.max(0, (q.x + padL + u * 6) / (u * 6)));
+            // an ear: a square turned to a diamond, then stretched tall and narrow into a point
+            var shape = p.ear ? " scale(0.62,1.35) rotate(45deg)" : "";
+            return { transform: "translate(" + (q.x - pw / 2) + "px," + (q.y - ph / 2) + "px) rotate(" + q.rot + "deg)" + shape, opacity: Math.max(0, op), offset: t / DUR };
+          });
+          var an = d.animate(kf, { duration: DUR * 1000, easing: "linear", fill: "forwards" });
+          g.board.appendChild(d);
+          an.onfinish = an.oncancel = function () { d.remove(); };
+          return an;
+        });
+      });
+      // The puzzle's boxes: in the heap, then batted up in an arc into their places.
+      swats.forEach(function (group, si) {
+        var th = swatAt(si), big = si === swats.length - 1;
+        group.forEach(function (k, j) {
+          var o = g.cells[k], fx = o.c * step + half, fy = o.r * step + half, h = heapAt[k];
+          var hit = th + j * (big ? 0.04 : 0.03), land = hit + FLY + Math.random() * 0.12;
+          var apexX = (h.x + fx) / 2 + (Math.random() - 0.5) * u, apexY = Math.min(h.y, fy) - H * (0.18 + Math.random() * 0.2) - u;
+          var spin = (Math.random() < 0.5 ? -1 : 1) * 360 * (1 + Math.floor(Math.random() * 2));
+          var T = function (x, y, rot, sx, sy) { return "translate(" + (x - fx) + "px," + (y - fy) + "px) rotate(" + rot + "deg) scale(" + sx + "," + (sy || sx) + ")"; };
+          a[k] = { kf: [
+            { transform: T(h.x, h.y, 0, sc), opacity: 0, zIndex: 3, offset: 0 },
+            { transform: T(h.x, h.y, 0, sc), opacity: 1, zIndex: 3, offset: 0.2 / DUR },
+            { transform: T(h.x, h.y, 0, sc), opacity: 1, zIndex: 3, offset: hit / DUR, easing: "cubic-bezier(.2,.7,.4,1)" },
+            { transform: T(apexX, apexY, spin / 2, (sc + 1) / 2), opacity: 1, zIndex: 3, offset: (hit + (land - hit) * 0.45) / DUR, easing: "cubic-bezier(.6,0,.9,.5)" },
+            { transform: T(fx, fy, spin, 1.12, 0.88), opacity: 1, zIndex: 1, offset: land / DUR, easing: "ease-out" },
+            { transform: T(fx, fy, spin, 1), opacity: 1, zIndex: 1, offset: Math.min(1, (land + 0.16) / DUR) },
+            { transform: "translate(0,0) rotate(" + spin + "deg) scale(1)", opacity: 1, zIndex: 1, offset: 1 }],
+            delay: 0, dur: DUR, ease: "linear" };
+          sfx(land, function (when, S) { S.knock(when, j + si); });
+        });
+        sfx(th, function (when, S) { S.flick(when); S.pat(when + 0.02, si); });
+      });
+      for (var st = 0.05; st < TW; st += 0.105) (function (at, i) { sfx(at, function (when, S) { S.pat(when, i); }); })(st, Math.round(st * 10));
+      sfx(TW + 0.05, function (when, S) { S.mrrp(when); });
+      sfx(TS, function (when, S) { S.purr(when, TE - TS + 0.1); });
+      for (var et = TE + 0.2; et < DUR - 0.2; et += 0.105) (function (at, i) { sfx(at, function (when, S) { S.pat(when, i); }); })(et, Math.round(et * 10));
+      return a;
+    } },
   { id: "saucer", name: "Flying saucer", icon: "🛸", premium: true,
     // The boxes assemble into a block flying saucer that swoops in and hovers. A little cannon
     // at the bottom fires: miss, miss, hit! The saucer bursts and its pieces drift slowly into
