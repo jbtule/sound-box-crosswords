@@ -49,7 +49,7 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    pause can't sound blended: the held sounds alone run ~650 ms).
 6. **Not babyish.** Players are strong readers, not toddlers. Friendly, but not toddler styling, voices or
    rewards.
-7. **A grown-up can tune it** without code, in Settings (the More button's first tab): syllable colors on/off, auto-speak,
+7. **A grown-up can tune it** without code, in Settings (the More button's first tab): syllable colors on/off, auto-speak, sound effects, quips (now and then),
    QWERTY (default) vs A–Z pad, a Custom pack with their own word list (off by default:
    `settings.custom`, `packIds()` in `app.js`; on where Custom was used before the switch).
    **Custom is switched off for everyone for now** (`CUSTOM_ALLOWED` in `app.js` hides the pack
@@ -224,7 +224,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   with that `start_url`) carry the grade in use (`homeScreenEdition` in `app.js`); `?start=` only
   applies when the device hasn't picked one. Each
   edition keeps its own progress, achievements, collection, colors, Custom list and settings
-  (letter pad, syllable colors, auto-speak, sound effects, Custom pack on/off); an edition
+  (letter pad, syllable colors, auto-speak, sound effects, quips, Custom pack on/off); an edition
   can set the letter pad default (`keyboard = "abc"`) and turn on Sound it out
   (`sound_it_out = true`). The check, the audio build and the
   listen check cover every edition. Never change an edition's `id` once in use.
@@ -440,7 +440,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     (5 words at most; never shown). After the word is spelled (typed, not finished by a crossing),
     it's said in another voice (Bella, `VOICE_FOR` in `build.mjs`, kind `q`) a beat later
     (`QUIP_BEAT`) while the word's boxes hop (`.cell.quip`), and the next clue waits for it to end.
-    Not every time: with auto-speak on, at most one a puzzle, once a puzzle has been finished since
+    Not every time: with quips on (Settings → Sounds, `settings.quips`, apart from auto-speak), at most one a puzzle, once a puzzle has been finished since
     the last (`quipAt`), then a roll (`QUIP_CHANCE`, 0.6: about 6 puzzles in 10). Decided when the
     puzzle starts (`pickQuip`, saved as `pz.quipFor`): which word, at random among the puzzle's
     words with a quip; if a crossing word finishes it, the quip moves to another (`moveQuip`).

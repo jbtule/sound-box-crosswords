@@ -387,6 +387,7 @@ html.pad-docked .cell { scroll-margin-bottom: 12px; } /* nothing floats over the
 .panel h3 { margin: 0 0 6px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .opt { display: flex; gap: 8px; flex-wrap: wrap; }
 .opt label { display: flex; align-items: center; gap: 6px; border: 1.5px solid var(--key-edge); border-radius: 12px; padding: 8px 12px; font-size: 0.92rem; }
+.opt label small { display: block; margin-top: 1px; color: var(--muted); font-size: 0.82rem; } /* a switch's description, under its name */
 .opt small { color: var(--muted); }
 select { flex: 1 1 200px; min-width: 0; min-height: 44px; border: 1.5px solid var(--key-edge); border-radius: 12px; background: var(--key); color: var(--ink); font: 1rem var(--body); padding: 8px 10px; } /* 16px+: iOS zooms into smaller form fields */
 select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }

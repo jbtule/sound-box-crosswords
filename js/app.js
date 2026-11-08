@@ -222,7 +222,7 @@ function moveChime() {
   try { localStorage.removeItem("sbx:shared"); } catch (e) {}
   device.set("chimeMoved", true);
 }
-var settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true }, store.get("settings", {}));
+var settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true, quips: true }, store.get("settings", {}));
 var customText = store.get("custom", DEFAULT_CUSTOM);
 var stars = store.get("stars", {});
 var packId = store.get("pack", "");
@@ -752,7 +752,7 @@ function complete(i, typed) {
 }
 // Quips: a word list can give a word a short line (~"Bock bock!"), said in another voice
 // (Bella; build.mjs) after the word is spelled, while its boxes give a little hop. Not every
-// time, so it stays a surprise: with auto-speak on, at most one a puzzle, and only once a puzzle
+// time, so it stays a surprise: with quips on (Settings), at most one a puzzle, and only once a puzzle
 // has been finished since the last (so starting new puzzles doesn't fish for one), then on a roll
 // of the dice: about 6 puzzles in 10 that have a quip word. Which word is decided when the puzzle
 // starts, at random among its words with a quip, so it can come anywhere in the puzzle, not just
@@ -776,7 +776,7 @@ function moveQuip() {
   pz.quipFor = left.length ? left[Math.floor(Math.random() * left.length)] : -1;
 }
 function maybeQuip(W, i) {
-  if (!W.quip || !settings.speakSel || pz.quipped || pz.quipFor !== i) return null; // only the word picked for this puzzle
+  if (!W.quip || !settings.quips || pz.quipped || pz.quipFor !== i) return null; // only the word picked for this puzzle
   pz.quipped = true; store.set("quipAt", { t: Date.now(), n: log.length });
   sayAfter(function () { return new Promise(function (r) { setTimeout(r, QUIP_BEAT); }); }); // a beat after the word
   sayAfter(function () { W.cells.forEach(function (c, j) { setTimeout(function () { flash(c, "quip", 600); }, j * 40); }); });
@@ -1292,6 +1292,7 @@ function openSheet(tab) {
   $("#optSyl").checked = settings.syl;
   $("#optSpeakSel").checked = settings.speakSel;
   $("#optChime").checked = settings.chime;
+  $("#optQuips").checked = settings.quips;
   $("#kbAbc").checked = settings.kb === "abc";
   $("#kbQwerty").checked = settings.kb === "qwerty";
   $("#customText").value = customText;
@@ -1714,6 +1715,7 @@ $("#sheet").addEventListener("click", function (e) { if (e.target === $("#sheet"
 $("#optSyl").addEventListener("change", function (e) { settings.syl = e.target.checked; saveSettings(); update(); });
 $("#optSpeakSel").addEventListener("change", function (e) { settings.speakSel = e.target.checked; saveSettings(); });
 $("#optChime").addEventListener("change", function (e) { settings.chime = e.target.checked; saveSettings(); if (settings.chime) chime(); });
+$("#optQuips").addEventListener("change", function (e) { settings.quips = e.target.checked; saveSettings(); });
 $("#optCustom").addEventListener("change", function (e) {
   settings.custom = e.target.checked; saveSettings();
   $("#customBox").hidden = !settings.custom;
@@ -1882,7 +1884,7 @@ function applyLive(d) {
   var was = canon([settings, store.get("custom", null)]);
   progress = d.progress; log = d.log; counts = d.counts; days = d.days; earned = d.achievements;
   slips = d.slips; stars = d.stars; guessing = d.guessing;
-  settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true }, d.settings);
+  settings = Object.assign({ syl: true, kb: EDITION.keyboard, speakSel: true, chime: true, quips: true }, d.settings);
   store.set("progress", progress); store.set("log", log); store.set("counts", counts); store.set("days", days);
   store.set("achievements", earned); store.set("slips", slips); store.set("stars", stars); store.set("guessing", guessing);
   store.set("seenEntrances", d.seenEntrances); store.set("settings", settings);
