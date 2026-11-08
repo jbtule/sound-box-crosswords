@@ -340,6 +340,16 @@ export function makeSfx(ac, dest) {
       o.start(t); fl.start(t); o.stop(t + D + 0.05); fl.stop(t + D * 0.35);
     },
     flick: function (t) { noise(t, 0.09, "bandpass", 1400, 3200, 0.12, 1.2); },
+    // Zipper: a zipper's rasp, quick clicks of its teeth, coming faster and rising in pitch
+    // going up (falling going down), over a soft brushing hiss.
+    zipper: function (t, dur, up) {
+      noise(t, dur, "bandpass", up ? 1800 : 3400, up ? 3400 : 1600, 0.06, 1.5);
+      for (var c = 0, i = 0; c < dur; i++) {
+        var p = c / dur, f = up ? 2200 + p * 2600 : 4800 - p * 2600;
+        noise(t + c, 0.006, "bandpass", f, 0, 0.09, 6);
+        c += 0.022 - 0.01 * Math.sin(Math.PI * p);
+      }
+    },
     purr: function (t, dur) {
       var s2 = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
       s2.buffer = noiseBuf; s2.loop = true; f.type = "lowpass"; f.frequency.value = 260; f.Q.value = 1.4;
