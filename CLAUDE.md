@@ -55,7 +55,8 @@ and holding every sound in order). This tool is home practice, not diagnosis or 
    **Custom is switched off for everyone for now** (`CUSTOM_ALLOWED` in `app.js` hides the pack
    and its Settings section; saved lists stay): a player typed guesses into its list box to
    let the iPad keyboard's suggestions spell pack words. Any text box is a spelling oracle,
-   so every one has `autocorrect`, `autocomplete` and `spellcheck` off. Nothing in Settings makes the game easier,
+   so every one has `autocorrect`, `autocomplete` and `spellcheck` off (boxes made in `app.js`
+   go through `noSpellHelp`; the check enforces both). Nothing in Settings makes the game easier,
    so it needs no lock (Start over, which erases progress, asks for a typed phrase instead).
    Keep it that way: don't add settings that weaken recall.
 
