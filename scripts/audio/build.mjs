@@ -32,7 +32,7 @@ export const VOICE = "af_heart";
 // js/speech.js uses the same kind letters.
 export const SPEED = { w: 0.9, s: 0.8, t: 0.95, p: 0.95, f: 0.8, q: 1.0 };
 // q = a quip after a word ("Bock bock!"): said in its own voice, so it's never taken for a clue.
-const VOICE_FOR = { q: "af_bella" };
+export const VOICE_FOR = { q: "af_bella" };
 const voiceOf = (kind) => VOICE_FOR[kind] ?? VOICE;
 export const PHRASES = ["You solved it!", "Way to go!", ...Object.values(PACK_KINDS)];
 // Clips that sound wrong at their kind's speed, picked by ear. At 0.9 the cut "shore"
