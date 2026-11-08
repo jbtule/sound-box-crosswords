@@ -439,7 +439,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     are accepted until the word is full; then wrong letters flash and clear; a key
     during the flash clears them at once and types into the first emptied box (`clearWrong`), so no key seems to do nothing. Every miss shows a toast:
     a red ⊘ and the spelling that was typed, so a player sees the word was wrong rather than
-    thinking the pad typed the wrong letters. Finishing one
+    thinking the pad typed the wrong letters. Toasts about a word (this one, the guessing
+    nudge, "You got it this time!") never cover its boxes (`placeToast`). Finishing one
     word can finish a crossing word. (A check-each-letter mode was removed: it let a stuck
     player guess letters until one stuck.)
   - Switching packs mid-puzzle (letters typed, `played`) asks first in a popover under the chip
