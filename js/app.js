@@ -717,6 +717,7 @@ function complete(i, typed) {
   W.cells.forEach(function (c, j) { fill[c] = W.w[j]; locked[c] = true; setTimeout(function () { flash(c, "pop"); }, j * 60); });
   say("w", W.w, 0.9);
   var quip = typed ? maybeQuip(W, i) : null; // now and then, a quip after the word
+  if (!typed && pz.quipFor === i && !pz.quipped) moveQuip();
   var pp = packProgress(packId);
   pp.done[W.w] = true;
   if (typed) {
@@ -750,18 +751,29 @@ function complete(i, typed) {
   }
 }
 // Quips: a word list can give a word a short line (~"Bock bock!"), said in another voice
-// (Bella; build.mjs) after the word is spelled, while its boxes give a little hop. Rare on
-// purpose, so it stays a surprise: with auto-speak on, at most one a puzzle, only once a few
-// minutes and a finished puzzle have passed since the last, and then only on a roll of the dice.
-// Which word is decided when the puzzle starts, at random among its words with a quip, so it can
-// come anywhere in the puzzle, not just on the first one spelled (pickQuip).
-var QUIP_BEAT = 350, QUIP_GAP = 3 * 60 * 1000, QUIP_CHANCE = 0.6;
+// (Bella; build.mjs) after the word is spelled, while its boxes give a little hop. Not every
+// time, so it stays a surprise: with auto-speak on, at most one a puzzle, and only once a puzzle
+// has been finished since the last (so starting new puzzles doesn't fish for one), then on a roll
+// of the dice: about 6 puzzles in 10 that have a quip word. Which word is decided when the puzzle
+// starts, at random among its words with a quip, so it can come anywhere in the puzzle, not just
+// on the first one spelled (pickQuip); if a crossing word finishes that one, it moves (moveQuip).
+var QUIP_BEAT = 350, QUIP_CHANCE = 0.6;
+function quipWords() {
+  var out = [];
+  P.words.forEach(function (W, i) { if (W.quip && !doneW[i]) out.push(i); });
+  return out;
+}
 function pickQuip() {
-  var last = store.get("quipAt", null), withQuip = [];
-  if (last && (Date.now() - last.t < QUIP_GAP || log.length === last.n)) return -1;
+  var last = store.get("quipAt", null), withQuip = quipWords();
+  if (last && log.length === last.n) return -1;
   if (Math.random() > QUIP_CHANCE) return -1;
-  P.words.forEach(function (W, i) { if (W.quip) withQuip.push(i); });
   return withQuip.length ? withQuip[Math.floor(Math.random() * withQuip.length)] : -1;
+}
+// The quip's word was finished by a crossing word, not typed: the quip goes to another quip word
+// still to be typed, if there is one.
+function moveQuip() {
+  var left = quipWords();
+  pz.quipFor = left.length ? left[Math.floor(Math.random() * left.length)] : -1;
 }
 function maybeQuip(W, i) {
   if (!W.quip || !settings.speakSel || pz.quipped || pz.quipFor !== i) return null; // only the word picked for this puzzle
