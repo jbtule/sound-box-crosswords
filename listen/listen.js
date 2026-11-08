@@ -54,6 +54,12 @@ async function getText(rel) {
 // `name` includes the grade when there's more than one (for reports).
 function pages(ed, multi, data, audio) {
   var out = [];
+  // The quip right under the word, as the app plays it (the word, then the quip), rather than
+  // last after the syllables and sentence. Marks don't depend on the order (markKey).
+  function quipUnderWord(clips) {
+    var q = clips.filter(function (c) { return c.kind === "q"; }), rest = clips.filter(function (c) { return c.kind !== "q"; });
+    return rest.slice(0, 1).concat(q, rest.slice(1));
+  }
   function withKeys(clips) {
     return clips.map(function (c) { return Object.assign({}, c, { key: audio.clips[c.kind + ":" + c.text] || null }); });
   }
@@ -76,7 +82,7 @@ function pages(ed, multi, data, audio) {
   }
   function fromList(id, name, list) {
     out.push({ id: id, edition: ed, short: name, name: (multi ? ed.name + " · " : "") + name,
-      words: parseList(list).map(function (e) { return withMarkKeys({ w: e.w, syll: e.syll, pic: e.pic, clips: withKeys(clipsFor(e)).concat(soundItOut(e)) }); }) });
+      words: parseList(list).map(function (e) { return withMarkKeys({ w: e.w, syll: e.syll, pic: e.pic, clips: quipUnderWord(withKeys(clipsFor(e))).concat(soundItOut(e)) }); }) });
   }
   Object.keys(data.packs).forEach(function (id) { if (id !== "mine") fromList(id, data.packs[id].name, data.packs[id].list); });
   if (data.starter) fromList("custom", "Custom starter", data.starter);
@@ -232,7 +238,10 @@ function indexList(all) {
     a.appendChild(pills(counts(page)));
     li.appendChild(a);
     // Nested index: every word in the pack with its status, each jumping to its card.
-    var more = el("details", "words-index"), sum = el("summary", null, page.words.length + (page.words.length === 1 ? " word" : " words"));
+    // How many of its words have a quip, so packs that could use more stand out.
+    var quips = page.words.filter(function (w) { return w.clips.some(function (c) { return c.kind === "q"; }); }).length;
+    var more = el("details", "words-index"), sum = el("summary", null, page.words.length + (page.words.length === 1 ? " word" : " words") +
+      (quips ? " · " + quips + (quips === 1 ? " quip" : " quips") : ""));
     var wl = el("ul", "word-list");
     page.words.forEach(function (w) {
       var s = wordState(w), item = el("li"), link = el("a", "word-link is-" + s);
