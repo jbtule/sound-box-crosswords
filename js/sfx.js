@@ -320,6 +320,33 @@ export function makeSfx(ac, dest) {
       noise(t, dur, "lowpass", 300, 900, 0.1, 1.2);
     },
     slurp: function (t) { osc(t, 520, "sine", 0.22, 0.01, 0.35, 70); noise(t, 0.4, "bandpass", 1400, 200, 0.18, 1.5); },
-    rustle: function (t) { for (var j = 0; j < 3; j++) noise(t + j * 0.025 + Math.random() * 0.02, 0.03, "bandpass", 3200 + Math.random() * 2500, 0, 0.07, 1.5); }
+    rustle: function (t) { for (var j = 0; j < 3; j++) noise(t + j * 0.025 + Math.random() * 0.02, 0.03, "bandpass", 3200 + Math.random() * 2500, 0, 0.07, 1.5); },
+    // Block cat: soft paw pats as it trots, a little "mrrp" (a voiced chirp: a sawtooth through a
+    // vowel-ish filter, pitch rising then dipping), a swat's flick, and a purr (a low rumble
+    // throbbing about 25 times a second).
+    pat: function (t, i) { noise(t, 0.035, "lowpass", 700 + (i % 3) * 120, 0, 0.13, 0.8); osc(t, 160 + (i % 2) * 20, "sine", 0.06, 0.003, 0.04, 110); },
+    mrrp: function (t) {
+      var o = ac.createOscillator(), f = ac.createBiquadFilter(), f2 = ac.createBiquadFilter(), g = ac.createGain(), D = 0.38;
+      o.type = "sawtooth";
+      o.frequency.setValueAtTime(420, t); o.frequency.linearRampToValueAtTime(690, t + D * 0.45); o.frequency.linearRampToValueAtTime(560, t + D);
+      f.type = "bandpass"; f.Q.value = 3; f.frequency.setValueAtTime(900, t); f.frequency.linearRampToValueAtTime(1500, t + D * 0.5); f.frequency.linearRampToValueAtTime(1100, t + D);
+      f2.type = "lowpass"; f2.frequency.value = 3200;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.04);
+      g.gain.setValueAtTime(0.16, t + D * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + D);
+      // the rolled "rr" at the start: a quick flutter on the level
+      var fl = ac.createOscillator(), fg = ac.createGain(); fl.frequency.value = 32; fg.gain.value = 0.07;
+      fl.connect(fg); fg.connect(g.gain);
+      o.connect(f); f.connect(f2); f2.connect(g); g.connect(dest);
+      o.start(t); fl.start(t); o.stop(t + D + 0.05); fl.stop(t + D * 0.35);
+    },
+    flick: function (t) { noise(t, 0.09, "bandpass", 1400, 3200, 0.12, 1.2); },
+    purr: function (t, dur) {
+      var s2 = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
+      s2.buffer = noiseBuf; s2.loop = true; f.type = "lowpass"; f.frequency.value = 260; f.Q.value = 1.4;
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.32, t + 0.25); g.gain.setValueAtTime(0.32, t + dur - 0.3); g.gain.linearRampToValueAtTime(0.0001, t + dur);
+      lfo.frequency.value = 25; lg.gain.value = 0.26; lfo.connect(lg); lg.connect(g.gain);
+      s2.connect(f); f.connect(g); g.connect(dest);
+      s2.start(t); lfo.start(t); s2.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
+    }
   };
 }
