@@ -1107,6 +1107,64 @@ export var ENTRANCES = [
       sfx(0.85, function (when, S) { S.horn(when, 2.2, C11, false, 130.81, 0.4); });
       return a;
     } },
+  { id: "zipper", name: "Zipper", icon: "🤐", premium: false,
+    // A zipper pull (an accent block) runs up the middle of the board, and behind it a wall of
+    // plain blocks zips shut row by row, each row's halves sliding in from the sides to meet in
+    // the middle like teeth; the puzzle's boxes slip into place behind it. A beat, then the pull
+    // runs back down and the wall unzips row by row, its halves sliding away to the sides:
+    // the puzzle is underneath. A zipper's rasp, up, then down.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap;
+      var ZU = 0.8, HOLD = 0.3, ZD = 0.8, T2 = ZU + HOLD, DUR = T2 + ZD + 0.35, mid = (g.cols - 1) / 2;
+      var rowUp = function (r) { return (g.rows - 1 - r) / Math.max(1, g.rows - 1) * ZU * 0.9; }; // when the pull passes row r going up
+      var rowDown = function (r) { return T2 + r / Math.max(1, g.rows - 1) * ZD * 0.9; };          // and going down
+      // The puzzle's boxes: hidden until the wall covers their row, then in place under it.
+      g.order.forEach(function (k) {
+        var o = g.cells[k], on = rowUp(o.r) + 0.12;
+        a[k] = { kf: [{ opacity: 0, offset: 0 }, { opacity: 0, offset: on / DUR }, { opacity: 1, offset: Math.min(1, (on + 0.01) / DUR) }, { opacity: 1, offset: 1 }], delay: 0, dur: DUR, ease: "linear" };
+      });
+      g.at(0, function () {
+        var anims = [];
+        function block(x, y, kf, z, color) {
+          var d = document.createElement("div"); d.className = "entrance-decoy";
+          d.style.width = d.style.height = g.size + "px"; d.style.left = x + "px"; d.style.top = y + "px"; d.style.zIndex = z;
+          if (color) { d.style.background = color.fill; d.style.borderColor = color.edge; }
+          g.board.appendChild(d);
+          var an = d.animate(kf, { duration: DUR * 1000, easing: "linear", fill: "forwards" });
+          an.onfinish = an.oncancel = function () { d.remove(); };
+          anims.push(an);
+        }
+        // The wall: a block over every spot of the grid, the puzzle's and the empty ones.
+        for (var r = 0; r < g.rows; r++) for (var c = 0; c < g.cols; c++) {
+          var side = c < mid ? -1 : c > mid ? 1 : (r % 2 ? 1 : -1), away = side * (Math.abs(c - mid) + 1.5) * step * 0.55;
+          var tIn = rowUp(r) + Math.abs(c - mid) * 0.012, tOut = rowDown(r) + Math.abs(c - mid) * 0.012, S = function (x, op) { return { transform: "translateX(" + x + "px)", opacity: op }; };
+          block(c * step, r * step, [
+            Object.assign(S(away, 0), { offset: 0 }),
+            Object.assign(S(away, 0), { offset: tIn / DUR, easing: "cubic-bezier(.2,.8,.3,1)" }),
+            Object.assign(S(0, 1), { offset: (tIn + 0.14) / DUR }),
+            Object.assign(S(0, 1), { offset: tOut / DUR, easing: "cubic-bezier(.6,0,.8,.4)" }),
+            Object.assign(S(away, 0), { offset: Math.min(1, (tOut + 0.18) / DUR) }),
+            Object.assign(S(away, 0), { offset: 1 })], 6);
+        }
+        // The pull: up the middle, a pause at the top, back down.
+        var px = mid * step, A = { fill: getComputedStyle(document.documentElement).getPropertyValue("--accent-soft").trim(), edge: g.accent };
+        var P = function (y, op, sc) { return { transform: "translateY(" + y + "px) scale(" + sc + ")", opacity: op }; };
+        block(px, 0, [
+          Object.assign(P(H + step * 0.3, 0, 0.7), { offset: 0 }),
+          Object.assign(P(H - g.size, 1, 0.8), { offset: 0.06 / DUR }),
+          Object.assign(P(-step * 0.15, 1, 0.8), { offset: ZU / DUR }),
+          Object.assign(P(-step * 0.25, 1, 0.9), { offset: (ZU + HOLD * 0.5) / DUR }),
+          Object.assign(P(-step * 0.15, 1, 0.8), { offset: T2 / DUR }),
+          Object.assign(P(H - g.size, 1, 0.8), { offset: (T2 + ZD) / DUR }),
+          Object.assign(P(H + step * 0.3, 0, 0.7), { offset: Math.min(1, (T2 + ZD + 0.2) / DUR) }),
+          Object.assign(P(H + step * 0.3, 0, 0.7), { offset: 1 })], 8, A);
+        return anims;
+      });
+      sfx(0.04, function (w, S) { S.zipper(w, ZU * 0.95, true); });
+      sfx(T2, function (w, S) { S.zipper(w, ZD * 0.95, false); });
+      sfx(T2 + ZD + 0.05, function (w, S) { S.clickin(w); });
+      return a;
+    } },
   { id: "coaster", name: "Roller coaster", icon: "🎢", premium: true,
     // The boxes ride in as one long train: a slow climb up the left, a drop, a loop-the-loop,
     // then each car peels off to its spot. Clack-clack up the lift, a whoosh down, a wheee
