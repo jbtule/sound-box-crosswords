@@ -340,6 +340,18 @@ export function makeSfx(ac, dest) {
       o.start(t); fl.start(t); o.stop(t + D + 0.05); fl.stop(t + D * 0.35);
     },
     flick: function (t) { noise(t, 0.09, "bandpass", 1400, 3200, 0.12, 1.2); },
+    // Spin down: a whirr winding down (Spin in's whirr in reverse), its throb slowing with it.
+    spindown: function (t, dur) {
+      var o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
+      o.type = "sawtooth"; o.frequency.setValueAtTime(280, t); o.frequency.exponentialRampToValueAtTime(70, t + dur);
+      f.type = "lowpass"; f.frequency.setValueAtTime(2400, t); f.frequency.exponentialRampToValueAtTime(380, t + dur);
+      lfo.frequency.setValueAtTime(34, t); lfo.frequency.exponentialRampToValueAtTime(5, t + dur); lg.gain.value = 0.05;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.11, t + 0.12); g.gain.setValueAtTime(0.11, t + dur * 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      lfo.connect(lg); lg.connect(g.gain); o.connect(f); f.connect(g); g.connect(dest);
+      o.start(t); lfo.start(t); o.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05);
+    },
+    // and as each disc stops, a soft little tick (far quieter than Flip's click).
+    softclick: function (t, i) { noise(t, 0.012, "bandpass", 1500 + (i % 3) * 180, 0, 0.08, 2.5); },
     // Zipper: a zipper's rasp, quick clicks of its teeth, coming faster and rising in pitch
     // going up (falling going down), over a soft brushing hiss.
     zipper: function (t, dur, up) {
