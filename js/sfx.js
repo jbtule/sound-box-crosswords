@@ -352,6 +352,24 @@ export function makeSfx(ac, dest) {
     },
     // and as each disc stops, a soft little tick (far quieter than Flip's click).
     softclick: function (t, i) { noise(t, 0.012, "bandpass", 1500 + (i % 3) * 180, 0, 0.08, 2.5); },
+    // Elevator: the car's soft hum while it moves (a low tone with a slow sway); one per ride.
+    lift: function (t, dur) {
+      var o = ac.createOscillator(), o2 = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
+      o.type = "sawtooth"; o.frequency.setValueAtTime(62, t); o.frequency.linearRampToValueAtTime(74, t + dur);
+      o2.type = "sine"; o2.frequency.setValueAtTime(124, t); o2.frequency.linearRampToValueAtTime(148, t + dur);
+      f.type = "lowpass"; f.frequency.value = 340; lfo.frequency.value = 3; lg.gain.value = 0.015;
+      var att = Math.min(0.08, dur * 0.3), rel = Math.min(0.12, dur * 0.35); // short rides fade in and out quickly
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + att); g.gain.setValueAtTime(0.06, t + dur - rel); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      lfo.connect(lg); lg.connect(g.gain); o.connect(f); o2.connect(f); f.connect(g); g.connect(dest);
+      [o, o2, lfo].forEach(function (x) { x.start(t); x.stop(t + dur + 0.05); });
+    },
+    // and its arrival "plink": a tiny, bright pluck as the car stops (a high note with a little
+    // edge, no slide, gone in under a tenth of a second, a crisp click on the strike).
+    plink: function (t) {
+      osc(t, 2093, "triangle", 0.2, 0.002, 0.09);
+      osc(t, 4186, "sine", 0.05, 0.001, 0.04);
+      noise(t, 0.01, "highpass", 5000, 0, 0.08, 1);
+    },
     // Zipper: a zipper's rasp, quick clicks of its teeth, coming faster and rising in pitch
     // going up (falling going down), over a soft brushing hiss.
     zipper: function (t, dur, up) {

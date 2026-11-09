@@ -1191,6 +1191,121 @@ export var ENTRANCES = [
       sfx(0.05, function (when, S) { S.spindown(when, IN + BASE + SPREAD + 0.2); });
       return a;
     } },
+  { id: "elevator", name: "Elevator", icon: "🛗", premium: false,
+    // An elevator up the middle of the board: its car is two accent blocks, the doors. From the
+    // bottom it works its way up, mostly upward but now and then back down to a floor it passed
+    // (every row with boxes, once), easing in and out of each ride; at each floor it stops: ding, the
+    // doors slide apart, and that floor's boxes come out of the doorway and slide along the row
+    // to their places. The doors close and the car goes on up while the last ones are still
+    // walking out. A soft hum while it moves, the same plink at every floor, the doors' swish,
+    // a plip as each box steps out.
+    plan: function (g, sfx) {
+      var a = {}, step = g.size + g.gap, W = g.cols * step - g.gap, H = g.rows * step - g.gap, half = g.size / 2, rows = {};
+      g.order.forEach(function (k) { var r = g.cells[k].r; (rows[r] = rows[r] || []).push(k); });
+      // A taller puzzle (more floors) runs faster, so it takes about 4 s like a short one; never
+      // faster than double speed.
+      // The doors keep their pace on every puzzle (open, stay, close: about 0.1 s each, alike), so
+      // they're always seen; a taller puzzle gets its speed from shorter rides and walks.
+      var nFloors = Object.keys(rows).length, D = Math.max(0.65, Math.min(1, 6 / nFloors)); // the taller, the brisker
+      var OPEN = 0.1 * D, STAY = 0.09 * D, CLOSE = 0.1 * D; // a little brisker on a tall puzzle, still plain to see
+      var K = Math.max(0.35, Math.min(1, (4.2 - nFloors * (OPEN + STAY + CLOSE)) / (0.45 * nFloors + 0.9)));
+      var RISE = 0.2 * K, WAIT = 0.05 * K, WALK = 0.5 * K;
+      // The route: mostly upward, now and then skipping a floor or two, and every so often back down
+      // to one it passed, like a real elevator answering calls; every floor with boxes, once.
+      var left = Object.keys(rows).map(Number).sort(function (x, y) { return y - x; }), floors = [left.shift()]; // bottom floor first
+      while (left.length) {
+        var here = floors[floors.length - 1], below = left.filter(function (r) { return r > here; }), above = left.filter(function (r) { return r < here; });
+        var pick;
+        if (below.length && (!above.length || Math.random() < (nFloors > 6 ? 0.15 : 0.3))) pick = below[Math.floor(Math.random() * below.length)]; // back down (less on a tall puzzle)
+        else pick = above[Math.min(above.length - 1, Math.floor(Math.random() * Math.min(3, above.length)))];                    // up, maybe past a floor or two
+        floors.push(pick); left.splice(left.indexOf(pick), 1);
+      }
+      var cx = W / 2, t = 0.25, stops = [];
+      var EACH = 0.02 * K; // the floor's boxes come out together, a hair apart
+      floors.forEach(function (r, i) {
+        var prev = i ? floors[i - 1] : g.rows + 0.4, rise = RISE * 0.7 + Math.abs(prev - r) * RISE * 0.3; // a longer trip takes a little longer
+        t += rise; var st = { r: r, rise: rise, arrive: t, open: t + WAIT }; st.close = st.open + OPEN + STAY; st.leave = st.close + CLOSE; stops.push(st); t = st.leave;
+      });
+      var LAST = stops[stops.length - 1], EXIT = (0.35 + LAST.r * 0.04) * K, TX = LAST.leave + EXIT; // after the top floor the car rides on up and out
+      var DUR = Math.max(LAST.open + OPEN + WALK + 0.35, TX + 0.1);
+      // Each floor's boxes: out of the doorway as the doors open, sliding along the row to their places.
+      stops.forEach(function (st, i) {
+        rows[st.r].sort(function (x, y) { return Math.abs(g.cells[x].c * step + half - cx) - Math.abs(g.cells[y].c * step + half - cx); })
+          .forEach(function (k, j) {
+            // waiting in the car, full size, behind the doors (it shows as they part); then it hops out
+            // along the row to its place, a little bounce per hop with a squash as it lands, in front
+            // of the open doors
+            var o = g.cells[k], fx = o.c * step + half, out = st.open + OPEN * 0.6 + j * EACH, dx = cx - fx;
+            // layered in the car, a little offset each, like a stack; they step out together and spread
+            var n = rows[st.r].length, lay = "translate(" + (dx + (j - (n - 1) / 2) * g.size * 0.08) + "px," + (-j * g.size * 0.05) + "px)";
+            var hops = Math.max(1, Math.round(Math.abs(dx) / step)), land = out + Math.min(WALK * 1.6, (0.16 * hops + 0.08) * K), inCar = lay;
+            var kf = [
+              { transform: inCar, opacity: 0, zIndex: 0, offset: 0 },
+              { transform: inCar, opacity: 0, zIndex: 0, offset: st.open / land },
+              { transform: inCar, opacity: 1, zIndex: 0, offset: Math.min(out - 0.006, st.open + 0.01) / land },
+              { transform: inCar, opacity: 1, zIndex: 0, offset: (out - 0.005) / land }];
+            for (var h = 0; h < hops; h++) {
+              var t0 = out + (land - out) * h / hops, t1 = out + (land - out) * (h + 1) / hops, x0 = dx * (1 - h / hops), x1 = dx * (1 - (h + 1) / hops), up = g.size * 0.32;
+              kf.push({ transform: (h ? "translate(" + x0 + "px,0)" : lay) + " scale(1.08,.9)", opacity: 1, zIndex: 8 + n - j, offset: t0 / land, easing: "cubic-bezier(.2,.6,.4,1)" });
+              kf.push({ transform: "translate(" + (x0 + x1) / 2 + "px," + (-up) + "px) scale(.95,1.06)", opacity: 1, zIndex: 8 + n - j, offset: (t0 + t1) / 2 / land, easing: "cubic-bezier(.6,0,.8,.4)" });
+            }
+            kf.push({ transform: "translate(0,0) scale(1.1,.88)", opacity: 1, zIndex: 8, offset: (land - (land - out) / hops / 4) / land, easing: "ease-out" }); // the landing, inside the last hop
+            kf.push({ transform: "translate(0,0) scale(1)", opacity: 1, zIndex: 1, offset: 1 });
+            a[k] = { kf: kf, delay: 0, dur: land, ease: "linear" };
+            sfx(out, function (when, S) { S.plip(when, 700 + j * 60); });
+          });
+        sfx(st.arrive, function (when, S) { S.plink(when); }); // the same plink every floor, like a real elevator
+        sfx(st.open, function (when, S) { S.whoosh(when, OPEN + 0.05); });
+        sfx(st.close, function (when, S) { S.whoosh(when, CLOSE + 0.05); });
+      });
+      // The car: two door blocks side by side in the middle, riding up between stops, parting at each.
+      var root = getComputedStyle(document.documentElement), DOOR = { fill: root.getPropertyValue("--accent-soft").trim(), edge: g.accent };
+      var frames = []; for (var ft = 0; ft < DUR; ft += 1 / 30) frames.push(ft); frames.push(DUR);
+      // An elevator's inertia: it eases up to speed and eases into each stop (no jolt at either end).
+      var smoother = function (f) { f = Math.max(0, Math.min(1, f)); return f * f * f * (f * (f * 6 - 15) + 10); };
+      function carY(t) { // the car's row position (top of the doors) at time t
+        var below = H + step * 0.4;
+        for (var i = 0; i < stops.length; i++) {
+          var st = stops[i], from = i ? stops[i - 1].r * step : below, to = st.r * step, set = st.arrive - st.rise;
+          if (t < set) return from;
+          if (t < st.arrive) return from + (to - from) * smoother((t - set) / st.rise);
+          if (t < st.leave) return to;
+        }
+        var f = Math.max(0, Math.min(1, (t - LAST.leave) / EXIT)); // up and out of the top, gathering speed
+        return LAST.r * step - (LAST.r * step + step * 1.6) * f * f * f;
+      }
+      function apart(t) { // how far the doors have parted (0 shut, 1 open)
+        for (var i = 0; i < stops.length; i++) {
+          var st = stops[i];
+          if (t >= st.open && t < st.open + OPEN) return (t - st.open) / OPEN;
+          if (t >= st.open + OPEN && t < st.close) return 1;
+          if (t >= st.close && t < st.close + CLOSE) return 1 - (t - st.close) / CLOSE;
+        }
+        return 0;
+      }
+      g.at(0, function () {
+        return [-1, 1].map(function (side) {
+          var d = document.createElement("div"); d.className = "entrance-decoy";
+          d.style.width = d.style.height = g.size + "px"; d.style.left = d.style.top = "0px"; d.style.zIndex = 6;
+          d.style.background = DOOR.fill; d.style.borderColor = DOOR.edge;
+          var kf = frames.map(function (t) {
+            var x = cx + (side < 0 ? -g.size - g.gap / 2 : g.gap / 2) + side * apart(t) * step * 0.95, y = carY(t);
+            var op = Math.min(1, t / 0.2, Math.max(0, (y + g.size) / g.size)); // fades only as it rides past the board's top
+            return { transform: "translate(" + x + "px," + y + "px)", opacity: op, offset: t / DUR };
+          });
+          g.board.appendChild(d);
+          var an = d.animate(kf, { duration: DUR * 1000, easing: "linear", fill: "forwards" });
+          an.onfinish = an.oncancel = function () { d.remove(); };
+          return an;
+        });
+      });
+      // (The boxes' animations end as they land; this keeps the entrance as long as the car.)
+      g.order.slice(0, 1).forEach(function (k) { var p = a[k]; if (p && p.dur < DUR) { p.kf = p.kf.map(function (f) { return Object.assign({}, f, { offset: f.offset * p.dur / DUR }); }); p.kf.push({ transform: "translateX(0) scale(1)", opacity: 1, offset: 1 }); p.dur = DUR; } });
+      // The hum only while the car moves: each ride up to a floor, and the last one out of the top.
+      stops.forEach(function (st) { sfx(st.arrive - st.rise, function (when, S) { S.lift(when, st.rise + 0.03); }); });
+      sfx(LAST.leave, function (when, S) { S.lift(when, EXIT); });
+      return a;
+    } },
   { id: "coaster", name: "Roller coaster", icon: "🎢", premium: true,
     // The boxes ride in as one long train: a slow climb up the left, a drop, a loop-the-loop,
     // then each car peels off to its spot. Clack-clack up the lift, a whoosh down, a wheee
@@ -2238,6 +2353,9 @@ export function playEntrance(id, g, opts) {
     // "both" holds its last frame (its starting look) until the selection shows (stop), so its
     // colors never snap in at the end.
     var kf = p.kf, fill = p.fill || "backwards";
+    // Offsets have to run forward, or animate() throws and the whole entrance stops: a plan's
+    // timing slip just nudges a frame later instead.
+    var at = 0; kf = kf.map(function (f) { if (f.offset == null) return f; at = Math.min(1, Math.max(at, f.offset)); return f.offset === at ? f : Object.assign({}, f, { offset: at }); });
     if (o.sel) {
       kf = kf.map(function (f) { return Object.assign({ backgroundColor: o.look.bg, borderColor: o.look.edge }, f); });
       fill = "both";
