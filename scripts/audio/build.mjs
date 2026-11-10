@@ -45,8 +45,9 @@ const ENCODING = "mp3-64k-mono-trim-v1"; // bump to regenerate every clip
 export const METHOD = { w: "cut", s: "cut", t: "text", p: "lift", f: "sound", q: "lift" };
 const CUT = "cut-next-v1"; // bump when the cut method changes
 // Clips made another way, picked by ear: "excited" says the line after "Wow, look at that!"
-// and cuts it out (lively.py), for a line with pauses inside that sounded stiff lifted.
-const METHOD_FOR = { "q:Stand back. I sneeze fire. Achoo!": "excited" };
+// and cuts it out (lively.py): the dragon's quip, whose pauses inside sounded stiff lifted,
+// and "Listened…", whose d the lift ran into the k of "close".
+const METHOD_FOR = { "q:Stand back. I sneeze fire. Achoo!": "excited", "p:Listened close to every word in a puzzle": "excited" };
 const LIVELY = { lift: "lift-v2", excited: "excited-v1" }; // bump one when lively.py changes it
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
