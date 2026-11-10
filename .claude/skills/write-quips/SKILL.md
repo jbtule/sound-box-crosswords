@@ -39,7 +39,8 @@ easy way to hear them.
     character holds up better than a plain reaction.
 
 **Rules**
-11. **5 words at most** (the word list header says so).
+11. **5 words at most** (the word list header says so). Sound words like "Achoo!" don't count
+    (`SOUND_WORDS` in `scripts/check.mjs`).
 12. **The same quip in every list a word is in** (the check enforces it), unless different
     audiences call for different lines: then mark it with `# differs: <why>` on the line above.
 
@@ -59,7 +60,7 @@ easy way to hear them.
 2. **Record the takes.** Put them in a file, one per line, `word | Quip text!`, then:
    `sh scripts/audio/quips.sh <model-dir> <out-dir> < takes.txt`
    It records each take the way the audio build will (`VOICE_FOR.q`, `SPEED.q` in
-   `scripts/audio/build.mjs`) and writes `<out-dir>/index.html`, which plays the word's live
+   `scripts/audio/build.mjs`, and `lively.py`'s lift) and writes `<out-dir>/index.html`, which plays the word's live
    recording, a beat, then the take, with a ✓ (works) and a ~ (good line, not right yet, with a note on what's off) per take: they gather in a box as
    `word | quip` lines to copy and paste back. For a ~, retake with other wording or
    punctuation, or a take at its own speed (`word | Quip! | 0.9`; it ships via `SPEED_FOR` in

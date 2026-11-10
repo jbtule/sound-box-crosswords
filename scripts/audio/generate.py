@@ -12,26 +12,19 @@
 #         ("and next, pub.") and cut out using the model's own per-phoneme durations.
 #         Phonemes are espeak's, mapped to misaki's alphabet (what Kokoro was trained on).
 #         See scripts/audio/eval/README.md for how this was chosen.
+#   lift, excited  phrases and quips, said livelier (lively.py).
 import json
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # kokoro.sh runs this with -I
 import kokoro_core as core  # noqa: E402
+import lively  # noqa: E402
 from kokoro_core import SR, cut_phonemes, mp3, phonemes, trim  # noqa: E402
 
 
 def cut(text, voice, speed):
     return cut_phonemes(phonemes(text), voice, speed)
-
-
-# "lively": the text said alone with the voice style Kokoro uses for a long sentence, which
-# sounds brighter on a short line. Picked by ear for "New achievement!".
-LIVELY_STYLE = 120
-
-
-def lively(text, voice, speed):
-    return cut_phonemes(phonemes(text), voice, speed, tail_ms=120, carrier=("", ""), style_n=LIVELY_STYLE)
 
 
 _lab = None
@@ -67,8 +60,8 @@ def main():
             audio, sr = sound(item["text"]), SR  # trimmed and leveled already
         elif item.get("method") == "cut":
             audio, sr = trim(cut(item["text"], item["voice"], item["speed"]), SR), SR
-        elif item.get("method") == "lively":
-            audio, sr = trim(lively(item["text"], item["voice"], item["speed"]), SR), SR
+        elif item.get("method") in ("lift", "excited"):
+            audio, sr = getattr(lively, item["method"])(item["text"], item["voice"], item["speed"]), SR
         else:
             audio, sr = core.kokoro.create(item["text"], voice=item["voice"], speed=item["speed"], lang="en-us")
             audio = trim(audio, sr)

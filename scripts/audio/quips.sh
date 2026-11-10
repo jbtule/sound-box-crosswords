@@ -1,5 +1,5 @@
 #!/bin/sh
-# Records quip takes the way the audio build will (the quip voice and speed, "text" method) and
+# Records quip takes the way the audio build will (the quip voice and speed, lively.py's lift) and
 # writes a listening page (quips_page.py) that plays each word's live recording, a beat, then the
 # take, as the app does, with a checkbox per take to gather the picks. For picking quips by ear (the write-quips skill):
 #   sh scripts/audio/quips.sh <model-dir> <out-dir> < takes.txt

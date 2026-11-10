@@ -114,8 +114,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   and syllables are said at the end of a phrase ("and next, ___.") and cut out, since
   Kokoro mispronounces them alone (`generate.py`; how that was chosen and how to re-test:
   `scripts/audio/eval/`). Clip names hash model + voice + speed + method (`METHOD` in
-  `build.mjs`; `SPEED_FOR` / `METHOD_FOR` for single clips picked by ear, e.g. "New achievement!"
-  in Kokoro's long-sentence voice style, which sounds more excited) + text, so only new or changed text is generated; the
+  `build.mjs`; `SPEED_FOR` / `METHOD_FOR` for single clips picked by ear) + text, so only new or changed text is generated. Phrases and
+  quips are said livelier (`lively.py`, picked by ear): `lift` gives Kokoro our spelling (its trained
+  symbols) and edits the pitch (higher, wider, the end lifted); `excited` says a line after
+  "Wow, look at that!" and cuts it out (the dragon's quip). Kept out of `kokoro_core.py` so
+  the Sound it out sounds don't change; the
   rest is downloaded from the live host. The site ships `audio.json` (`"kind:text"` → clip);
   `say(kind, text)` in `speech.js` plays a clip or falls back to the device voice (Custom
   words, local dev, network failure). Kokoro runs on Linux only (the macOS espeak wheel is
@@ -437,7 +440,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     `listened`), says "Slow down and sound it out." and pauses the letter pad for a second
     (`.paused`), once per word. Counted in `sbx:guessing` for Stats. `GUESSES` / `PAD_PAUSE` tune it.
   - Quips (`maybeQuip`): a word list can give a word a short line, `~"No hugs."` last on its line
-    (5 words at most; never shown). After the word is spelled (typed, not finished by a crossing),
+    (5 words at most, not counting sound words like "Achoo!", `SOUND_WORDS` in the check; never shown). After the word is spelled (typed, not finished by a crossing),
     it's said in another voice (Bella, `VOICE_FOR` in `build.mjs`, kind `q`) a beat later
     (`QUIP_BEAT`) while the word's boxes hop (`.cell.quip`), and the next clue waits for it to end.
     Not every time: with quips on (Settings → Sounds, `settings.quips`, apart from auto-speak), at most one a puzzle, once a puzzle has been finished since

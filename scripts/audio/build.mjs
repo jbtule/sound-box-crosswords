@@ -40,13 +40,14 @@ export const PHRASES = ["You solved it!", "Way to go!", ...Object.values(PACK_KI
 const SPEED_FOR = { "w:shore": 0.8, "p:New achievement!": 1.0, "p:Secret achievement!": 1.0, "p:Achievement!": 1.0 };
 const ENCODING = "mp3-64k-mono-trim-v1"; // bump to regenerate every clip
 // How generate.py renders each kind: "cut" says the word inside a phrase and cuts it out
-// (single words and syllables mispronounce alone); "text" says the text as is.
-export const METHOD = { w: "cut", s: "cut", t: "text", p: "text", f: "sound", q: "text" };
+// (single words and syllables mispronounce alone); "text" says the text as is; "lift" says it
+// livelier (lively.py: our spelling, pitch higher and wider, the end lifted).
+export const METHOD = { w: "cut", s: "cut", t: "text", p: "lift", f: "sound", q: "lift" };
 const CUT = "cut-next-v1"; // bump when the cut method changes
-// Clips made another way, picked by ear: "lively" says the line in the voice style Kokoro
-// uses for long sentences, which sounds more excited ("New achievement!").
-const METHOD_FOR = { "p:New achievement!": "lively", "p:Secret achievement!": "lively", "p:Achievement!": "lively" };
-const LIVELY = "lively-v1"; // bump when the lively method changes
+// Clips made another way, picked by ear: "excited" says the line after "Wow, look at that!"
+// and cuts it out (lively.py), for a line with pauses inside that sounded stiff lifted.
+const METHOD_FOR = { "q:Stand back. I sneeze fire. Achoo!": "excited" };
+const LIVELY = { lift: "lift-v1", excited: "excited-v1" }; // bump one when lively.py changes it
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
@@ -89,7 +90,7 @@ export function keyFor(kind, text) {
   const parts = [MODEL, voiceOf(kind), speedOf(kind, text), ENCODING];
   const method = methodOf(kind, text);
   if (method === "cut") parts.push(CUT); // "text" clips keep their original keys
-  if (method === "lively") parts.push(LIVELY);
+  if (LIVELY[method]) parts.push(LIVELY[method]);
   const id = JSON.stringify([...parts, text]);
   return createHash("sha256").update(id).digest("hex").slice(0, 20);
 }
