@@ -23,7 +23,7 @@
 #               Spoken for context (word, sentence, word), which also tells homophones
 #               apart: their "The kids hung their coats on the hooks."
 #               Also shown with the word as a blank, so don't use other words from the pack.
-#     ~"quip"   Optional, last on the line: a few words (5 at most) said in another voice
+#     ~"quip"   Optional, last on the line: a few words (5 at most, not counting sound words like "Achoo!") said in another voice
 #               after the word is spelled, now and then, for a chuckle: cactus ~"No hugs."
 #               Never shown, so it can say anything; keep it short and not babyish.
 #
@@ -185,7 +185,7 @@ cac-tus 🌵 (kack-tus) ~"No hugs."
 can-dle 🕯️ (kan-dull)
 win-dow 🪟 (win-doe)
 sand-wich 🥪 (sand-witch)
-drag-on 🐉 (drag-un) ~"Stand back. I sneeze fire."
+drag-on 🐉 (drag-un) ~"Stand back. I sneeze fire. Achoo!"
 hel-met ⛑️ (hel-mitt) ~"My noggin says thanks."
 but-ton 🔘 (but-tun) ~"Don't press it!"
 pan-da 🐼 (pan-duh)
@@ -195,7 +195,7 @@ spi-der 🕷️ (spy-durr) ~"Eight legs, no shoes."
 mon-key 🐒 (mun-key)
 chick-en 🐔 (chick-in) ~"Jockey!"
 cup-cake 🧁 (cup-cake) ~"Sprinkles fuel my spelling."
-snow-man ⛄ (snow-man) ~"I want to build one."
+snow-man ⛄ (snow-man) ~"I wanna build one!"
 """
 
 [[pack]]

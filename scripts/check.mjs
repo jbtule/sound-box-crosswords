@@ -251,6 +251,8 @@ const ABBREV = new Set(["mit", "bih", "uhn", "uhb", "ca", "tle", "ril", "ple", "
   "jan", "feb", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec", "st", "dr", "mr", "mrs", "ms",
   "ft", "pt", "gal", "oz", "lb", "km", "cm", "mm", "sec", "hr", "est", "etc", "vs", "inc", "ltd", "corp", "dept", "ave",
   "blvd", "rd", "ref", "pg", "pp", "ch", "fig", "govt", "approx", "misc", "gen", "lt", "sgt", "capt", "col", "jr", "sr"]);
+// Sound words in quips, which the 5-word limit leaves out.
+const SOUND_WORDS = /^(achoo|ah-?choo|bock|moo|oink|woof|meow|roar|boom|zap|whoosh|vroom)[!.,?]*$/i;
 // word, then optional emoji (none = listen-only), (sounds) hint, "context sentence",
 // {its sounds} for Sound it out, and ~"a quip".
 const LINE = /^([a-z][a-z']*(?:-[a-z']+)*)(?: +([^\s("{~]\S*))?(?: +\(([^)]*)\))?(?: +"([^"]+)")?(?: +\{([^}]*)\})?(?: +~"([^"]+)")?$/;
@@ -279,8 +281,9 @@ for (const { id, text, custom, sio } of lists) {
     const w = m[1].replace(/-/g, "");
     // Sounds only matter in editions with Sound it out; elsewhere they're never compared.
     (entries[w] ??= []).push({ id, differs, fields: [m[1], m[2] ?? "", m[3] ?? "", m[4] ?? "", sio ? m[5] ?? "" : null, m[6] ?? ""] });
-    // A quip: a few words (5 at most), said after the word now and then.
-    if (m[6] != null && m[6].trim().split(/\s+/).length > 5) errors.push(`${id}: "${w}" quip is more than 5 words: "${m[6]}"`);
+    // A quip: a few words (5 at most), said after the word now and then. Sound words
+    // ("Achoo!") don't count: they're over in a moment.
+    if (m[6] != null && m[6].trim().split(/\s+/).filter((x) => !SOUND_WORDS.test(x)).length > 5) errors.push(`${id}: "${w}" quip is more than 5 words: "${m[6]}"`);
     differs = null;
     if (w.length < 2 || w.length > 12) errors.push(`${id}: "${w}" must be 2–12 letters`);
     if (seen.has(w)) errors.push(`${id}: "${w}" is listed twice`);
