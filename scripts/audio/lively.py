@@ -2,7 +2,7 @@
 # changing these doesn't touch the Sound it out sounds (SOUND_INPUTS in build.mjs).
 #
 #   lift     the line in our spelling (phonemes(): misaki symbols, what Kokoro was trained
-#            on, which already sounds brighter than Kokoro's own spelling), with its pitch
+#            on, which already sounds brighter than Kokoro's own spelling; spell()), with its pitch
 #            edited: higher, a wider range, and the last ~150 ms of voicing lifted, so it
 #            sounds pleased rather than flat. Every phrase and quip.
 #   excited  the line after an excited lead-in ("Wow, look at that!") and before a long tail,
@@ -11,6 +11,8 @@
 # Both run the model with its pitch (F0) and energy, or its durations, exposed: the ONNX graph
 # gets those tensors as outputs, or takes them as inputs in place of the nodes that make them.
 # Everything is deterministic, so the same text always makes the same clip.
+import re
+
 import numpy as np
 import onnx
 import onnxruntime as rt
@@ -55,9 +57,15 @@ def _sessions():
     return _probe, _with_f0
 
 
+def spell(text):
+    """Our spelling, except the word "I" as Kokoro's own spelling has it (aɪ): misaki's single
+    "I" symbol came out too faint to hear at the start of a line ("I hear the ocean!")."""
+    return re.sub(r"(?<![^\s.,!?;:…—\"(])I(?![^\W\d_])", "aɪ", phonemes(text))
+
+
 def lift(text, voice, speed):
     probe, with_f0 = _sessions()
-    toks = core.kokoro.tokenizer.tokenize(phonemes(text))
+    toks = core.kokoro.tokenizer.tokenize(spell(text))
     style = core.kokoro.voices[voice][len(toks)]
     _, _, f0, nn = _run(probe, toks, style, speed)
     f0 = f0.copy()

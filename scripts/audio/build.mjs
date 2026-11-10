@@ -47,7 +47,7 @@ const CUT = "cut-next-v1"; // bump when the cut method changes
 // Clips made another way, picked by ear: "excited" says the line after "Wow, look at that!"
 // and cuts it out (lively.py), for a line with pauses inside that sounded stiff lifted.
 const METHOD_FOR = { "q:Stand back. I sneeze fire. Achoo!": "excited" };
-const LIVELY = { lift: "lift-v1", excited: "excited-v1" }; // bump one when lively.py changes it
+const LIVELY = { lift: "lift-v2", excited: "excited-v1" }; // bump one when lively.py changes it
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 
