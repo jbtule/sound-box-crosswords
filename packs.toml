@@ -51,6 +51,34 @@
 # Run `npm run check` after editing; it catches typos and builds test puzzles.
 
 [[pack]]
+id = "g3-2026-unit4"
+name = "Unit 4"
+note = "3rd grade 2026 school words. A sound wave means listen, then spell."
+school = true
+words = """
+she "She can see the dog."
+e-ven (eee-vin) "Four and six are even numbers."
+pho-to (foe-toe) "Grandma keeps a photo of us on her fridge."
+ma-jor (may-jur) "We made a major mess in the kitchen."
+re-cent (ree-sent) "This is a recent picture of my dog."
+mid-dle (mid-dull) "I sat in the middle seat of the car."
+puz-zle 🧩 (puz-zull)
+ti-tle (tie-tull) "The title of my book is on the cover."
+ea-gle 🦅 (eee-gull)
+gen-tle (jen-tull) "Be gentle with the new kitten."
+speed "The bikes picked up speed going down the hill."
+bright "The sun is very bright today."
+grow "Plants need water and sun to grow."
+sub-way (sub-way) "We rode the subway under the city."
+en-joy (in-joy) "I enjoy reading books before bed."
+what "What is your name?" ~"What a word!"
+when "When will the bus get here?"
+which "Which shirt do you want to wear?"
+how "How do you make a paper boat?"
+write "I write my name on my paper."
+"""
+
+[[pack]]
 id = "g3-2026-unit3"
 name = "Unit 3"
 note = "3rd grade 2026 school words. A sound wave means listen, then spell."
