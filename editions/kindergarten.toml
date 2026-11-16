@@ -35,33 +35,6 @@ hat 🎩 {h a t} ~"Looking sharp."
 # spotting a word printed nearby is part of learning to read it. A clue's own word is
 # still blanked.
 [[pack]]
-id = "k-hfw-2"
-name = "High frequency words 2"
-note = "More everyday words to know by heart. Listen to the sentence, then spell."
-words_in_text = true
-school = true
-words = """
-are "We are friends."
-big "An elephant is big." {b i g}
-for "This gift is for you."
-he "He can run fast."
-here "Come here, puppy!" ~"Here comes another word!"
-lit-tle (lit-tul) "A mouse is little."
-of "I want a cup of milk."
-saw "I saw a rainbow."
-what "What is your name?" ~"What a word!"
-with "Come play with me."
-jump "Frogs can jump high."
-play "Let's play a game." ~"Tag, you're it!"
-look "Look at the moon!" ~"Look! Another spelling word!"
-want "I want a snack, please." ~"Gimme, gimme more words!"
-you "I love you." ~"You did it!"
-one "I have one nose." ~"One down, more to go!"
-has "She has a red ball."
-have "I have two cats."
-"""
-
-[[pack]]
 id = "k-hfw"
 name = "High frequency words"
 note = "Everyday words to know by heart. Listen to the sentence, then spell."
@@ -90,6 +63,33 @@ this "This is my bike."
 
 # Phonics packs, in teaching order: two letters for one sound, then blends at the start,
 # then blends at the end. Short vowels only, so every other sound is one players know.
+[[pack]]
+id = "k-hfw-2"
+name = "High frequency words (future)"
+note = "More everyday words to know by heart. Listen to the sentence, then spell."
+words_in_text = true
+school = true
+words = """
+are "We are friends."
+big "An elephant is big." {b i g}
+for "This gift is for you."
+he "He can run fast."
+here "Come here, puppy!" ~"Here comes another word!"
+lit-tle (lit-tul) "A mouse is little."
+of "I want a cup of milk."
+saw "I saw a rainbow."
+what "What is your name?" ~"What a word!"
+with "Come play with me."
+jump "Frogs can jump high."
+play "Let's play a game." ~"Tag, you're it!"
+look "Look at the moon!" ~"Look! Another spelling word!"
+want "I want a snack, please." ~"Gimme, gimme more words!"
+you "I love you." ~"You did it!"
+one "I have one nose." ~"One down, more to go!"
+has "She has a red ball."
+have "I have two cats."
+"""
+
 [[pack]]
 id = "k-two-letter-sounds"
 name = "Two-letter sounds"
