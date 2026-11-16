@@ -8,7 +8,10 @@
 //   _audio/a/<key>.json a blend's ("f:f+r") { split_ms }: where its second sound starts
 //   _audio/index.json   every key in this deploy; the next deploy reads it from the live
 //                       site to know which clips already exist
-//   _audio/_headers     long-lived caching for clips
+//   _audio/h/<edition>  an empty file per edition, never cached: the app asks for its
+//                       edition's once a day per device, so the request counts in Cloudflare's
+//                       analytics are daily devices per edition (no IDs or cookies)
+//   _audio/_headers     long-lived caching for clips, none for h/
 //   audio.json          { base, clips: { "w:volcano": key, ... }, splits: { "f:f+r": ms } },
 //                       shipped with the app
 //
@@ -189,9 +192,14 @@ async function main() {
   }
 
   writeFileSync(join(out, "index.json"), JSON.stringify(plan.map((c) => c.key)));
+  mkdirSync(join(out, "h"), { recursive: true });
+  for (const ed of readEditions(readFileSync(join(root, "editions.toml"), "utf8"))) writeFileSync(join(out, "h", ed.id), "");
   writeFileSync(join(out, "_headers"), [
     "/a/*",
     "  Cache-Control: public, max-age=31536000, immutable",
+    "  Access-Control-Allow-Origin: https://tools.tuley.name",
+    "/h/*",
+    "  Cache-Control: no-store",
     "  Access-Control-Allow-Origin: https://tools.tuley.name",
     "",
   ].join("\n"));

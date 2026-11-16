@@ -44,6 +44,9 @@ settings are saved in the browser's localStorage.
   `sound-box-sync.asset-data.stream`), which keeps sealed copies of a profile's progress for
   its linked devices. It can't read them, and refuses anything that isn't encrypted, including
   many compressed formats. Try it locally with `npx wrangler dev` in `sync/`.
+- Once a day, each device asks the audio host for `h/<edition>` (an empty file), so
+  Cloudflare's request counts for it show how many devices opened each grade that day. It
+  carries nothing but the edition: no IDs or cookies.
 
 See `CLAUDE.md` for the goals behind the design and a map of the code.
 
