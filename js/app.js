@@ -2228,6 +2228,21 @@ function welcomeLink() {
   gotKey(arrived);
 }
 
+/* ---------- daily count ---------- */
+// Once a day per device and edition, the app asks the audio host for /h/<edition> (an empty
+// file, never cached), so Cloudflare's request counts for it are how many devices opened each
+// edition that day. Nothing identifies the device: no IDs or cookies, just the edition. The
+// day is saved only once the request has gone, so a day spent offline is tried again later.
+// Skipped locally.
+var HELLO_AT = "https://sound-box-crosswords.asset-data.stream/h/";
+function hello() {
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;
+  var today = dayKey(Date.now()), seen = device.get("hello", {}) || {};
+  if (seen[EDITION.id] === today) return;
+  fetch(HELLO_AT + EDITION.id, { cache: "no-store", mode: "no-cors", credentials: "omit" })
+    .then(function () { var s = device.get("hello", {}) || {}; s[EDITION.id] = today; device.set("hello", s); }, function () {});
+}
+
 /* ---------- start ---------- */
 $("#pic").addEventListener("click", function () { if (P) { listened(); sayWord(P.words[cur], 0.85); } });
 $("#hearBtn").addEventListener("click", function () { if (P) { listened(); sayWord(P.words[cur], 0.75); } });
@@ -2383,3 +2398,5 @@ if (!gradeTapped) showStart(resumed && played());
 renderWho();
 syncAll();
 welcomeLink();
+hello();
+document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") hello(); });

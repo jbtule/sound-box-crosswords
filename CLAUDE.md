@@ -203,6 +203,12 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   not heard. Report copies the ✗ list or opens a GitHub issue. It spells
   every pack word, so nothing in the app links to it and it's `noindex` (the check
   enforces both).
+- Daily count (`hello` in `app.js`): once a day per device and edition (at launch and on
+  coming back to the screen), a no-store request for `h/<edition>` on the audio host, an empty
+  file `scripts/audio/build.mjs` writes per edition. Its request count per day in Cloudflare's
+  analytics (zone `asset-data.stream`, path `/h/<edition>`) is daily devices per edition. No
+  IDs or cookies; the day is saved (`device` "hello") only once the request went; skipped on
+  localhost.
 - `sw.js`: service worker, so a home-screen launch works offline. The page and unstamped
   files are network first (4 s, then the saved copy); `?v=` files, the CDN parser, fonts
   and audio clips are saved copy first. Clips are answered by byte range (Safari's
