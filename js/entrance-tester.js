@@ -2,8 +2,9 @@
 // then stays on, on this device, until Exit; ↻ reloads the page to pick up code changes). A bar
 // at the top picks an entrance, replays it on this puzzle or a new shape, slows it down (no
 // sound then), and shows how long it took. app.js asks it (next()) which entrance to play while
-// it's open, and it leaves the player's cycle, queue and Front Row Seat alone. Not linked from
-// the app; it shows no words.
+// it's open, and it leaves the player's cycle, queue and Front Row Seat alone. Log shows the
+// last 20 entrance decisions and what led to them (app.js noteEntrance), with Copy, for finding
+// out why an entrance moved on. Not linked from the app; it shows no words.
 import { ENTRANCES } from "./entrances.js";
 
 export function mountTester(app) {
@@ -18,6 +19,7 @@ export function mountTester(app) {
     '<label><input type="checkbox" id="trySound" checked> Sound</label>' +
     '<label><input type="checkbox" id="tryLoop"> Loop</label>' +
     '<span id="tryTime" aria-live="polite"></span>' +
+    '<button type="button" id="tryLog" aria-expanded="false">Log</button>' +
     '<button type="button" id="tryExit" title="Turn the tester off">Exit</button>';
   document.body.appendChild(bar);
   var fit = function () { document.body.style.paddingTop = bar.offsetHeight + "px"; }; // the page starts below the bar
@@ -36,6 +38,28 @@ export function mountTester(app) {
   bar.querySelector("#tryShape").addEventListener("click", function () { app.newShape(); });
   bar.querySelector("#tryRate").addEventListener("change", function () { app.replay(); });
   bar.querySelector("#tryReload").addEventListener("click", function () { location.reload(); });
+  // The entrance log: one line per decision, newest last, and Copy to send it on.
+  var logBox = document.createElement("div");
+  logBox.className = "tester-log"; logBox.hidden = true;
+  logBox.innerHTML = '<pre id="tryLogText"></pre><button type="button" id="tryLogCopy">Copy</button>';
+  bar.appendChild(logBox);
+  var logText = function () {
+    return app.log().map(function (e) {
+      return Object.keys(e).map(function (k) { return k === "at" ? e[k] : k + "=" + JSON.stringify(e[k]); }).join("  ");
+    }).join("\n") || "(nothing logged yet)";
+  };
+  bar.querySelector("#tryLog").addEventListener("click", function () {
+    logBox.hidden = !logBox.hidden;
+    this.setAttribute("aria-expanded", String(!logBox.hidden));
+    if (!logBox.hidden) bar.querySelector("#tryLogText").textContent = logText();
+    fit();
+  });
+  bar.querySelector("#tryLogCopy").addEventListener("click", function () {
+    var btn = this;
+    Promise.resolve().then(function () { return navigator.clipboard.writeText(logText()); })
+      .then(function () { btn.textContent = "Copied!"; }, function () { btn.textContent = "Couldn't copy"; })
+      .then(function () { setTimeout(function () { btn.textContent = "Copy"; }, 2000); });
+  });
   bar.querySelector("#tryExit").addEventListener("click", function () {
     if (!confirm("Turn the entrance tester off?")) return;
     try { localStorage.removeItem("sbx:backstage-on"); } catch (e) {}

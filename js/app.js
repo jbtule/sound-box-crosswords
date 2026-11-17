@@ -51,7 +51,7 @@ var store = storage(function () { return PREFIX; });
 var PROFILES = [], PROFILE = "default";
 // Everything a profile keeps in each grade, and of its own.
 var GRADE_KEYS = ["progress", "log", "counts", "days", "achievements", "slips", "stars", "guessing", "seenEntrances", "settings", "custom",
-  "puzzle", "pending", "entranceQueue", "entranceDue", "pack", "entrances", "syncBase", "quipAt"];
+  "puzzle", "pending", "entranceQueue", "entranceDue", "pack", "entrances", "syncBase", "quipAt", "entranceLog"];
 var OWN_KEYS = ["edition", "linkKey", "syncedAt"];
 function loadProfiles() {
   PROFILES = device.get("profiles", null) || [];
@@ -305,7 +305,7 @@ var newPics = 0;  // pictures added to the collection in this puzzle
 var pz = { helped: {}, crossed: {}, twofer: false, keys: false, guess: {}, nudged: {} };
 
 function newPuzzle(solved) {
-  if (updateReady || syncedSettings) { location.reload(); return; }
+  if (updateReady || syncedSettings) { noteEntrance({ event: "reload", why: updateReady ? "update" : "settings from another device", cause: entranceCause }); location.reload(); return; }
   skipEntrance();
   $("#done").hidden = true; $("#cluebar").classList.remove("spent"); $(".board-card").style.minHeight = "";
   finished = false; fill = {}; locked = {}; doneW = {}; misses = 0; missedW = {}; newPics = 0; pz = { helped: {}, crossed: {}, twofer: false, keys: false, guess: {}, nudged: {} };
@@ -324,6 +324,8 @@ function newPuzzle(solved) {
   // Only finishing a puzzle moves on to the next entrance. Remembered (entranceDue) until it
   // plays, so an update's reload between the solve and the new puzzle doesn't lose the turn.
   var turn = solved === true || store.get("entranceDue", false) === true;
+  noteEntrance({ event: "new puzzle", cause: entranceCause, solved: solved === true, due: store.get("entranceDue", null), pack: packId, waits: !(started || gradeTapped) });
+  entranceCause = "other";
   if (started || gradeTapped) runEntrance(turn); else { board.classList.add("waiting"); waitTurn = turn; } // the Start tap plays it
 }
 // The first word, said as the new puzzle's boxes land (with auto-speak on), unless the player has
@@ -338,19 +340,37 @@ function sayFirstWord(p) {
 // plays again. Skipped with reduced motion. Taps and keys work during it (typing fills the boxes
 // as they arrive) but don't cut it short; a new puzzle does.
 var entrance = null, waitTurn = false;
+// Entrance diagnostics: the last 20 entrance decisions and what led to them (solves, new puzzles
+// and their cause, reloads), to find out why an entrance moved on when it shouldn't have. Kept on
+// this device (per edition), shown only in the ?backstage bar's Log.
+var entranceCause = "launch";
+function noteEntrance(o) {
+  try {
+    var all = store.get("entranceLog", []) || [], d = new Date();
+    all.push(Object.assign({ at: d.toLocaleDateString() + " " + d.toLocaleTimeString() }, o));
+    store.set("entranceLog", all.slice(-20));
+  } catch (e) {}
+}
 function runEntrance(turn) {
   board.classList.remove("waiting");
   skipEntrance();
   var p = P, after = function () { sayFirstWord(p); }, test = tester && tester.next();
-  if (!P || document.hidden) return;
-  if (reducedMotion() && !test) { after(); return; }
+  var note = { event: "entrance", turn: turn, due: store.get("entranceDue", null) };
+  if (!P || document.hidden) { noteEntrance(Object.assign(note, { path: P ? "skipped: page hidden" : "skipped: no puzzle" })); return; }
+  if (reducedMotion() && !test) { noteEntrance(Object.assign(note, { path: "skipped: reduced motion" })); after(); return; }
   var saved = store.get("entrances", null), id = saved && saved.last, queue = entranceQueue();
+  note.saved = id || null; note.n = saved ? saved.n : null;
   if (turn && !test) store.set("entranceDue", false);
-  if (test) id = test.id; // the tester (?backstage) picks it, and leaves the cycle and Front Row Seat alone
+  if (test) { id = test.id; note.path = "tester"; } // the tester (?backstage) picks it, and leaves the cycle and Front Row Seat alone
   else if (turn && queue.length) { // the player's own order (the Director tab) comes first
     id = queue.shift(); store.set("entranceQueue", queue);
     store.set("entrances", Object.assign({}, saved, { last: id }));
-  } else if (turn || !id) { var pick = nextEntrance(saved, store.get("seenEntrances", [])); store.set("entrances", pick.state); id = pick.id; }
+    note.path = "director";
+  } else if (turn || !id) { var pick = nextEntrance(saved, store.get("seenEntrances", [])); store.set("entrances", pick.state); id = pick.id; note.path = turn ? "next (due)" : "next (none saved)"; }
+  else note.path = "replay";
+  note.played = id;
+  if (note.path !== "replay" && note.path !== "tester") note.savedOk = (store.get("entrances", {}) || {}).last === id && (!turn || store.get("entranceDue", null) === false);
+  noteEntrance(note);
   var run = playEntrance(id, geometry(P, board, order()), { audio: (test ? test.sound : settings.chime) ? audioOut() : null, rate: test ? test.rate : 1 });
   entrance = run;
   showBoardCard();
@@ -373,7 +393,8 @@ if ((function () {
   import("./entrance-tester.js").then(function (m) {
     tester = m.mountTester({
       replay: function () { dismissStart(); runEntrance(false); },
-      newShape: function () { dismissStart(); newPuzzle(); }
+      newShape: function () { dismissStart(); entranceCause = "tester"; newPuzzle(); },
+      log: function () { return store.get("entranceLog", []) || []; }
     });
   });
 }
@@ -799,6 +820,7 @@ function finish() {
   if (wd === 0 || wd === 6) counts.weekend = (counts.weekend || 0) + 1; // this puzzle, not past weekends
   store.set("counts", counts);
   store.set("entranceDue", true); // the next new puzzle gets the next entrance (newPuzzle)
+  noteEntrance({ event: "solved", pack: packId, due: store.get("entranceDue", null) });
   var today = dayKey(Date.now());
   if (days.indexOf(today) < 0) { days.push(today); store.set("days", days); }
   syncSoon();
@@ -1025,7 +1047,7 @@ function switchPack(id) {
     if (PACKS[id].school) say("p", PACK_KINDS.school, 0.95);
     if (PACKS[id].hard) say("p", PACK_KINDS.hard, 0.95);
   }
-  renderPacks(); startNewPuzzle();
+  entranceCause = "pack"; renderPacks(); startNewPuzzle();
 }
 // Switching packs mid-puzzle clears that puzzle (words already finished still count): a
 // popover under the chip asks first. Browsers without popovers use confirm().
@@ -1719,7 +1741,7 @@ $("#optQuips").addEventListener("change", function (e) { settings.quips = e.targ
 $("#optCustom").addEventListener("change", function (e) {
   settings.custom = e.target.checked; saveSettings();
   $("#customBox").hidden = !settings.custom;
-  if (!settings.custom && packId === "mine") { packId = packIds()[0]; store.set("pack", packId); recent = []; startNewPuzzle(); }
+  if (!settings.custom && packId === "mine") { packId = packIds()[0]; store.set("pack", packId); recent = []; entranceCause = "custom off"; startNewPuzzle(); }
   renderPacks(); renderProgressSheet();
 });
 ["kbAbc", "kbQwerty"].forEach(function (id) { $("#" + id).addEventListener("change", function (e) { settings.kb = e.target.value; saveSettings(); renderKeyboard(); sizeBoard(); }); });
@@ -1729,7 +1751,7 @@ $("#saveBtn").addEventListener("click", function () {
   customText = txt; store.set("custom", txt); syncSoon();
   $("#saveMsg").style.color = ""; $("#saveMsg").textContent = "Saved " + n + " words.";
   packId = "mine"; store.set("pack", "mine"); recent = [];
-  renderPacks(); startNewPuzzle();
+  entranceCause = "custom saved"; renderPacks(); startNewPuzzle();
   setTimeout(closeSheet, 600);
 });
 
@@ -1890,6 +1912,7 @@ function applyLive(d) {
   store.set("seenEntrances", d.seenEntrances); store.set("settings", settings);
   if (d.custom != null) { customText = d.custom; store.set("custom", d.custom); }
   if (canon([settings, store.get("custom", null)]) !== was) syncedSettings = true;
+  noteEntrance({ event: "sync applied", settingsChanged: syncedSettings, due: store.get("entranceDue", null) });
   checkAchievements();
   renderPacks();
 }
@@ -2233,8 +2256,8 @@ $("#pic").addEventListener("click", function () { if (P) { listened(); sayWord(P
 $("#hearBtn").addEventListener("click", function () { if (P) { listened(); sayWord(P.words[cur], 0.75); } });
 $("#clapBtn").addEventListener("click", function () { listened(); clap(); });
 $("#soundBtn").addEventListener("click", function () { listened(); soundOut(); });
-$("#newBtn").addEventListener("click", function () { startNewPuzzle(); });
-$("#nextBtn").addEventListener("click", function () { startNewPuzzle(true); });
+$("#newBtn").addEventListener("click", function () { entranceCause = "New puzzle button"; startNewPuzzle(); });
+$("#nextBtn").addEventListener("click", function () { entranceCause = "Next puzzle button"; startNewPuzzle(true); });
 window.addEventListener("resize", sizeBoard);
 // Turning the iPad: Safari can leave the stuck-to-the-bottom pad where the old screen's bottom
 // was (a gap under it, the puzzle covered) and report the old height for a moment. Once the
@@ -2309,7 +2332,7 @@ function start() {
   if ($("#startOverlay").hidden) return;
   $("#startOverlay").hidden = true;
   started = true;
-  if (board.classList.contains("waiting")) runEntrance(waitTurn); // says the first word as it ends
+  if (board.classList.contains("waiting")) { noteEntrance({ event: "start tap", waitTurn: waitTurn }); runEntrance(waitTurn); } // says the first word as it ends
   else if (P && !finished && settings.speakSel) sayWord(P.words[cur], 0.85);
 }
 $("#startOverlay").addEventListener("click", start);
@@ -2362,6 +2385,7 @@ document.addEventListener("visibilitychange", function () {
       var live = html.match(/js\/app\.js\?v=([0-9a-f]+)/);
       if (!live || live[1] === BUILD) return;
       updateReady = true;
+      noteEntrance({ event: "update found", reloadsNow: safeToReload() });
       if (safeToReload()) location.reload();
     })
     .catch(function () {});
@@ -2375,7 +2399,7 @@ refreshPill();
 renderPacks();
 renderKeyboard();
 var resumed = loadPuzzle();
-if (!resumed) newPuzzle();
+if (!resumed) { entranceCause = "launch"; newPuzzle(); }
 else if (!played() && !gradeTapped) board.classList.add("waiting"); // untouched: it's new, so Start plays its entrance
 appReady(); // the first puzzle is drawn: show the app (before Start, which takes focus, and focus needs it shown)
 saveGradeAudio();
