@@ -361,7 +361,11 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   Exit button; ↻ reloads to pick up code changes) (`js/entrance-tester.js`,
   loaded only then; nothing links to it): a bar replays any entrance on the real board (this
   puzzle or a new shape), at ½× or ¼× (no sound then), looped, with its running time; it leaves
-  the cycle, the queue and Front Row Seat alone, and plays even with reduced motion. Each entrance seen to the end is saved (`seenEntrances`,
+  the cycle, the queue and Front Row Seat alone, and plays even with reduced motion. Its **Log**
+  shows the last 20 entrance decisions and what led to them (`noteEntrance`, saved per edition as
+  `entranceLog`): solves, new puzzles and their cause, reloads, syncs, and for each entrance
+  whether one was due, which was saved, which played and why, and whether saving worked; for
+  finding out why an entrance moved on when it shouldn't have. Each entrance seen to the end is saved (`seenEntrances`,
   `sawEntrance`); all of them earns the secret Front Row Seat, which unlocks the 🏆 sheet's
   Director tab (shown as a locked ??? until then; `renderEntrances`): every entrance (`icon`, ⭐ for premium), tapped into an
   order (`entranceQueue`) that finished puzzles play one each before the usual cycle.
