@@ -1112,6 +1112,7 @@ function renderProgressSheet() {
   });
   $("#packsEmpty").hidden = shown > 0;
   renderSlips();
+  renderNotYet();
   renderTricky();
   renderGuessing();
   // Comebacks: words spelled right on the first try after an earlier miss, each counted once
@@ -1194,8 +1195,31 @@ function renderSlips() {
   });
   wrap.appendChild(bars);
 }
-// Tricky words: missed more often than spelled right on the first try, as pictures (or
-// their sound stickers) to tap and hear; never the spelling, since this sheet isn't locked.
+// Still learning: words tried (a miss, or typed) but never spelled right on the first try, most
+// misses first, as pictures to tap and hear. Tricky words below leave these out.
+var NOTYET_MAX = 24;
+function renderNotYet() {
+  var found = {}, list = $("#notYetList");
+  statsPacks().forEach(function (id) {
+    var words = entries(id), stats = packProgress(id).stats, stickers = listenStickers(words);
+    words.forEach(function (e) {
+      var st = stats[e.w];
+      if (!st || st.ok || !(st.miss || st.n)) return;
+      var have = found[e.w];
+      if (!have || st.miss > have.miss) found[e.w] = { e: e, id: id, miss: st.miss || 0, sticker: stickers[e.w] };
+    });
+  });
+  var all = Object.keys(found).map(function (w) { return found[w]; }).sort(function (a, b) { return b.miss - a.miss; });
+  list.innerHTML = "";
+  $("#notYetNote").textContent = all.length
+    ? all.length + (all.length === 1 ? " word" : " words") + " tried but not spelled right the first time yet" +
+      (all.length > NOTYET_MAX ? " (the " + NOTYET_MAX + " missed most shown)" : "") + ". Tap a picture to hear the word."
+    : "None: every word tried so far has been spelled right the first time at least once.";
+  byPack(list, all.slice(0, NOTYET_MAX), "Word not yet right the first time, hear it");
+}
+// Tricky words: missed more often than spelled right on the first try, but right the first
+// time at least once (the rest are under Still learning), as pictures (or their sound stickers) to
+// tap and hear; never the spelling, since this sheet isn't locked.
 var TRICKY_MAX = 12;
 function renderTricky() {
   var found = {}, list = $("#trickyList");
@@ -1203,7 +1227,7 @@ function renderTricky() {
     var words = entries(id), stats = packProgress(id).stats, stickers = listenStickers(words);
     words.forEach(function (e) {
       var st = stats[e.w];
-      if (!st || !st.miss || st.miss <= st.ok) return;
+      if (!st || !st.ok || st.miss <= st.ok) return;
       var score = st.miss - st.ok, have = found[e.w];
       if (!have || score > have.score) found[e.w] = { e: e, id: id, score: score, miss: st.miss, sticker: stickers[e.w] };
     });
@@ -1212,8 +1236,8 @@ function renderTricky() {
     .sort(function (a, b) { return b.score - a.score || b.miss - a.miss; }).slice(0, TRICKY_MAX);
   list.innerHTML = "";
   $("#trickyNote").textContent = top.length
-    ? "Missed more often than spelled right the first time. Tap a picture to hear the word."
-    : "None yet: words missed more often than spelled right will show here.";
+    ? "Spelled right the first time before, but missed more often. Tap a picture to hear the word."
+    : "None yet: words spelled right the first time before, but missed more often, will show here.";
   byPack(list, top, "Tricky word, hear it");
 }
 // Pictures (or sound stickers) to tap and hear, grouped under their pack's name: packs in the
