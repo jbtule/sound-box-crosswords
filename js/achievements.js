@@ -12,7 +12,7 @@ import { ENTRANCES } from "./entrances.js";
 //   comeback: words spelled right on the first try after an earlier miss
 //   days:     ["YYYY-MM-DD", ...] local days with a finished puzzle
 //   edition:  the grade's name ("3rd grade"), for Champion of Champions and Legend of Legends
-//   secret:   { listener, twofer, shared, look, peek, words, qwerty, weekend, entrances } counts for the
+//   secret:   { listener, twofer, shared, look, peek, words, qwerty, weekend, thanksgiving, winter, summer, entrances } counts for the
 //             secret achievements (SECRETS)
 // }
 
@@ -45,6 +45,10 @@ var SECRETS = [
   { key: "twofer", goal: 1, icon: "✌️", title: "Two for One", detail: "Finished two words with one move" },
   { key: "words", goal: 100, icon: "💯", title: "Triple Digits", detail: "100 words spelled right" },
   { key: "weekend", goal: 1, icon: "📅", title: "Weekend Speller", detail: "Spelled on a weekend" },
+  // Holidays: a puzzle finished in one of these stretches (holidaysOn), any year.
+  { key: "thanksgiving", goal: 1, icon: "🦃", title: "Gobble Gobble", detail: "Spelled over Thanksgiving weekend" },
+  { key: "winter", goal: 1, icon: "⛄", title: "Snow Much Fun", detail: "Spelled over winter break" },
+  { key: "summer", goal: 1, icon: "🏖️", title: "Summer Splash", detail: "Spelled over summer break" },
   { key: "qwerty", goal: 5, icon: "⌨️", title: "Touch Typist", detail: "5 puzzles typed on the QWERTY keys" },
   { key: "shared", goal: 1, icon: "📣", title: "Show-Off", detail: "Shared an achievement" },
   { key: "look", goal: 1, icon: "🎨", title: "New Look", detail: "Picked a fresh color scheme" },
@@ -52,6 +56,18 @@ var SECRETS = [
   // Every new-puzzle entrance seen to the end; it unlocks the Director tab (pick the entrances' order).
   { key: "entrances", goal: ENTRANCES.length, icon: "🍿", title: "Front Row Seat", detail: "Saw every way the boxes arrive" }
 ];
+// The holiday secrets a local date falls in: Thanksgiving weekend (the 4th Thursday of
+// November through Sunday), winter break (Dec 24 to Jan 1) and summer (June 1 to Aug 14).
+export function holidaysOn(d) {
+  var m = d.getMonth(), day = d.getDate(), out = [];
+  if (m === 10) {
+    var thu = 1 + (4 - new Date(d.getFullYear(), 10, 1).getDay() + 7) % 7 + 21; // 4th Thursday
+    if (day >= thu && day <= thu + 3) out.push("thanksgiving");
+  }
+  if ((m === 11 && day >= 24) || (m === 0 && day === 1)) out.push("winter");
+  if (m === 5 || m === 6 || (m === 7 && day <= 14)) out.push("summer");
+  return out;
+}
 // The whole grade at once, for grades with at least this many packs (Custom and hard mode
 // packs don't count).
 var GRAND_MIN = 5;
