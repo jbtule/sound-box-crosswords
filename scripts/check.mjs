@@ -178,7 +178,7 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
   const big = { packs, hard: 1e6, clean: 1e6, comeback: 1e6, days: Array.from({ length: 1000 }, (_, i) => "d" + i), edition: "3rd grade", secret: all };
   const { spokenParts } = await import("../js/achievements.js");
   const shown = catalog(big);
-  for (const id of ["grand:champion", "grand:legend", "secret:listener", "hard:mode", "pack:h"]) if (!shown.some((a) => a.id === id)) errors.push(`scripts/check.mjs: catalog() no longer lists ${id}; update this check`);
+  for (const id of ["grand:champion", "grand:legend", "secret:listener", "hard:mode", "pack:h", "loading:p0"]) if (!shown.some((a) => a.id === id)) errors.push(`scripts/check.mjs: catalog() no longer lists ${id}; update this check`);
   for (const a of shown) {
     for (const t of spokenParts(a)) if (!lines.has(t)) errors.push(`js/achievements.js: spokenLines() is missing "${t}"`);
   }

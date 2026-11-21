@@ -55,6 +55,8 @@ var SECRETS = [
 // The whole grade at once, for grades with at least this many packs (Custom and hard mode
 // packs don't count).
 var GRAND_MIN = 5;
+// Legend Loading…: more than this share of a pack's words right on the first try.
+var LOADING = 0.6;
 // Hard mode: finishing any puzzle in a hard pack (🥋 on its chip). Listed in grades that have one.
 var HARD = { icon: "🥋", title: "Hard Mode", detail: "Took on the toughest words and won" };
 
@@ -64,7 +66,7 @@ function tierItem(track, i, have) {
 }
 
 // Every achievement that could be shown: [{ id, icon, title, detail, goal, have, met }],
-// plus `pack` (its id) on a pack's Champion and Legend, and `hard` on hard mode ones (the cards
+// plus `pack` (its id) and `total` (its size) on a pack's Champion, Legend Loading… and Legend, and `hard` on hard mode ones (the cards
 // add "Hard mode" to the grade line). Their detail shows the pack's size
 // ("Cleared all 23 words in Blends"); what's said stays the same for every pack ("Cleared every word in
 // this pack"), so a pack needs no recording beyond its name.
@@ -73,13 +75,17 @@ export function catalog(state) {
   var out = [];
   state.packs.forEach(function (p) {
     if (p.total < 3) return;
-    out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "Cleared all " + p.total + " words in " + p.name, goal: p.total, have: p.done, pack: p.id, hard: !!p.hard,
+    out.push({ id: "pack:" + p.id, icon: "🏆", title: p.name + " Champion", detail: "Cleared all " + p.total + " words in " + p.name, goal: p.total, have: p.done, total: p.total, pack: p.id, hard: !!p.hard,
       spoken: ["Champion!", p.name, "Cleared every word in this pack"] });
     // Then a Legend: every word right on the first try (at some point, not all at once).
-    // Shown once Champion is reached, as the next goal; not for the Custom list ("mine"). It
-    // doesn't unlock colors (palettes count pack: achievements only).
+    // Shown once Champion is reached, as the next goal; not for the Custom list ("mine").
+    // Legend Loading… comes first, over 60% of the way there, since Legend can be a long way
+    // off. Neither unlocks colors (palettes count pack: achievements only).
     if (p.done >= p.total && p.id !== "mine") {
-      out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "All " + p.total + " words in " + p.name + ", first try, no misses", goal: p.total, have: p.firsts || 0, pack: p.id, hard: !!p.hard,
+      out.push({ id: "loading:" + p.id, icon: "⏳", title: p.name + " Legend Loading…", detail: "Over 60% of the " + p.total + " words in " + p.name + ", first try",
+        goal: Math.floor(p.total * LOADING) + 1, have: p.firsts || 0, total: p.total, pack: p.id, hard: !!p.hard,
+        spoken: ["Legend... loading!", p.name, "Over 60 percent of the words, first try!"] });
+      out.push({ id: "legend:" + p.id, icon: "🌟", title: p.name + " Legend", detail: "All " + p.total + " words in " + p.name + ", first try, no misses", goal: p.total, have: p.firsts || 0, total: p.total, pack: p.id, hard: !!p.hard,
         spoken: ["Legend!", p.name, "Every word, first try. No misses."] });
     }
   });
@@ -129,7 +135,7 @@ export function spokenParts(a) {
 // each tier's title and detail, so the audio build can record them all
 // (scripts/audio/build.mjs). The check keeps this in step with catalog().
 export function spokenLines(packs) {
-  var out = ["New achievement!", "Secret achievement!", "Achievement!", "Champion!", "Legend!", "Cleared every word in this pack", "Every word, first try. No misses.",
+  var out = ["New achievement!", "Secret achievement!", "Achievement!", "Champion!", "Legend... loading!", "Over 60 percent of the words, first try!", "Legend!", "Cleared every word in this pack", "Every word, first try. No misses.",
     "Champion of Champions!", "Conquered every pack", "Legend of Legends!", "Every pack. Every word. First try."];
   packs.forEach(function (p) { out.push(p.name); });
   Object.keys(TIERS).forEach(function (track) {
