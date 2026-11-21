@@ -5,7 +5,7 @@ import { ENTRANCES, geometry, playEntrance, nextEntrance } from "./entrances.js"
 import { listenStickers } from "./stickers.js";
 import { renderCard, shareCard } from "./sharecard.js";
 import { PALETTES, EVERYDAY, unlockedCount, paletteCSS } from "./palettes.js";
-import { catalog, award, dayKey, daysThisWeek, spokenParts } from "./achievements.js";
+import { catalog, award, dayKey, daysThisWeek, spokenParts, holidaysOn } from "./achievements.js";
 import { parseList, makePuzzle, restorePuzzle, blankSentence, shuffle, clipsFor } from "./crossword.js";
 import { clipUrls, speak, say, sayAfter, sayRecorded, hasClip, splitOf, onClips, stopSpeech, speechEpoch, hasSpeech } from "./speech.js";
 import { blendsIn, slipSpots, isClose } from "./phonics.js";
@@ -818,6 +818,7 @@ function finish() {
   if (listenedToAll()) counts.listener = (counts.listener || 0) + 1;
   var wd = new Date().getDay();
   if (wd === 0 || wd === 6) counts.weekend = (counts.weekend || 0) + 1; // this puzzle, not past weekends
+  holidaysOn(new Date()).forEach(function (k) { counts[k] = (counts[k] || 0) + 1; });
   store.set("counts", counts);
   store.set("entranceDue", true); // the next new puzzle gets the next entrance (newPuzzle)
   noteEntrance({ event: "solved", pack: packId, due: store.get("entranceDue", null) });
@@ -1362,7 +1363,7 @@ function achState() {
       return { id: id, name: PACKS[id].name, done: c.done, total: c.total, firsts: firsts, hard: isHard(id) };
     }),
     hard: counts.hard || 0, clean: counts.clean, comeback: counts.comeback, days: days, edition: EDITION.short,
-    secret: { listener: counts.listener, twofer: counts.twofer, shared: counts.shared, look: counts.look, peek: counts.peek, qwerty: counts.qwerty, weekend: counts.weekend, words: wordsRight(), entrances: counts.entrances }
+    secret: { listener: counts.listener, twofer: counts.twofer, shared: counts.shared, look: counts.look, peek: counts.peek, qwerty: counts.qwerty, weekend: counts.weekend, thanksgiving: counts.thanksgiving, winter: counts.winter, summer: counts.summer, words: wordsRight(), entrances: counts.entrances }
   };
 }
 // Words spelled right (typed, not finished by a crossing word), in every pack.

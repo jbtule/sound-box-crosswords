@@ -174,13 +174,26 @@ if (!editions.length) errors.push("editions.toml: needs at least one [[edition]]
   const packs = ["Blends", "Bossy R", "Two Beats", "Three Beats", "Unit 1"].map((name, i) => ({ id: "p" + i, name, done: 5, total: 5, firsts: 5 }))
     .concat({ id: "mine", name: "Custom", done: 3, total: 3, firsts: 3 }, { id: "h", name: "Long Words", done: 5, total: 5, firsts: 5, hard: true });
   const lines = new Set(spokenLines(packs));
-  const all = { listener: 1e6, twofer: 1e6, shared: 1e6, look: 1e6, peek: 1e6, words: 1e6, qwerty: 1e6, weekend: 1e6 };
+  const all = { listener: 1e6, twofer: 1e6, shared: 1e6, look: 1e6, peek: 1e6, words: 1e6, qwerty: 1e6, weekend: 1e6, thanksgiving: 1e6, winter: 1e6, summer: 1e6 };
   const big = { packs, hard: 1e6, clean: 1e6, comeback: 1e6, days: Array.from({ length: 1000 }, (_, i) => "d" + i), edition: "3rd grade", secret: all };
   const { spokenParts } = await import("../js/achievements.js");
   const shown = catalog(big);
   for (const id of ["grand:champion", "grand:legend", "secret:listener", "hard:mode", "pack:h", "loading:p0"]) if (!shown.some((a) => a.id === id)) errors.push(`scripts/check.mjs: catalog() no longer lists ${id}; update this check`);
   for (const a of shown) {
     for (const t of spokenParts(a)) if (!lines.has(t)) errors.push(`js/achievements.js: spokenLines() is missing "${t}"`);
+  }
+}
+
+// Holiday secrets: the stretches holidaysOn() puts a date in.
+{
+  const { holidaysOn } = await import("../js/achievements.js");
+  const want = [["2026-11-25", ""], ["2026-11-26", "thanksgiving"], ["2026-11-29", "thanksgiving"], ["2026-11-30", ""],
+    ["2025-11-27", "thanksgiving"], ["2027-11-25", "thanksgiving"], ["2027-11-24", ""], ["2028-11-23", "thanksgiving"], ["2028-11-27", ""],
+    ["2026-12-23", ""], ["2026-12-24", "winter"], ["2026-12-31", "winter"], ["2027-01-01", "winter"], ["2027-01-02", ""],
+    ["2026-05-31", ""], ["2026-06-01", "summer"], ["2026-07-15", "summer"], ["2026-08-14", "summer"], ["2026-08-15", ""]];
+  for (const [day, k] of want) {
+    const [y, m, d] = day.split("-").map(Number), got = holidaysOn(new Date(y, m - 1, d)).join(",");
+    if (got !== k) errors.push(`js/achievements.js: holidaysOn(${day}) is "${got}", expected "${k}"`);
   }
 }
 
