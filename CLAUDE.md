@@ -489,7 +489,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
     the first try after an earlier miss); where the slips happen (`renderSlips`: the
     wrong letters in try-agains by place, beginning / middle / end, and by kind, vowel / letter
     in a blend / other consonant, from `slipSpots` in `phonics.js`, counted in `checkWord` into
-    `sbx:slips`; shown from 10); not yet (`renderNotYet`: words tried but never right on the first
+    `sbx:slips`; shown from 10); still learning (`renderNotYet`: words tried but never right on the first
     try, most misses first); tricky words (`renderTricky`: missed more often than right first try, but right
     first try at least once, so the two lists don't repeat); both, and guessing, as pictures or sound stickers
     to tap and hear, grouped under pack names by `byPack`; guessing (`renderGuessing`, once the

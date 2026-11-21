@@ -1195,7 +1195,7 @@ function renderSlips() {
   });
   wrap.appendChild(bars);
 }
-// Not yet: words tried (a miss, or typed) but never spelled right on the first try, most
+// Still learning: words tried (a miss, or typed) but never spelled right on the first try, most
 // misses first, as pictures to tap and hear. Tricky words below leave these out.
 var NOTYET_MAX = 24;
 function renderNotYet() {
@@ -1218,7 +1218,7 @@ function renderNotYet() {
   byPack(list, all.slice(0, NOTYET_MAX), "Word not yet right the first time, hear it");
 }
 // Tricky words: missed more often than spelled right on the first try, but right the first
-// time at least once (the rest are under Not yet), as pictures (or their sound stickers) to
+// time at least once (the rest are under Still learning), as pictures (or their sound stickers) to
 // tap and hear; never the spelling, since this sheet isn't locked.
 var TRICKY_MAX = 12;
 function renderTricky() {
