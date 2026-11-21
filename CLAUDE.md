@@ -370,7 +370,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   Director tab (shown as a locked ??? until then; `renderEntrances`): every entrance (`icon`, ⭐ for premium), tapped into an
   order (`entranceQueue`) that finished puzzles play one each before the usual cycle.
 - `js/achievements.js`: no DOM. `catalog(state)` lists achievements (pack champion, then once that's reached a pack
-  Legend, every word right on the first try, not for Custom, and unlocking no colors; tiered
+  Legend Loading… ⏳, over 60% of its words right on the first try (`LOADING`), and a pack
+  Legend, every word right on the first try; neither for Custom, and unlocking no colors; tiered
   clean solves, comeback words, practice days, showing only the next unmet tier), `award`
   records newly met ones in `sbx:achievements` ({ id: time }); earned ones are never taken
   away (no streaks). Inputs saved by `app.js`: `sbx:counts` { clean, comeback } and

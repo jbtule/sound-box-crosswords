@@ -1476,7 +1476,7 @@ function sharePics(a) {
     entries(id).forEach(function (e) { if (e.pic && stats[e.w] && stats[e.w].ok > 0 && pics.indexOf(e.pic) < 0) pics.push(e.pic); });
   });
   pics = shuffle(pics).slice(0, a.pack ? 5 : 6);
-  return { pics: pics, more: a.pack ? Math.max(0, a.goal - pics.length) : 0 };
+  return { pics: pics, more: a.pack ? Math.max(0, (a.total || a.goal) - pics.length) : 0 };
 }
 // The grade line on an achievement's cards: the grade when there's more than one, and "Hard
 // mode" on hard mode ones ("3rd grade · Hard mode").
