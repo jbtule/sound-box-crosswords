@@ -46,9 +46,9 @@ var SECRETS = [
   { key: "words", goal: 100, icon: "💯", title: "Triple Digits", detail: "100 words spelled right" },
   { key: "weekend", goal: 1, icon: "📅", title: "Weekend Speller", detail: "Spelled on a weekend" },
   // Holidays: a puzzle finished in one of these stretches (holidaysOn), any year.
-  { key: "thanksgiving", goal: 1, icon: "🦃", title: "Gobble Gobble", detail: "Spelled over Thanksgiving weekend" },
-  { key: "winter", goal: 1, icon: "⛄", title: "Snow Much Fun", detail: "Spelled over winter break" },
-  { key: "summer", goal: 1, icon: "🏖️", title: "Summer Splash", detail: "Spelled over summer break" },
+  { key: "thanksgiving", goal: 1, icon: "🦃", title: "Gobble Gobble", detail: "Practiced spelling between bites of turkey" },
+  { key: "winter", goal: 1, icon: "⛄", title: "Snow Much Fun", detail: "Kept spelling sharp over winter break, snow or no snow" },
+  { key: "summer", goal: 1, icon: "🏖️", title: "Summer Speller", detail: "Practiced spelling in the summer sun. Now that's dedication!" },
   { key: "qwerty", goal: 5, icon: "⌨️", title: "Touch Typist", detail: "5 puzzles typed on the QWERTY keys" },
   { key: "shared", goal: 1, icon: "📣", title: "Show-Off", detail: "Shared an achievement" },
   { key: "look", goal: 1, icon: "🎨", title: "New Look", detail: "Picked a fresh color scheme" },

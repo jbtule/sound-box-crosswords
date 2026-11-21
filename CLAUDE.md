@@ -381,7 +381,7 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   grades with a hard pack): a puzzle finished in one (`counts.hard`); its card, and a hard pack's
   Champion and Legend cards, add "Hard mode" to the grade line (`gradeLine` in `app.js`, on the
   big card and the share card). Secret achievements (`SECRETS`: Good Listener,
-  Two for One, Triple Digits, Weekend Speller, Gobble Gobble, Snow Much Fun, Summer Splash (holidays: `holidaysOn`), Touch Typist, Show-Off, New Look, Collector's
+  Two for One, Triple Digits, Weekend Speller, Gobble Gobble, Snow Much Fun, Summer Speller (holidays: `holidaysOn`), Touch Typist, Show-Off, New Look, Collector's
   Eye, Front Row Seat) show as ??? in the 🏆 sheet until earned, with no hint (the ones that count up show just their count once started, "37 of 100"), and their card says "Secret
   achievement!"; their counts are in `sbx:counts` too (puzzle ones from `pz`, this puzzle's
   flags in `app.js`).
