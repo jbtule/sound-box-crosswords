@@ -65,7 +65,7 @@ own licenses:
 - [qrcode](https://github.com/soldair/node-qrcode) (MIT), which draws the share sheet's QR code,
   loaded from jsDelivr when the share sheet opens.
 - [jsQR](https://github.com/cozmo/jsQR) (Apache-2.0), which reads a link code with the camera
-  (More → Link → Scan a code), loaded from jsDelivr then.
+  (More → Players → Scan a code), loaded from jsDelivr then.
 - [Fredoka](https://fonts.google.com/specimen/Fredoka) and
   [Lexend](https://fonts.google.com/specimen/Lexend) (SIL Open Font License 1.1), from
   Google Fonts.

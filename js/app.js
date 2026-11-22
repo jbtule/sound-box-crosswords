@@ -45,7 +45,7 @@ var device = storage(function () { return "sbx:"; });
 var store = storage(function () { return PREFIX; });
 // Profiles: one player's progress each, in every grade, all kept the same way: under
 // "sbx:@<id>:", then the grade's prefix. Every device starts with one, "default"; others
-// arrive only by Receive (More → Link). Names are this device's own and never sync, and an
+// come from Add a player or Receive (More → Players). Names are this device's own and never sync, and an
 // empty one shows as "Default". `who` is the active profile's own data: its grade and link
 // key. Set by loadProfiles, after upgradeStorage.
 var PROFILES = [], PROFILE = "default";
@@ -1878,7 +1878,7 @@ $("#shareCopy").addEventListener("click", function () {
 });
 
 /* ---------- profiles and linked devices ---------- */
-// More → Link (called "players" there; "profiles" in the code). "Play on another device
+// More → Players ("profiles" in the code). "Add a player" starts a new, empty profile here. "Play on another device
 // too" (Send) shows the active profile's link code: a QR code and a link carrying its key
 // after # (seal.js). "Get a player from another device" (Receive) scans or pastes one, then
 // asks who it is: the same player as this device (Replace: from then on both devices are the
@@ -2088,10 +2088,11 @@ function removeProfile(id) {
   saveProfiles();
   renderProfiles(); renderWho();
 }
-// The Link tab shows one task at a time: Home (the two tasks, the players here, the
-// status), Send ("Play on another device too") or Recv ("Get a player from another device").
+// The Players tab shows one task at a time: Home (the tasks, the players here, the link
+// status), Send ("Play on another device too"), Recv ("Get a player from another device")
+// or Add ("Add a player").
 function linkView(name) {
-  ["Home", "Send", "Recv"].forEach(function (v) { $("#link" + v).hidden = v !== name; });
+  ["Home", "Send", "Recv", "Add"].forEach(function (v) { $("#link" + v).hidden = v !== name; });
   if (name !== "Recv") endScan();
   if (name === "Home") { incoming = null; $("#arriveSec").hidden = true; renderLinkStatus(); }
 }
@@ -2103,6 +2104,27 @@ function renderLink() {
 document.querySelectorAll("#linkPanel [data-back]").forEach(function (b) { b.addEventListener("click", function () { linkView("Home"); }); });
 $("#goSend").addEventListener("click", function () { linkView("Send"); prepareSend(); });
 $("#goRecv").addEventListener("click", function () { linkView("Recv"); showScan(); startScan(); });
+// Add a player: a new, empty profile, played at once. With no grade of its own yet, it gets
+// the grade question (chooseEdition). The first time, the player here gets a name too.
+$("#goAdd").addEventListener("click", function () {
+  linkView("Add");
+  $("#addName").value = ""; $("#addMsg").textContent = "";
+  $("#addMine").value = PROFILES.find(function (p) { return p.id === PROFILE; }).name;
+  $("#addMineBox").hidden = PROFILES.length > 1;
+  $("#addName").focus();
+});
+["addName", "addMine"].forEach(function (id) { $("#" + id).addEventListener("input", function () { $("#addMsg").textContent = ""; }); });
+$("#addGo").addEventListener("click", function () {
+  var name = $("#addName").value.trim(), mineName = $("#addMine").value.trim();
+  if (!name) { $("#addMsg").textContent = "What’s the new player’s name?"; $("#addName").focus(); return; }
+  if (PROFILES.length < 2 && !mineName) { $("#addMsg").textContent = "And who plays on this device now?"; $("#addMine").focus(); return; }
+  var id = newKey().slice(0, 10);
+  PROFILES.forEach(function (p) { if (p.id === PROFILE && mineName) p.name = mineName; });
+  PROFILES.push({ id: id, name: name });
+  saveProfiles();
+  device.set("profile", id);
+  reloadClean();
+});
 
 // What Send says when the player couldn't be saved first (syncErr's kinds).
 var SEND_TROUBLE = {
@@ -2220,7 +2242,7 @@ $("#pasteBtn").addEventListener("click", async function () {
   try { text = await navigator.clipboard.readText(); } catch (e) { text = window.prompt("Paste the link from the other device:"); }
   var k = keyFromLink(text);
   if (k) gotKey(k);
-  else { $("#scanAgain").hidden = false; $("#receiveMsg").textContent = "No link code there. On the other device: More → Link → Play on another device too → Copy link."; }
+  else { $("#scanAgain").hidden = false; $("#receiveMsg").textContent = "No link code there. On the other device: More → Players → Play on another device too → Copy link."; }
 });
 $("#recvGo").addEventListener("click", async function () {
   var key = incoming, add = $("#recvAdd").checked;
