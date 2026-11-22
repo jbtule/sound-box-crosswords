@@ -2106,22 +2106,75 @@ $("#goSend").addEventListener("click", function () { linkView("Send"); prepareSe
 $("#goRecv").addEventListener("click", function () { linkView("Recv"); showScan(); startScan(); });
 // Add a player: a new, empty profile, played at once. With no grade of its own yet, it gets
 // the grade question (chooseEdition). The first time, the player here gets a name too.
+// The first time, when the player here has progress in two or more editions (two players may
+// have shared it, one edition each), each edition can go to the new player instead. Not for a
+// linked player: syncing would bring the moved progress back.
+function splitEditions() {
+  if (PROFILES.length > 1 || linkKey(PROFILE)) return [];
+  var eds = EDITIONS.filter(function (ed) { return hasData(PROFILE, ed); });
+  return eds.length > 1 ? eds : [];
+}
+function renderSplit() {
+  var eds = splitEditions(), list = $("#addSplitList"), mine = $("#addMine").value.trim() || "The player here",
+    theirs = $("#addName").value.trim() || "The new player", was = {};
+  list.querySelectorAll("input:checked").forEach(function (r) { was[r.name] = r.value; });
+  $("#addSplit").hidden = !eds.length;
+  list.innerHTML = "";
+  eds.forEach(function (ed) {
+    var row = document.createElement("div"), head = document.createElement("span"), opts = document.createElement("div");
+    row.className = "split-row"; head.textContent = ed.name; opts.className = "opt";
+    opts.setAttribute("role", "radiogroup"); opts.setAttribute("aria-label", ed.name);
+    [["mine", mine], ["theirs", theirs]].forEach(function (o) {
+      var lab = document.createElement("label"), r = noSpellHelp(document.createElement("input"));
+      r.type = "radio"; r.name = "split-" + ed.id; r.value = o[0];
+      r.checked = (was[r.name] || "mine") === o[0];
+      lab.append(r, " " + o[1]);
+      opts.appendChild(lab);
+    });
+    row.append(head, opts);
+    list.appendChild(row);
+  });
+}
+// A grade's saved keys, from one player to another (the other has none there yet).
+function moveGrade(from, to, ed) {
+  try {
+    GRADE_KEYS.forEach(function (k) {
+      var a = gradePrefix(from, ed) + k, v = localStorage.getItem(a);
+      if (v === null) return;
+      localStorage.setItem(gradePrefix(to, ed) + k, v);
+      localStorage.removeItem(a);
+    });
+  } catch (e) {}
+}
 $("#goAdd").addEventListener("click", function () {
   linkView("Add");
   $("#addName").value = ""; $("#addMsg").textContent = "";
   $("#addMine").value = PROFILES.find(function (p) { return p.id === PROFILE; }).name;
   $("#addMineBox").hidden = PROFILES.length > 1;
+  $("#addSplitList").innerHTML = "";
+  renderSplit();
   $("#addName").focus();
 });
-["addName", "addMine"].forEach(function (id) { $("#" + id).addEventListener("input", function () { $("#addMsg").textContent = ""; }); });
+["addName", "addMine"].forEach(function (id) { $("#" + id).addEventListener("input", function () { $("#addMsg").textContent = ""; renderSplit(); }); });
 $("#addGo").addEventListener("click", function () {
   var name = $("#addName").value.trim(), mineName = $("#addMine").value.trim();
   if (!name) { $("#addMsg").textContent = "What’s the new player’s name?"; $("#addName").focus(); return; }
   if (PROFILES.length < 2 && !mineName) { $("#addMsg").textContent = "And who plays on this device now?"; $("#addMine").focus(); return; }
   var id = newKey().slice(0, 10);
   PROFILES.forEach(function (p) { if (p.id === PROFILE && mineName) p.name = mineName; });
+  var gone = splitEditions().filter(function (ed) { // before the new player counts
+    var r = document.querySelector('#addSplitList input[name="split-' + ed.id + '"]:checked');
+    return r && r.value === "theirs";
+  });
   PROFILES.push({ id: id, name: name });
   saveProfiles();
+  if (gone.length) {
+    receiving = true; // read the grades from storage, not this page, and no syncing meanwhile
+    gone.forEach(function (ed) { moveGrade(PROFILE, id, ed); });
+    whoOf(id).set("edition", (gone.find(function (ed) { return ed.id === EDITION.id; }) || gone[0]).id);
+    var kept = EDITIONS.find(function (ed) { return gone.indexOf(ed) < 0 && hasData(PROFILE, ed); });
+    if (gone.indexOf(EDITION) >= 0 && kept) who.set("edition", kept.id);
+  }
   device.set("profile", id);
   reloadClean();
 });

@@ -144,7 +144,9 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   key there). `device` (plain `sbx:`) holds what's the device's: `profiles` (id and name),
   `profile` (the one playing), the device id, the storage version and the Home Screen tip.
   Every device starts with one profile, `default`; others come from Add a player (a new, empty
-  profile, which gets the grade question; the first time, the default is named too) or Receive. Names are
+  profile, which gets the grade question; the first time, the default is named too, and if it has
+  progress in two or more editions and isn't linked, each edition can go to the new player: `splitEditions`,
+  `moveGrade`) or Receive. Names are
   the device's own and never sync (empty shows as "Default"). Any player but the one playing
   can be removed (`removeProfile` / `wipeProfile`: everything under its prefix).
   **Storage versions** (`upgradeStorage`, device `storage`): 2 moved the first player's data

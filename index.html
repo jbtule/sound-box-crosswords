@@ -347,6 +347,11 @@
           <label class="help" for="addMine">And who plays on this device now?</label>
           <input id="addMine" type="text" maxlength="24" autocomplete="off" autocorrect="off" spellcheck="false">
         </div>
+        <div id="addSplit" hidden>
+          <p class="step">Whose progress is it?</p>
+          <p class="help">This device has progress in more than one edition. If some of it is the new player’s, give it to them.</p>
+          <div id="addSplitList"></div>
+        </div>
         <p class="help">They get their own progress, achievements and settings. Switch players from More.</p>
         <p class="help" id="addMsg" role="status"></p>
         <button class="primary wide" id="addGo" type="button">Add and play</button>
