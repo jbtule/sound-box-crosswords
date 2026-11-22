@@ -1,4 +1,4 @@
-// No DOM. Send's link code (More → Link), drawn from the qrcode library's grid so it doesn't
+// No DOM. Send's link code (More → Players), drawn from the qrcode library's grid so it doesn't
 // look like the share sheet's plain QR code: round dots, rounded corner eyes with an orange
 // box in each, and a key in the middle, since the code carries the player's key. The middle
 // covers a few percent of the code, which error correction H (up to 30%) reads through.

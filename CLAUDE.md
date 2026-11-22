@@ -143,12 +143,13 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   (`edition`), link key and sync time (`OWN_KEYS`; per grade, `GRADE_KEYS`: add a new saved
   key there). `device` (plain `sbx:`) holds what's the device's: `profiles` (id and name),
   `profile` (the one playing), the device id, the storage version and the Home Screen tip.
-  Every device starts with one profile, `default`; others only arrive by Receive. Names are
+  Every device starts with one profile, `default`; others come from Add a player (a new, empty
+  profile, which gets the grade question; the first time, the default is named too) or Receive. Names are
   the device's own and never sync (empty shows as "Default"). Any player but the one playing
   can be removed (`removeProfile` / `wipeProfile`: everything under its prefix).
   **Storage versions** (`upgradeStorage`, device `storage`): 2 moved the first player's data
   from the plain keys (`sbx:` and `sbx:<edition>:`, from before profiles) to `sbx:@default:`,
-  one key at a time, so a move cut short carries on at the next launch. **Linking** (More → Link, which says "player",
+  one key at a time, so a move cut short carries on at the next launch. **Linking** (More → Players, which says "player",
   one task at a time, `linkView`): Send ("Play on another device too") shows the active
   profile's link code (`linkFor`: the site's address + `#link=<key>`, also as a QR code);
   Receive ("Get a player from another device") starts the camera (`js/scan.js`), or pastes

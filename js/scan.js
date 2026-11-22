@@ -1,4 +1,4 @@
-// Reads a QR code with the camera, for More → Link → Scan a code. Loaded only then. The
+// Reads a QR code with the camera, for More → Players → Scan a code. Loaded only then. The
 // reading is done by jsQR (from the CDN, via the import map), since Safari has no
 // BarcodeDetector. The Home Screen app needs its own scanner: the Camera app would open the
 // link in Safari, whose storage is separate.

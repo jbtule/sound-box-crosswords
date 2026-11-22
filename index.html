@@ -63,7 +63,7 @@
       <button class="quiet-btn" id="settingsBtn" type="button"><svg class="gear" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="label">More</span></button>
     </div>
   </div>
-  <!-- Who's playing, with two or more players (More → Link): a quiet line under the title; opens More.
+  <!-- Who's playing, with two or more players (More → Players): a quiet line under the title; opens More.
        Not at the very top: iOS blurs the strip just under the status bar. -->
   <button class="who-bar" id="whoPill" type="button" hidden></button>
   <div class="install-nudge" id="installNudge" hidden>
@@ -227,10 +227,10 @@
       <div class="row"><select id="editionSel" aria-label="Edition"></select></div>
       <p class="help">Each edition keeps its own words, progress, achievements and settings on this device.</p>
     </div>
-    <div class="tabs" role="tablist" aria-label="Settings, stats, link and about">
+    <div class="tabs" role="tablist" aria-label="Settings, stats, players and about">
       <button type="button" role="tab" id="tabSet" aria-selected="true" aria-controls="setPanel">Settings</button>
       <button type="button" role="tab" id="tabStats" aria-selected="false" aria-controls="statsPanel">Stats</button>
-      <button type="button" role="tab" id="tabLink" aria-selected="false" aria-controls="linkPanel">Link</button>
+      <button type="button" role="tab" id="tabLink" aria-selected="false" aria-controls="linkPanel">Players</button>
       <button type="button" role="tab" id="tabAbout" aria-selected="false" aria-controls="aboutPanel">About</button>
     </div>
     <div class="tabpanel" id="setPanel" role="tabpanel" aria-labelledby="tabSet">
@@ -266,7 +266,7 @@
       </div>
       <div>
         <h3>Start over</h3>
-        <p class="help">Clears <span class="edName">this grade</span>’s achievements, stars, collected pictures, unlocked colors and puzzle history on this device. Settings and Custom words stay.<span id="resetLinked" hidden> This also unlinks this device; other devices keep their progress.</span></p>
+        <p class="help">Clears <span class="edName">this grade</span>’s achievements, stars, collected pictures, unlocked colors and puzzle history on this device. Settings stay.<span id="resetLinked" hidden> This also unlinks this device; other devices keep their progress.</span></p>
         <button class="ghost" id="resetOpen" type="button">Start over…</button>
         <div id="resetBox" hidden>
           <label class="help" for="resetText">To confirm, type <b>start over</b></label>
@@ -314,10 +314,11 @@
     <div class="tabpanel" id="linkPanel" role="tabpanel" aria-labelledby="tabLink" hidden>
       <!-- One task at a time (linkView in app.js). -->
       <div class="link-view" id="linkHome">
-        <p class="help">Linked devices share a player’s progress, settings and Custom words, through a small server that keeps a sealed copy. Without the code no one can read it, the server included, and it holds no names. Each device keeps its own copy and plays offline.</p>
+        <p class="help">Linked devices share a player’s progress and settings, through a small server that keeps a sealed copy. Without the code no one can read it, the server included, and it holds no names. Each device keeps its own copy and plays offline.</p>
         <p class="link-status" id="linkStatus" role="status"></p>
         <button class="task" id="goSend" type="button"><span class="task-ico" aria-hidden="true">📲</span><span><b>Play on another device too</b><small>Show a code for the other device to scan.</small></span></button>
         <button class="task" id="goRecv" type="button"><span class="task-ico" aria-hidden="true">📥</span><span><b>Get a player from another device</b><small>Scan the code it shows, or paste its link.</small></span></button>
+        <button class="task" id="goAdd" type="button"><span class="task-ico" aria-hidden="true">🙋</span><span><b>Add a player</b><small>Someone new starts fresh on this device.</small></span></button>
         <div id="profilesSec" hidden>
           <h3>Players on this device</h3>
           <ul class="plain" id="profileList"></ul>
@@ -331,16 +332,29 @@
         <button class="primary" id="sendRetry" type="button" hidden>Try again</button>
         <div id="sendBox" hidden>
           <div class="share-qr" id="sendQr" role="img" aria-label="Link code" hidden></div>
-          <p class="help center">On the other device: More → Link → <b>Get a player from another device</b>.</p>
+          <p class="help center">On the other device: More → Players → <b>Get a player from another device</b>.</p>
           <div class="row center"><button class="ghost" id="sendShare" type="button">Share…</button><button class="ghost" id="sendCopy" type="button">Copy link</button></div>
           <p class="help center fine">Anyone with this code can change this player’s progress. Show it only on your own devices.</p>
           <code id="sendUrl" hidden></code>
         </div>
       </div>
+      <div class="link-view" id="linkAdd" hidden>
+        <button class="back" type="button" data-back>‹ Back</button>
+        <p class="step">Who’s the new player?</p>
+        <label class="help" for="addName">Their name</label>
+        <input id="addName" type="text" maxlength="24" autocomplete="off" autocorrect="off" spellcheck="false">
+        <div id="addMineBox" hidden>
+          <label class="help" for="addMine">And who plays on this device now?</label>
+          <input id="addMine" type="text" maxlength="24" autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+        <p class="help">They get their own progress, achievements and settings. Switch players from More.</p>
+        <p class="help" id="addMsg" role="status"></p>
+        <button class="primary wide" id="addGo" type="button">Add and play</button>
+      </div>
       <div class="link-view" id="linkRecv" hidden>
         <button class="back" type="button" data-back>‹ Back</button>
         <div class="arrive" id="arriveSec" hidden>
-          <p class="help">This page opened with a link code. If Sound Box is on your Home Screen, copy the link, then open Sound Box there: More → Link → Get a player → Paste link. Or link it right here, if you play in this browser.</p>
+          <p class="help">This page opened with a link code. If Sound Box is on your Home Screen, copy the link, then open Sound Box there: More → Players → Get a player → Paste link. Or link it right here, if you play in this browser.</p>
           <button class="ghost" id="arriveCopy" type="button">Copy link</button>
         </div>
         <div id="recvScan">
