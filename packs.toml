@@ -255,6 +255,33 @@ pi-an-o 🎹 (pea-ann-oh)
 # Hard mode (🥋, opens after any other pack is finished): long words whose endings like to
 # fade (-ture, -tion, -ble, -ous), plus a few whose last beat is easy to drop.
 [[pack]]
+id = "endings"
+name = "Endings"
+note = "Hold on to the end: -ed, -ful, -less. A sound wave means listen, then spell."
+words = """
+jumped "The cat jumped onto the couch."
+kicked "She kicked the ball into the net."
+helped "I helped my dad wash the car."
+camped "We camped by the lake all weekend."
+played "We played tag at recess."
+yelled "He yelled when he saw the spider."
+smiled "She smiled for the class photo."
+rained "It rained all day, so we stayed inside."
+plant-ed (plant-edd) "We planted seeds in the garden."
+paint-ed (paint-edd) "I painted a picture of my dog."
+melt-ed (melt-edd) "The snowman melted in the sun."
+land-ed (land-edd) "The plane landed on the runway."
+care-ful (care-full) "Be careful with the hot soup."
+help-ful (help-full) "My big sister is very helpful."
+thank-ful (thank-full) "We are thankful for our friends."
+play-ful (play-full) "The puppy is playful and silly."
+end-less (end-less) "The long car ride felt endless."
+fear-less (fear-less) "The fearless firefighter ran into the smoke."
+spot-less (spot-less) "After we cleaned, the kitchen was spotless."
+care-less (care-less) "I made a careless mistake on my test."
+"""
+
+[[pack]]
 id = "long-words"
 name = "Long Words"
 note = "Long words with endings that like to fade. Hold on to every beat!"
