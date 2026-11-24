@@ -72,7 +72,7 @@ export function holidaysOn(d) {
 // packs don't count).
 var GRAND_MIN = 5;
 // Put In the Practice: a school pack with a test date, played on this many different days
-// before it, with every word done.
+// before it, at least one of them in the week before it (the 7 days before), with every word done.
 var PRACTICE_DAYS = 3;
 // Legend Loading…: more than this share of a pack's words right on the first try.
 var LOADING = 0.6;
@@ -115,11 +115,14 @@ export function catalog(state) {
     if (!p.test) return;
     var id = "practice:" + p.id;
     if ((state.today || "") > p.test && !(state.earned && state.earned[id])) return;
-    var d = p.testDays || 0, left = p.total - p.done;
-    out.push({ id: id, icon: "💪", title: "Put In the Practice", detail: "Practiced " + p.name + " on " + PRACTICE_DAYS + " days before the test",
-      goal: PRACTICE_DAYS, have: d, total: p.total, pack: p.id, met: d >= PRACTICE_DAYS && left <= 0,
-      progress: Math.min(d, PRACTICE_DAYS) + " of " + PRACTICE_DAYS + " days" + (left > 0 ? ", " + left + (left === 1 ? " word" : " words") + " to go" : ""),
-      spoken: ["Put in the practice!", p.name, "Practiced on " + PRACTICE_DAYS + " days before the test"] });
+    var d = p.testDays || 0, wk = p.testWeek || 0, left = p.total - p.done;
+    var todo = [];
+    if (!wk) todo.push("1 in the week before the test");
+    if (left > 0) todo.push(left + (left === 1 ? " word" : " words") + " to go");
+    out.push({ id: id, icon: "💪", title: "Put In the Practice", detail: "Practiced " + p.name + " on " + PRACTICE_DAYS + " days, including the week before the test",
+      goal: PRACTICE_DAYS, have: d, total: p.total, pack: p.id, met: d >= PRACTICE_DAYS && wk > 0 && left <= 0,
+      progress: Math.min(d, PRACTICE_DAYS) + " of " + PRACTICE_DAYS + " days" + (todo.length ? " · still: " + todo.join(", ") : ""),
+      spoken: ["Put in the practice!", p.name, "Practiced on " + PRACTICE_DAYS + " days, including the week before the test"] });
   });
   // Champion of Champions: every pack's Champion; then Legend of Legends: every pack's Legend.
   // On screen they name the grade; what's said is the same for every grade.
@@ -169,7 +172,7 @@ export function spokenParts(a) {
 export function spokenLines(packs) {
   var out = ["New achievement!", "Secret achievement!", "Achievement!", "Champion!", "Legend... loading!", "Over 60 percent of the words, first try!", "Legend!", "Cleared every word in this pack", "Every word, first try. No misses.",
     "Champion of Champions!", "Conquered every pack", "Legend of Legends!", "Every pack. Every word. First try.",
-    "Put in the practice!", "Practiced on " + PRACTICE_DAYS + " days before the test"];
+    "Put in the practice!", "Practiced on " + PRACTICE_DAYS + " days, including the week before the test"];
   packs.forEach(function (p) { out.push(p.name); });
   Object.keys(TIERS).forEach(function (track) {
     TIERS[track].forEach(function (n, i) { var t = tierItem(track, i, 0); out.push(t.title + "!", t.detail); });

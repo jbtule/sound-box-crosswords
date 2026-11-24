@@ -43,7 +43,7 @@
 #               high-frequency words), not one of the app's phonics packs. Its button gets 🏫.
 #   test = "2026-12-04"   optional, for school lists: the test date. The note says "Test: Fri,
 #               Dec 4." through that day, and playing the pack on 3 different days before it,
-#               with every word done, earns Put In the Practice. Nothing changes after it.
+#               one of them in the 7 days before, with every word done, earns Put In the Practice. Nothing changes after it.
 #   hard = true   optional: a hard mode pack, a real stretch for the grade. Its button gets 🥋
 #               and sits last; it opens once any other pack is finished (Champion), and
 #               finishing a puzzle in it earns Hard Mode. Name it for its theme, never "Hard mode".

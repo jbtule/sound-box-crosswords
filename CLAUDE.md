@@ -380,7 +380,8 @@ When a request is ambiguous, prefer the option that better serves goals 1–4.
   away (no streaks). Inputs saved by `app.js`: `sbx:counts` { clean, comeback } and
   `sbx:days` (local "YYYY-MM-DD" with a finished puzzle), backfilled from `sbx:log` once.
   Put In the Practice (💪, `practice:<pack>`): a school pack with a `test` date, played on 3
-  different days before it (`testDays` in `app.js`, from `sbx:log`) with every word done; listed
+  different days before it, at least one in the 7 days before (`testDays` in `app.js`, from
+  `sbx:log`), with every word done; listed
   through the test day or once earned, then it quietly goes. The pack note adds "Test: Fri, Dec 4."
   through the test day (`testLine`).
   Champion of Champions and then Legend of Legends: every pack's Champion / Legend, in grades
