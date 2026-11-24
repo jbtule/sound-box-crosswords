@@ -41,6 +41,9 @@
 #               (kindergarten high-frequency words); normally the check forbids it.
 #   school = true   optional: the school's own list (a unit's spelling words, the class's
 #               high-frequency words), not one of the app's phonics packs. Its button gets 🏫.
+#   test = "2026-12-04"   optional, for school lists: the test date. The note says "Test: Fri,
+#               Dec 4." through that day, and playing the pack on 3 different days before it,
+#               with every word done, earns Put In the Practice. Nothing changes after it.
 #   hard = true   optional: a hard mode pack, a real stretch for the grade. Its button gets 🥋
 #               and sits last; it opens once any other pack is finished (Champion), and
 #               finishing a puzzle in it earns Hard Mode. Name it for its theme, never "Hard mode".
@@ -55,6 +58,7 @@ id = "g3-2026-unit4"
 name = "Unit 4"
 note = "3rd grade 2026 school words. A sound wave means listen, then spell."
 school = true
+test = "2026-12-04"
 words = """
 she "She can see the dog."
 e-ven (eee-vin) "Four and six are even numbers." ~"Not odd at all."
@@ -83,6 +87,7 @@ id = "g3-2026-unit3"
 name = "Unit 3"
 note = "3rd grade 2026 school words. A sound wave means listen, then spell."
 school = true
+test = "2026-11-13"
 words = """
 yard 🏡
 storm ⛈️ ~"I'm not scared. Okay, maybe."

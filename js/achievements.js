@@ -71,6 +71,9 @@ export function holidaysOn(d) {
 // The whole grade at once, for grades with at least this many packs (Custom and hard mode
 // packs don't count).
 var GRAND_MIN = 5;
+// Put In the Practice: a school pack with a test date, played on this many different days
+// before it, with every word done.
+var PRACTICE_DAYS = 3;
 // Legend Loading…: more than this share of a pack's words right on the first try.
 var LOADING = 0.6;
 // Hard mode: finishing any puzzle in a hard pack (🥋 on its chip). Listed in grades that have one.
@@ -105,6 +108,19 @@ export function catalog(state) {
         spoken: ["Legend!", p.name, "Every word, first try. No misses."] });
     }
   });
+  // Put In the Practice: for a pack with a test date (school lists), practice on different
+  // days before it, every word done. Listed until the test day is over, or once earned
+  // (state.earned); after the test it quietly goes, with nothing missed.
+  state.packs.forEach(function (p) {
+    if (!p.test) return;
+    var id = "practice:" + p.id;
+    if ((state.today || "") > p.test && !(state.earned && state.earned[id])) return;
+    var d = p.testDays || 0, left = p.total - p.done;
+    out.push({ id: id, icon: "💪", title: "Put In the Practice", detail: "Practiced " + p.name + " on " + PRACTICE_DAYS + " days before the test",
+      goal: PRACTICE_DAYS, have: d, total: p.total, pack: p.id, met: d >= PRACTICE_DAYS && left <= 0,
+      progress: Math.min(d, PRACTICE_DAYS) + " of " + PRACTICE_DAYS + " days" + (left > 0 ? ", " + left + (left === 1 ? " word" : " words") + " to go" : ""),
+      spoken: ["Put in the practice!", p.name, "Practiced on " + PRACTICE_DAYS + " days before the test"] });
+  });
   // Champion of Champions: every pack's Champion; then Legend of Legends: every pack's Legend.
   // On screen they name the grade; what's said is the same for every grade.
   var real = state.packs.filter(function (p) { return p.id !== "mine" && !p.hard && p.total > 0; });
@@ -134,7 +150,7 @@ export function catalog(state) {
   SECRETS.forEach(function (x) {
     out.push({ id: "secret:" + x.key, icon: x.icon, title: x.title, detail: x.detail, goal: x.goal, have: sec[x.key] || 0, secret: true });
   });
-  out.forEach(function (a) { a.met = a.have >= a.goal; });
+  out.forEach(function (a) { if (a.met === undefined) a.met = a.have >= a.goal; });
   return out;
 }
 
@@ -152,7 +168,8 @@ export function spokenParts(a) {
 // (scripts/audio/build.mjs). The check keeps this in step with catalog().
 export function spokenLines(packs) {
   var out = ["New achievement!", "Secret achievement!", "Achievement!", "Champion!", "Legend... loading!", "Over 60 percent of the words, first try!", "Legend!", "Cleared every word in this pack", "Every word, first try. No misses.",
-    "Champion of Champions!", "Conquered every pack", "Legend of Legends!", "Every pack. Every word. First try."];
+    "Champion of Champions!", "Conquered every pack", "Legend of Legends!", "Every pack. Every word. First try.",
+    "Put in the practice!", "Practiced on " + PRACTICE_DAYS + " days before the test"];
   packs.forEach(function (p) { out.push(p.name); });
   Object.keys(TIERS).forEach(function (track) {
     TIERS[track].forEach(function (n, i) { var t = tierItem(track, i, 0); out.push(t.title + "!", t.detail); });

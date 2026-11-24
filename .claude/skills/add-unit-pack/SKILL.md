@@ -39,6 +39,9 @@ rules below add to them; they don't replace them.
   and flag any `<...>` placeholder left in. Link the issue in the PR (`Closes #N`).
 - **From a photo:** copy the words exactly as printed. Don't fix the school's spelling and
   don't add or drop words. List anything you can't read clearly and ask about it.
+- **Test date:** ask when the unit's spelling test is, if it isn't given. It goes in as
+  `test = "YYYY-MM-DD"` (the note then shows it, and practicing before it earns Put In the
+  Practice). Leave it off if no one knows.
 - **Bonus or challenge words:** ask whether to include them. Default to the main list only.
 - **Limits:** the check needs at least 10 words; each word must be 2–12 letters (letters
   and apostrophes only). If the list is shorter, or a word is longer or has a hyphen or
@@ -59,6 +62,7 @@ id = "g3-2026-unit4"
 name = "Unit 4"
 note = "3rd grade 2026 school words. A sound wave means listen, then spell."
 school = true
+test = "2026-12-04"
 words = """
 ...
 """
@@ -67,6 +71,7 @@ words = """
 - `id`: `g<grade>-<year>-unit<N>`, with the same year as the earlier units of that school
   year (`2026` for 2026–27). Saved progress is keyed by it, so it can never change once shipped.
 - `name`: `Unit N`. `note`: the same line as the other units, with grade and year.
+- `test`: the spelling test's date, in quotes, if known (optional).
 - `school = true`: it's the school's own list, so its button shows 🏫. (Never `hard = true`,
   which marks the app's hard mode packs, 🥋.)
 - Keep the words in the school's order.
