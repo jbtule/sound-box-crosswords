@@ -1035,7 +1035,7 @@ function renderPacks() {
     });
     wrap.appendChild(b);
   });
-  $("#packNote").textContent = PACKS[packId].note;
+  $("#packNote").textContent = PACKS[packId].note + testLine(PACKS[packId].test);
   renderProgress();
 }
 function switchPack(id) {
@@ -1360,11 +1360,27 @@ function achState() {
     }).map(function (id) {
       var c = coverage(id), stats = packProgress(id).stats;
       var firsts = entries(id).filter(function (e) { return stats[e.w] && stats[e.w].ok > 0; }).length;
-      return { id: id, name: PACKS[id].name, done: c.done, total: c.total, firsts: firsts, hard: isHard(id) };
+      return { id: id, name: PACKS[id].name, done: c.done, total: c.total, firsts: firsts, hard: isHard(id),
+        test: PACKS[id].test, testDays: PACKS[id].test ? testDays(id, PACKS[id].test) : 0,
+        testWeek: PACKS[id].test ? testDays(id, PACKS[id].test, 7) : 0 };
     }),
+    today: dayKey(Date.now()), earned: earned,
     hard: counts.hard || 0, clean: counts.clean, comeback: counts.comeback, days: days, edition: EDITION.short,
     secret: { listener: counts.listener, twofer: counts.twofer, shared: counts.shared, look: counts.look, peek: counts.peek, qwerty: counts.qwerty, weekend: counts.weekend, thanksgiving: counts.thanksgiving, winter: counts.winter, summer: counts.summer, words: wordsRight(), entrances: counts.entrances }
   };
+}
+// Different days with a finished puzzle of a pack before its test date (from the puzzle log);
+// with `within`, only the days in that many days before it.
+function testDays(id, test, within) {
+  var p = test.split("-").map(Number), from = within ? dayKey(new Date(p[0], p[1] - 1, p[2] - within).getTime()) : "", seen = {};
+  log.forEach(function (e) { var k = dayKey(e.t); if (e.pack === id && k < test && k >= from) seen[k] = true; });
+  return Object.keys(seen).length;
+}
+// A pack's test date for its note, "Test: Fri, Dec 4", through the test day; nothing after.
+function testLine(test) {
+  if (!test || dayKey(Date.now()) > test) return "";
+  var p = test.split("-").map(Number);
+  return " Test: " + new Date(p[0], p[1] - 1, p[2]).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) + ".";
 }
 // Words spelled right (typed, not finished by a crossing word), in every pack.
 function wordsRight() {
@@ -1712,7 +1728,7 @@ function openAchievements() {
     // it has started, "37 of 100", never what it counts.
     var secretCount = hide && a.goal > 1 && a.have > 0 ? " · " + Math.min(a.have, a.goal) + " of " + a.goal : "";
     sub.textContent = hide ? "Secret achievement" + secretCount : got ? a.detail + " · " + new Date(earned[a.id]).toLocaleDateString(undefined, { month: "short", day: "numeric" })
-      : a.detail + " · " + Math.min(a.have, a.goal) + " of " + a.goal;
+      : a.detail + " · " + (a.progress || Math.min(a.have, a.goal) + " of " + a.goal);
     text.appendChild(sub);
     li.append(icon, text);
     if (got) { // reopen it in the big card, where it can be shared
